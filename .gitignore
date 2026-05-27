@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+
+# Node
+node_modules/
+.next/
+.turbo/
+out/
+*.tsbuildinfo
+
+# uv
+.uv/
+
+# Modal
+.modal/
+.modal_cache/
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+logs/
+
+# Coverage
+.coverage
+coverage/
+htmlcov/
+
+# Harness conda env (lives in user's conda; never committed)
+harness/.conda/
+harness/__pycache__/
