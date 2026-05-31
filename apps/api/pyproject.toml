@@ -1,0 +1,21 @@
+[project]
+name = "capychem-api"
+version = "0.0.0"
+description = "CapyChem FastAPI backend + LangGraph runtime."
+requires-python = ">=3.12"
+dependencies = [
+    "capychem-core",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Contributes `capychem.api` to the PEP 420 `capychem` namespace (see packages/core).
+[tool.hatch.build.targets.wheel]
+packages = ["capychem"]
+
+[tool.uv.sources]
+capychem-core = { workspace = true }

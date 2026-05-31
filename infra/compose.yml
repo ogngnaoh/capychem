@@ -1,0 +1,24 @@
+# CapyChem run-state database (Postgres 16).
+# Slice 1 (walking skeleton) only proves connectivity; the schema lands in slice 2.
+# Usage: docker compose -f infra/compose.yml up -d
+services:
+  postgres:
+    image: postgres:16
+    container_name: capychem-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-capychem}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-capychem}
+      POSTGRES_DB: ${POSTGRES_DB:-capychem}
+    ports:
+      - "5432:5432"
+    volumes:
+      - capychem-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-capychem}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  capychem-pg:

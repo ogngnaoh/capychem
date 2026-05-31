@@ -14,7 +14,8 @@ CapyChem is an autonomous closed-loop molecular optimization agent. Start every 
 ## Commands
 
 Install:
-- `uv sync` — Python deps (root + all workspaces)
+- `uv sync` — modern Python deps (root workspace: packages/core + apps/api)
+- `uv sync --project harness` — isolated harness env (Python 3.10, PyTDC 0.3.6); separate venv, never a workspace member
 - `pnpm install` — Node deps (root + apps/web)
 
 Dev:
@@ -36,7 +37,7 @@ Test single:
 - `pnpm --filter web test -- --runTestsByPath app/runs/[id]/page.test.tsx`
 
 Typecheck:
-- `uv run mypy packages apps/api`
+- `uv run mypy -p capychem` — strict; `-p` (not paths) because `capychem` is a PEP 420 namespace split across packages/core + apps/api
 - `pnpm --filter web typecheck`
 
 Lint:
@@ -51,14 +52,14 @@ Eval:
 - `uv run capychem-eval --task=qed --budget=10000 --seed=42` — single PMO task
 - `uv run capychem-eval --all --budget=10000` — full 23-task sweep (cost-bounded; confirm before invoking)
 
-Legacy harness (isolated env):
-- `conda activate capychem-harness && python -m mol_opt.runner --task=qed` — reproduces a Graph-GA baseline. Never invoke from modern Python; always shell out.
+Legacy harness (isolated uv env, Python 3.10):
+- `harness/.venv/bin/python harness/capychem_harness/score.py` — scores SMILES against a PyTDC oracle (reads JSON on stdin). Reproducing a Graph-GA baseline via `mol_opt` lands in milestone 01. Never `import` from harness; always shell out.
 
 ## Stack
 
-- Python 3.12 (modern stack); Python 3.10 (legacy harness env only)
+- Python 3.12 (modern stack, pinned via `.python-version`); Python 3.10 (legacy harness env only)
 - Node 22 LTS
-- Next.js 15 (App Router) + React 19 + TypeScript 5 + Tailwind + shadcn/ui
+- Next.js 16 (App Router) + React 19 + TypeScript 5 + Tailwind + shadcn/ui
 - FastAPI 0.115+
 - LangGraph (current)
 - Postgres 16 (managed: Neon or Supabase — pick at infra-setup)
@@ -100,7 +101,7 @@ Top-level only:
 
 ## Gotchas
 
-- `mol_opt` pins PyTDC 0.3.6 and Python 3.7–3.10. The legacy env lives in `harness/` behind a conda env named `capychem-harness`. Modern code talks to it through `apps/worker/oracle.py` via subprocess + JSON. Never `pip install pytdc` into the modern env.
+- `mol_opt` pins PyTDC 0.3.6 and Python 3.7–3.10. The legacy env lives in `harness/` as an isolated uv venv (`harness/.venv`, Python 3.10) — its own pyproject/lockfile, `package = false`, excluded from the root workspace. Modern code talks to it through `packages/core/capychem/oracle.py` via subprocess + JSON (wrapped by `apps/worker` for Modal in slice 4). Never `import` from harness or `uv add pytdc` into the modern env. PyTDC 0.3.6 also has incomplete deps: it needs `requests`/`networkx`/`scipy` declared explicitly and a one-symbol `rdkit.six` shim (modern RDKit dropped it) — both handled in `harness/`.
 - DeepSeek-v4-pro cold start on Modal is ~30 s. The WebSocket layer must tolerate that: heartbeat-ping the client, buffer events, do not disconnect. Use Modal's warm-pool for active runs.
 - The PMO success metric is **AUC of top-10 mean score versus oracle calls**, not the raw final top-1 score. The eval harness in `packages/core/eval` is the authoritative implementation; recomputing it ad hoc gives the wrong number.
 - Langfuse traces are the source of truth for "what the agent decided this generation." Logs are secondary. When debugging a run, open Langfuse first.

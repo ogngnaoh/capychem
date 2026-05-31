@@ -1,0 +1,43 @@
+# Self-hosted Langfuse (v2 — single Postgres dependency; lighter than v3's
+# Clickhouse/Redis/Minio stack and sufficient for the walking skeleton).
+# Slice 1 only proves the container boots + answers its health check; spans are
+# wired in slice 2. Web app owns :3000, so Langfuse is published on :3001.
+# Usage: docker compose -f infra/langfuse-compose.yml up -d
+# Health: curl http://localhost:3001/api/public/health
+services:
+  langfuse-db:
+    image: postgres:16
+    container_name: capychem-langfuse-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse
+      POSTGRES_DB: langfuse
+    volumes:
+      - capychem-langfuse-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  langfuse:
+    image: langfuse/langfuse:2
+    container_name: capychem-langfuse
+    restart: unless-stopped
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+    ports:
+      - "3001:3000"
+    environment:
+      DATABASE_URL: postgresql://langfuse:langfuse@langfuse-db:5432/langfuse
+      NEXTAUTH_URL: http://localhost:3001
+      # Local dev throwaway values — NOT secrets. Override in real deployments.
+      NEXTAUTH_SECRET: capychem-local-dev-nextauth-secret
+      SALT: capychem-local-dev-salt
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      TELEMETRY_ENABLED: "false"
+
+volumes:
+  capychem-langfuse-pg:

@@ -40,7 +40,7 @@ PRD non-goals N1–N6 carry forward. Engineering-level additions:
 
 | Layer | Choice | Version |
 |---|---|---|
-| Frontend | Next.js (App Router) + React + TypeScript + Tailwind + shadcn/ui | Next 15, React 19, TS 5.x |
+| Frontend | Next.js (App Router) + React + TypeScript + Tailwind + shadcn/ui | Next 16, React 19, TS 5.x |
 | Backend API | FastAPI | 0.115+ |
 | Agent orchestration | LangGraph | current at impl time |
 | Observability | Langfuse, self-hosted via Docker Compose | current OSS image |
@@ -82,7 +82,7 @@ Performance / scale: single concurrent user; single-digit concurrent runs in MVP
                                         └──────────────────┘
 ```
 
-`apps/web` is the only client. `apps/api` owns REST + WS and hosts the LangGraph runtime in-process; long-running loops run as background tasks within the API process, persisting state to Postgres after each generation. `apps/worker` is a Modal app exposing two endpoints: `llm.propose(batch, prompt)` and `oracle.score(smiles_batch, task)`. The oracle worker shells out to the **pinned `harness/` conda env** via subprocess + JSON; this is the only bridge between the modern stack and the legacy `mol_opt` + PyTDC environment.
+`apps/web` is the only client. `apps/api` owns REST + WS and hosts the LangGraph runtime in-process; long-running loops run as background tasks within the API process, persisting state to Postgres after each generation. `apps/worker` is a Modal app exposing two endpoints: `llm.propose(batch, prompt)` and `oracle.score(smiles_batch, task)`. The oracle worker shells out to the **isolated `harness/` uv env** (Python 3.10, own venv + lockfile, excluded from the modern workspace) via subprocess + JSON; this is the only bridge between the modern stack and the legacy `mol_opt` + PyTDC environment.
 
 ### 6.2 Data model
 
@@ -188,7 +188,7 @@ Keep working on assorted demos. No portfolio anchor, no closed-loop optimization
 
 No migration — greenfield. The 16-week build runs in four phases (kill-switch gates from PROJECT.md §9 attached):
 
-- **Phase 1 (weeks 1–3) — harness reproducibility & loop spike.** Stand up the pinned `harness/` conda env (PyTDC 0.3.6, Python 3.10); reproduce one Graph-GA PMO result. Wire LangGraph + Langfuse around a trivial `LLM → TDC oracle → log` loop. Measure valid-SMILES rate. **Kill-switch:** <80% valid SMILES or harness won't reproduce → fix before proceeding.
+- **Phase 1 (weeks 1–3) — harness reproducibility & loop spike.** Stand up the isolated `harness/` uv env (PyTDC 0.3.6, Python 3.10); reproduce one Graph-GA PMO result. Wire LangGraph + Langfuse around a trivial `LLM → TDC oracle → log` loop. Measure valid-SMILES rate. **Kill-switch:** <80% valid SMILES or harness won't reproduce → fix before proceeding.
 - **Phase 2 (weeks 4–7) — end-to-end loop on one PMO task with web shell.** Modal LLM endpoint + Modal oracle worker pool; FastAPI REST + WS skeleton; Postgres schema; minimal Next.js launch + watch-live view on one PMO task; first ≥6/23 beat-Graph-GA attempt on a single task. **Kill-switch:** can't reproduce MOLLEO-like beat on a single task by week 7 → narrow scope before scaling.
 - **Phase 3 (weeks 8–12) — analyzer agent + full benchmark surface.** Implement the analyzer step (the differentiator); roll out across all 23 PMO tasks; cost gate checks. **Kill-switch (the PROJECT.md §9 Week-8 bar):** beat Graph-GA on ≥3 of 23 tasks → on track; <3 → **pivot to analyzer-only narrative**, not abandon.
 - **Phase 4 (weeks 13–16) — compare view + polish + Langfuse-driven writeup.** Compare-runs flow; web app polish; README + Langfuse trace walkthroughs that are recruiter-legible without chemistry knowledge.

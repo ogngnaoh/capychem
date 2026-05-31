@@ -1,0 +1,46 @@
+[project]
+name = "capychem-workspace"
+version = "0.0.0"
+description = "CapyChem monorepo root — uv workspace coordinator (no package code of its own)."
+requires-python = ">=3.12"
+dependencies = [
+    "capychem-core",
+    "capychem-api",
+]
+
+[tool.uv]
+package = false
+
+# harness/ is deliberately NOT a member. It pins Python 3.10 + legacy PyTDC and is
+# reached only via subprocess (see packages/core/capychem/oracle.py). Never import it.
+[tool.uv.workspace]
+members = ["packages/core", "apps/api"]
+
+[tool.uv.sources]
+capychem-core = { workspace = true }
+capychem-api = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "mypy>=1.13",
+    "ruff>=0.8",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["harness"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+# `capychem` is a PEP 420 namespace split across packages/core and apps/api.
+# These let mypy map files to the right dotted module from the source roots.
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "packages/core:apps/api"
+exclude = ["harness/"]

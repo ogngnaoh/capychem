@@ -1,0 +1,15 @@
+[project]
+name = "capychem-core"
+version = "0.0.0"
+description = "CapyChem core: oracle bridge, loop, mutations, analyzer adapters."
+requires-python = ">=3.12"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# `capychem` is a PEP 420 namespace package shared with capychem-api (apps/api).
+# No capychem/__init__.py anywhere — that is what lets the two distributions merge.
+[tool.hatch.build.targets.wheel]
+packages = ["capychem"]

@@ -1,0 +1,8 @@
+packages:
+  - "apps/web"
+
+# pnpm 11 gates native build scripts; allow these two (sharp = image optimization,
+# unrs-resolver = eslint's oxc resolver) so `pnpm install` runs non-interactively.
+allowBuilds:
+  sharp: true
+  unrs-resolver: true

@@ -1,0 +1,19 @@
+[project]
+name = "capychem-harness"
+version = "0.0.0"
+description = "Isolated legacy PMO/PyTDC harness (Python 3.10). Reached only via subprocess + JSON — never imported by modern code."
+requires-python = ">=3.10,<3.11"
+dependencies = [
+    "pytdc==0.3.6",
+    # PyTDC 0.3.6 imports these at runtime but does not declare them.
+    "rdkit",
+    "requests",
+    "networkx",
+    "scipy",
+]
+
+# This project is deliberately NOT a member of the root uv workspace. Its pinned
+# legacy deps (PyTDC 0.3.6, Python 3.10) must never resolve against the modern
+# 3.12 lockfile. It manages its own .venv via `uv sync` run from this directory.
+[tool.uv]
+package = false

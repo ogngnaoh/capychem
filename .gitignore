@@ -43,6 +43,5 @@ logs/
 coverage/
 htmlcov/
 
-# Harness conda env (lives in user's conda; never committed)
-harness/.conda/
+# Harness env (isolated uv venv at harness/.venv — covered by .venv/ above; never committed)
 harness/__pycache__/

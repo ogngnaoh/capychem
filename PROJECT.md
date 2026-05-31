@@ -81,7 +81,7 @@ Most of this hardened from `[judgment]` to `[VERIFIED]`. Each still becomes an A
 | API surface | FastAPI-class. | `[VERIFIED]` (sensible) |
 | Deployment target | Modal + container. | `[VERIFIED]` (sensible) |
 
-**New `[VERIFIED]` risk — dependency surface:** `mol_opt` pins an *old* stack (PyTDC 0.3.6, Python 3.7–3.10, PyTorch 1.10.2 per its README). Use a dedicated pinned conda env for the harness; isolate it from the modern agent/serving code. This is a real week-one hazard. `[CORRECTED]`
+**New `[VERIFIED]` risk — dependency surface:** `mol_opt` pins an *old* stack (PyTDC 0.3.6, Python 3.7–3.10, PyTorch 1.10.2 per its README). Use a dedicated pinned uv env (Python 3.10) for the harness; isolate it from the modern agent/serving code. This is a real week-one hazard. `[CORRECTED]` *(Resolved in slice 00-foundation via an isolated `harness/.venv`; PyTDC also needed `requests`/`networkx`/`scipy` declared and an `rdkit.six` shim.)*
 
 ---
 
@@ -140,7 +140,7 @@ Agent framework, serving/inference, observability, data store — each an ADR wi
 
 Tiered, replacing v1's mis-calibrated "beat random/Graph-GA":
 
-- **Week-1 feasibility gate:** stand up `mol_opt` (old conda env) and reproduce one Graph-GA PMO result; get **>80% valid-SMILES rate** from the chosen LLM on a simple prompt. Fail → fix env/prompt/model before proceeding.
+- **Week-1 feasibility gate:** stand up `mol_opt` (isolated uv env, Python 3.10) and reproduce one Graph-GA PMO result; get **>80% valid-SMILES rate** from the chosen LLM on a simple prompt. Fail → fix env/prompt/model before proceeding.
 - **Cost gate:** if LLM cost to reach 10K oracle calls > ~$50/run → switch to a smaller/open model.
 - **Week-8 bar:** beat Graph GA on **≥3 PMO tasks** by AUC top-10. Fail → **pivot to LLM-as-analyzer-only** (thinner but defensible), do *not* abandon.
 - **True anchor-kill (rare):** only if even the analyzer-only angle shows no value *and* the harness fundamentally won't run. Much higher bar than v1.
@@ -165,7 +165,7 @@ The caching/memoization/budget-accounting framing ("designed for expensive oracl
 
 ## 11. Week-one setup checklist (was "open questions"; mostly resolved → now concrete) `[CORRECTED]`
 
-1. **Harness:** create the pinned conda env, install `mol_opt` + legacy PyTDC, reproduce one Graph-GA PMO result (proves the eval contract).
+1. **Harness:** create the isolated uv env (Python 3.10), install `mol_opt` + legacy PyTDC, reproduce one Graph-GA PMO result (proves the eval contract).
 2. **Loop spike:** wire LangGraph + Langfuse around a trivial `LLM → TDC oracle → log` loop; measure valid-SMILES rate (>80% gate).
 3. **Cost probe:** estimate LLM tokens to hit 10K oracle calls; confirm < ~$50/run or pick a fallback model.
 4. **Differentiator confirm:** read MOLLEO source to verify the analyze step is genuinely absent (the narrative in §2/§10 depends on it).
