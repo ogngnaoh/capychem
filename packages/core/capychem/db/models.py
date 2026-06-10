@@ -1,0 +1,79 @@
+"""Async SQLAlchemy 2.0 models for CapyChem run state (SPEC §6.2, minus RunCost).
+
+Four entities for slice 2: Run, Generation, Candidate, OracleCall. RunCost +
+AnalyzerHypothesis arrive in later slices. Schema is bootstrapped via
+metadata.create_all (db/session.py); Alembic lands with the first additive change.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
+from sqlalchemy import JSON, ForeignKey, Index, String, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class Run(Base):
+    __tablename__ = "runs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    task: Mapped[str] = mapped_column(String(64))
+    budget: Mapped[int]
+    mutation_strategy: Mapped[str] = mapped_column(String(32), default="graph_ga")
+    plateau_window: Mapped[int]
+    pop_size: Mapped[int]
+    offspring: Mapped[int]
+    mutation_rate: Mapped[float]
+    seed: Mapped[int]
+    status: Mapped[str] = mapped_column(String(16), default="running")
+    started_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    ended_at: Mapped[datetime | None] = mapped_column(default=None)
+    summary_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
+
+
+class Generation(Base):
+    __tablename__ = "generations"
+    __table_args__ = (Index("ix_generation_run_index", "run_id", "index"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"))
+    index: Mapped[int]
+    proposer_used: Mapped[str] = mapped_column(String(16))  # "starting" | "graph_ga"
+    started_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    ended_at: Mapped[datetime | None] = mapped_column(default=None)
+
+
+class Candidate(Base):
+    __tablename__ = "candidates"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    generation_id: Mapped[int] = mapped_column(
+        ForeignKey("generations.id", ondelete="CASCADE")
+    )
+    smiles: Mapped[str] = mapped_column(String(512))
+    parent_candidate_id: Mapped[int | None] = mapped_column(
+        ForeignKey("candidates.id", ondelete="SET NULL"), default=None
+    )
+    proposer: Mapped[str] = mapped_column(String(16))  # "starting" | "graph_ga"
+    valid: Mapped[bool] = mapped_column(default=True)
+    score: Mapped[float | None] = mapped_column(default=None)
+
+
+class OracleCall(Base):
+    __tablename__ = "oracle_calls"
+    __table_args__ = (Index("ix_oraclecall_run_score", "run_id", "score"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"))
+    candidate_id: Mapped[int] = mapped_column(
+        ForeignKey("candidates.id", ondelete="CASCADE")
+    )
+    task: Mapped[str] = mapped_column(String(64))
+    score: Mapped[float]
+    wall_ms: Mapped[int]
+    compute_cost_usd: Mapped[float] = mapped_column(default=0.0)  # 0 for local oracle
