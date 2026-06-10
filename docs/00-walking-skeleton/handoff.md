@@ -2,48 +2,59 @@
 
 ## Completed this session
 
-- Reviewed + refined the slice-2 **design spec** `docs/superpowers/specs/2026-06-08-local-loop-design.md`
-  (two adversarial subagent review rounds → approved). Resolved 2 blocking + 9 clarifying
-  issues: structured-offspring **parent provenance** over the bridge (FR-006), gen-0 scoring
-  counting against budget, per-gen seed (`seed+gen_index`), deterministic canonical-SMILES
-  tiebreak, budget trim (no FR-002 overshoot), max-gen + zero-progress termination,
-  `summary_json` schema, RDKit pin to harness major.minor, Langfuse async span nesting,
-  starting-pop licensing, cross-gen dedup deferral.
-- Wrote + reviewed the **implementation plan** `docs/superpowers/plans/2026-06-10-local-loop.md`
-  (16 TDD tasks; subagent review → fixed 3 mechanical blockers → **APPROVED**). Ready to execute.
-- NOTE: the design-spec edits, the new plan file, and this handoff are **UNCOMMITTED** (no commit
-  was requested this session).
+- **Shipped slice 2 (`01-local-loop`)** via subagent-driven development — 16 tasks, each with a
+  fresh implementer + spec-compliance review + code-quality review. 18 commits, `2bfcbc1..dfd5460`
+  (planning artifacts: `a7ac849`; ship-docs commit follows this handoff).
+- End-to-end loop runs locally: `capychem-run --task qed --budget <n> --seed 42` →
+  propose (Graph-GA via harness bridge) → validate (RDKit) → score → persist (Postgres) → stop.
+- Full green gate: **22 pytest pass**, mypy strict clean (12 files), ruff check + format clean,
+  `scripts/smoke.sh` **9/9**.
+- Two review catches worth remembering (now fixed/decided):
+  - `loop/trace.py` `span()` masked with-body exceptions on the enabled path (second `yield` →
+    `RuntimeError`); fixed + regression test added (`73f02eb`).
+  - rdkit 2026.3 `rdkit-stubs` has a broken `.pyi` that halts mypy → scoped `rdkit.*` mypy
+    override (`3af42f8`).
 
 ## Slice status across milestone
 
 - `00-foundation` → shipped (2026-05-30)
-- `01-local-loop` → **design + plan approved; NOT yet implemented** (next)
-- `02-web-surface` → planned
+- `01-local-loop` → **shipped (2026-06-11)**
+- `02-web-surface` → planned (next)
 - `03-cloudify` → planned
 
 ## Current state
 
-- Branch `main`. Slice-1 scaffold live: uv + pnpm workspaces, isolated harness venv (py3.10),
-  Docker Postgres + Langfuse. `scripts/smoke.sh` → 8/8.
-- No slice-2 code written yet — only the approved design + plan.
-- Before executing: start Postgres — `docker compose -f infra/compose.yml up -d`.
+- Branch `main`. Slice-2 code merged. Postgres + Langfuse containers up via
+  `docker compose -f infra/compose.yml up -d` (+ `infra/langfuse-compose.yml`).
+- `01-local-loop.md` slice doc is frozen. The loop is CLI-only (no API/WS/UI yet).
+- The slice-3 design spec + implementation plan are drafted under `docs/superpowers/` and have
+  passed an independent subagent review (see "Next session start here").
 
 ## Next session start here
 
-Execute `docs/superpowers/plans/2026-06-10-local-loop.md` via **superpowers:subagent-driven-development**
-(recommended — fresh subagent per task, review between tasks). Task 1 = add modern deps
-(rdkit/langgraph/langfuse/sqlalchemy[asyncio]/asyncpg) + harness numpy. The ship commit (plan
-Task 16) authors + freezes `docs/00-walking-skeleton/01-local-loop.md` and flips milestone/handoff status.
+Execute the **slice 3 (`02-web-surface`)** implementation plan at
+`docs/superpowers/plans/<date>-web-surface.md` (design spec:
+`docs/superpowers/specs/<date>-web-surface-design.md`) via
+**superpowers:subagent-driven-development**. It grafts the committed in-process LangGraph loop
+behind a FastAPI REST + WebSocket surface with a minimal Next.js launch + watch-live view on QED.
+First action = plan Task 1.
 
 ## Active concerns
 
-- **CORRECTED (was stale here):** slice 2 does NOT install full `mol_opt`. It vendors only the
-  Jensen `crossover.py`/`mutate.py` operators (RDKit+numpy, **no PyTorch**) into
-  `harness/capychem_harness/graph_ga/`. Full `mol_opt` + `BaseOptimizer` baseline reproduction
-  stays deferred to milestone 01.
-- Execution watch-items (plan self-review): the harness import path needs the `sys.path`-insert
-  in `propose.py` (load-bearing — without it the proposer can't import its operators); Langfuse
-  SDK v2 vs v3 (`trace.py` targets v2); LangGraph `recursion_limit` + `CompiledStateGraph` generic
-  arity may vary by version; vendored-operator signatures must match `propose.py` call sites.
-- Langfuse enabled-path is not CI-exercised (no-op without keys) — verify the nested run→gen→node
-  trace manually once `LANGFUSE_*` keys are set.
+- **Langfuse enabled-path trace is unverified.** The no-op path (no keys) is CI-covered; the
+  nested run→generation→node trace against a live Langfuse has NOT been manually checked (no
+  `LANGFUSE_*` keys set this session). Set keys + run once when convenient (slice-2 design exit
+  criterion, deferred).
+- **`summary.auc_curve` is the running top-10 mean, NOT the canonical PMO AUC** — do not cite it as
+  the G1 number; the authoritative AUC lives in `packages/core/eval` (later milestone).
+- **Plateau (FR-003) is configured but not enforced.** Loop stops on budget / max-generations /
+  zero-progress only. Plateau enforcement is deferred.
+- **Slice 2 vendored only the two Jensen operators (no PyTorch)** — full `mol_opt` + `BaseOptimizer`
+  baseline reproduction remains in milestone 01, not here.
+- langgraph pin floor is loose (`>=0.2`, resolves to 1.2.x); builder generics are `[Any,…]`.
+  Consider tightening to `>=1` when next touching loop deps.
+
+## Slice log
+
+- 2026-06-11 — Slice 2 (`01-local-loop`) shipped.
+- 2026-05-30 — Slice 1 (`00-foundation`) shipped.
