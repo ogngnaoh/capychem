@@ -126,9 +126,7 @@ def build_graph(
                             compute_cost_usd=0.0,
                         )
                     )
-                    new_scored.append(
-                        Scored(smiles=vc.smiles, score=sc, candidate_id=cand.id)
-                    )
+                    new_scored.append(Scored(smiles=vc.smiles, score=sc, candidate_id=cand.id))
                 await session.commit()
 
             survivors = merge_and_truncate(pop, new_scored, pop_size=state["pop_size"])

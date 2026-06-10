@@ -54,9 +54,7 @@ def _harness_python() -> Path:
     return Path(override) if override else _DEFAULT_HARNESS_PYTHON
 
 
-def score_smiles(
-    smiles: list[str], task: str, *, timeout_s: float = 120.0
-) -> list[OracleResult]:
+def score_smiles(smiles: list[str], task: str, *, timeout_s: float = 120.0) -> list[OracleResult]:
     """Score SMILES against a PyTDC oracle via the isolated harness subprocess.
 
     Raises ``HarnessError`` if the harness env is missing, the subprocess fails,
@@ -84,8 +82,7 @@ def score_smiles(
     payload = _parse_last_json_line(proc.stdout)
     if payload is None:
         raise HarnessError(
-            f"Harness returned no JSON (exit {proc.returncode}). "
-            f"stderr tail: {proc.stderr[-500:]}"
+            f"Harness returned no JSON (exit {proc.returncode}). stderr tail: {proc.stderr[-500:]}"
         )
     if payload.get("error"):
         raise HarnessError(str(payload["error"]))
@@ -146,8 +143,7 @@ def propose_offspring(
     payload = _parse_last_json_line(proc.stdout)
     if payload is None:
         raise HarnessError(
-            f"Harness returned no JSON (exit {proc.returncode}). "
-            f"stderr tail: {proc.stderr[-500:]}"
+            f"Harness returned no JSON (exit {proc.returncode}). stderr tail: {proc.stderr[-500:]}"
         )
     if payload.get("error"):
         raise HarnessError(str(payload["error"]))

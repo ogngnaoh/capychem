@@ -28,23 +28,37 @@ def test_merge_and_truncate_keeps_top_pop_size_with_canonical_tiebreak() -> None
 
 
 def test_stop_reason_budget_exhausted() -> None:
-    assert stop_reason(calls_used=100, budget=100, gen_index=2,
-                       max_generations=100, made_progress=True) == "exhausted"
+    assert (
+        stop_reason(
+            calls_used=100, budget=100, gen_index=2, max_generations=100, made_progress=True
+        )
+        == "exhausted"
+    )
 
 
 def test_stop_reason_max_generations() -> None:
-    assert stop_reason(calls_used=10, budget=100, gen_index=100,
-                       max_generations=100, made_progress=True) == "max_generations"
+    assert (
+        stop_reason(
+            calls_used=10, budget=100, gen_index=100, max_generations=100, made_progress=True
+        )
+        == "max_generations"
+    )
 
 
 def test_stop_reason_zero_progress() -> None:
-    assert stop_reason(calls_used=10, budget=100, gen_index=3,
-                       max_generations=100, made_progress=False) == "no_progress"
+    assert (
+        stop_reason(
+            calls_used=10, budget=100, gen_index=3, max_generations=100, made_progress=False
+        )
+        == "no_progress"
+    )
 
 
 def test_stop_reason_continue() -> None:
-    assert stop_reason(calls_used=10, budget=100, gen_index=3,
-                       max_generations=100, made_progress=True) is None
+    assert (
+        stop_reason(calls_used=10, budget=100, gen_index=3, max_generations=100, made_progress=True)
+        is None
+    )
 
 
 def test_build_summary_shape() -> None:

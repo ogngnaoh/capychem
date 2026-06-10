@@ -52,9 +52,7 @@ class Candidate(Base):
     __tablename__ = "candidates"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    generation_id: Mapped[int] = mapped_column(
-        ForeignKey("generations.id", ondelete="CASCADE")
-    )
+    generation_id: Mapped[int] = mapped_column(ForeignKey("generations.id", ondelete="CASCADE"))
     smiles: Mapped[str] = mapped_column(String(512))
     parent_candidate_id: Mapped[int | None] = mapped_column(
         ForeignKey("candidates.id", ondelete="SET NULL"), default=None
@@ -70,9 +68,7 @@ class OracleCall(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     run_id: Mapped[int] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"))
-    candidate_id: Mapped[int] = mapped_column(
-        ForeignKey("candidates.id", ondelete="CASCADE")
-    )
+    candidate_id: Mapped[int] = mapped_column(ForeignKey("candidates.id", ondelete="CASCADE"))
     task: Mapped[str] = mapped_column(String(64))
     score: Mapped[float]
     wall_ms: Mapped[int]
