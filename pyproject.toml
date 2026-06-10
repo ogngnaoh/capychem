@@ -44,3 +44,13 @@ namespace_packages = true
 explicit_package_bases = true
 mypy_path = "packages/core:apps/api"
 exclude = ["harness/"]
+
+# rdkit ships rdkit-stubs, but its 2026.3 .pyi files contain a stub-level syntax
+# error (rdchem.pyi: a parameter without a default follows one with a default) that
+# halts mypy the moment rdkit is imported. Skip following imports into rdkit — and
+# its stubs — so the broken .pyi is never parsed; rdkit symbols become Any. RDKit
+# correctness is covered at runtime and by the integration tests, not by these stubs.
+[[tool.mypy.overrides]]
+module = "rdkit.*"
+follow_imports = "skip"
+follow_imports_for_stubs = true

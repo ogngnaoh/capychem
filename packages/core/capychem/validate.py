@@ -8,6 +8,7 @@ duplicates collapsed by canonical form, so the budget is never spent on junk
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 from rdkit import Chem, RDLogger
 
@@ -31,7 +32,7 @@ def canonicalize(smiles: str) -> str | None:
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return None
-    return Chem.MolToSmiles(mol)
+    return cast(str, Chem.MolToSmiles(mol))
 
 
 def validate_batch(
