@@ -59,9 +59,10 @@ def span(name: str, *, parent_id: str | None, **metadata: Any) -> Iterator[str |
     sp = None
     try:
         sp = _get_client().span(name=name, trace_id=parent_id, metadata=metadata or None)
-        yield str(sp.id)
-    except Exception:  # noqa: BLE001
-        yield None
+    except Exception:  # noqa: BLE001 - tracing must never break the loop
+        sp = None
+    try:
+        yield str(sp.id) if sp is not None else None
     finally:
         if sp is not None:
             try:
