@@ -21,6 +21,7 @@ from typing import Any
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _DEFAULT_HARNESS_PYTHON = _REPO_ROOT / "harness" / ".venv" / "bin" / "python"
 _SCORER = _REPO_ROOT / "harness" / "capychem_harness" / "score.py"
+_PROPOSER = _REPO_ROOT / "harness" / "capychem_harness" / "propose.py"
 
 
 class HarnessError(RuntimeError):
@@ -35,6 +36,17 @@ class OracleResult:
     score: float | None
     valid: bool
     wall_ms: int
+
+
+@dataclass(frozen=True)
+class Offspring:
+    """One Graph-GA offspring with the indices of its two crossover parents.
+
+    ``parents`` indexes into the population list passed to ``propose_offspring``.
+    """
+
+    smiles: str
+    parents: tuple[int, int]
 
 
 def _harness_python() -> Path:
@@ -86,6 +98,63 @@ def score_smiles(
             wall_ms=row["wall_ms"],
         )
         for row in payload["results"]
+    ]
+
+
+def propose_offspring(
+    population: list[tuple[str, float]],
+    n_offspring: int,
+    *,
+    mutation_rate: float,
+    seed: int,
+    timeout_s: float = 120.0,
+) -> list[Offspring]:
+    """Run one Graph-GA reproduce step via the isolated harness subprocess.
+
+    ``population`` is a list of (smiles, score) pairs. Returns offspring SMILES,
+    each with the indices (into ``population``) of its two crossover parents. May
+    return fewer than ``n_offspring`` (crossover can fail validity checks).
+    Raises ``HarnessError`` if the harness env is missing, the subprocess fails,
+    or the response is malformed.
+    """
+    python = _harness_python()
+    if not python.exists():
+        raise HarnessError(
+            f"Build the harness env first (`uv sync` in harness/); "
+            f"interpreter not found at {python}"
+        )
+
+    request = json.dumps(
+        {
+            "population": [{"smiles": s, "score": sc} for s, sc in population],
+            "n_offspring": n_offspring,
+            "mutation_rate": mutation_rate,
+            "seed": seed,
+        }
+    )
+    try:
+        proc = subprocess.run(
+            [str(python), str(_PROPOSER)],
+            input=request,
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise HarnessError(f"Harness proposal timed out after {timeout_s}s") from exc
+
+    payload = _parse_last_json_line(proc.stdout)
+    if payload is None:
+        raise HarnessError(
+            f"Harness returned no JSON (exit {proc.returncode}). "
+            f"stderr tail: {proc.stderr[-500:]}"
+        )
+    if payload.get("error"):
+        raise HarnessError(str(payload["error"]))
+
+    return [
+        Offspring(smiles=row["smiles"], parents=(row["parents"][0], row["parents"][1]))
+        for row in payload["offspring"]
     ]
 
 
