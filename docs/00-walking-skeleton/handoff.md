@@ -2,45 +2,48 @@
 
 ## Completed this session
 
-- **2026-05-30 — Slice 1 `00-foundation` shipped** (this session's single slice commit on
-  `main`; hash in `git log`). Walking-skeleton scaffold + the load-bearing harness↔modern
-  subprocess bridge, proven with a real QED score.
-- Design spec: `docs/superpowers/specs/2026-05-30-foundation-slice-design.md`.
-- Slice doc `docs/00-walking-skeleton/00-foundation.md` (frozen).
-- Corrected conda→uv (also Next 15→16, Python pin, mypy `-p capychem`) across CLAUDE.md,
-  SPEC.md, PROJECT.md, milestone.md.
+- Reviewed + refined the slice-2 **design spec** `docs/superpowers/specs/2026-06-08-local-loop-design.md`
+  (two adversarial subagent review rounds → approved). Resolved 2 blocking + 9 clarifying
+  issues: structured-offspring **parent provenance** over the bridge (FR-006), gen-0 scoring
+  counting against budget, per-gen seed (`seed+gen_index`), deterministic canonical-SMILES
+  tiebreak, budget trim (no FR-002 overshoot), max-gen + zero-progress termination,
+  `summary_json` schema, RDKit pin to harness major.minor, Langfuse async span nesting,
+  starting-pop licensing, cross-gen dedup deferral.
+- Wrote + reviewed the **implementation plan** `docs/superpowers/plans/2026-06-10-local-loop.md`
+  (16 TDD tasks; subagent review → fixed 3 mechanical blockers → **APPROVED**). Ready to execute.
+- NOTE: the design-spec edits, the new plan file, and this handoff are **UNCOMMITTED** (no commit
+  was requested this session).
 
 ## Slice status across milestone
 
-- `00-foundation` → shipped
-- `01-local-loop` → planned (next)
+- `00-foundation` → shipped (2026-05-30)
+- `01-local-loop` → **design + plan approved; NOT yet implemented** (next)
 - `02-web-surface` → planned
 - `03-cloudify` → planned
 
 ## Current state
 
-- Branch `main`. Monorepo live: uv workspace (`packages/core`, `apps/api`, py3.12) + pnpm
-  workspace (`apps/web`, Next 16). Isolated harness uv env at `harness/.venv` (py3.10).
-- `scripts/smoke.sh` → **8/8 passing** (harness QED bridge, ruff, mypy strict, web
-  typecheck/lint, Postgres `pg_isready`, Langfuse health).
-- Infra containers left **running** (colima): `capychem-postgres`, `capychem-langfuse`,
-  `capychem-langfuse-db`. Stop with `docker compose -f infra/compose.yml down` and
-  `docker compose -f infra/langfuse-compose.yml down`.
-- Bridge proven: benzene QED = 0.4426 via subprocess; invalid SMILES handled gracefully.
+- Branch `main`. Slice-1 scaffold live: uv + pnpm workspaces, isolated harness venv (py3.10),
+  Docker Postgres + Langfuse. `scripts/smoke.sh` → 8/8.
+- No slice-2 code written yet — only the approved design + plan.
+- Before executing: start Postgres — `docker compose -f infra/compose.yml up -d`.
 
 ## Next session start here
 
-Open slice 2 (`01-local-loop`). Author `docs/00-walking-skeleton/01-local-loop.md`, then
-build the LangGraph propose→validate→score→persist loop with the Graph-GA proposer. This
-requires installing `mol_opt` into the harness env (`harness/`), introducing the Postgres
-schema (Run/Generation/Candidate/OracleCall), and a CLI that runs QED end-to-end locally.
+Execute `docs/superpowers/plans/2026-06-10-local-loop.md` via **superpowers:subagent-driven-development**
+(recommended — fresh subagent per task, review between tasks). Task 1 = add modern deps
+(rdkit/langgraph/langfuse/sqlalchemy[asyncio]/asyncpg) + harness numpy. The ship commit (plan
+Task 16) authors + freezes `docs/00-walking-skeleton/01-local-loop.md` and flips milestone/handoff status.
 
 ## Active concerns
 
-- `mol_opt` is NOT yet installed in the harness (only PyTDC for QED). Slice 2 must add it —
-  expect more legacy-dep friction (old PyTorch pins); the `rdkit.six` shim pattern is the
-  precedent. Docker-harness fallback remains the escape hatch if a native install fails.
-- Langfuse v2 (single Postgres) is up but unused; slice 2 wires the first spans. v3's
-  Clickhouse/Redis/Minio stack was deliberately avoided for the skeleton.
-- Live browser render of the health page is the one step verified only by its parts (API
-  CORS + web build), not an automated browser test.
+- **CORRECTED (was stale here):** slice 2 does NOT install full `mol_opt`. It vendors only the
+  Jensen `crossover.py`/`mutate.py` operators (RDKit+numpy, **no PyTorch**) into
+  `harness/capychem_harness/graph_ga/`. Full `mol_opt` + `BaseOptimizer` baseline reproduction
+  stays deferred to milestone 01.
+- Execution watch-items (plan self-review): the harness import path needs the `sys.path`-insert
+  in `propose.py` (load-bearing — without it the proposer can't import its operators); Langfuse
+  SDK v2 vs v3 (`trace.py` targets v2); LangGraph `recursion_limit` + `CompiledStateGraph` generic
+  arity may vary by version; vendored-operator signatures must match `propose.py` call sites.
+- Langfuse enabled-path is not CI-exercised (no-op without keys) — verify the nested run→gen→node
+  trace manually once `LANGFUSE_*` keys are set.

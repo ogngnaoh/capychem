@@ -40,10 +40,15 @@ before rigor phases dig in.
 - **The harness owns the full GA *reproduce* step.** `propose.py` receives the scored
   population and does fitness-weighted parent sampling → crossover → mutate → offspring.
   Modern code owns population management across generations (merge offspring + survivors,
-  keep top-K) and budget accounting. This keeps "Graph-GA reproduction" in one place.
-- **Determinism is seeded end to end (G6).** `Run.seed` flows into `propose.py`, which
-  seeds both `random` and `numpy`, so same task + same seed → same offspring → identical
-  trajectory.
+  keep top-K) and budget accounting. This keeps "Graph-GA reproduction" in one place. Each
+  offspring is returned **with the indices of the parent(s) it was bred from** so modern
+  code can record `parent_candidate_id` provenance (FR-006).
+- **Determinism is seeded end to end (G6).** `Run.seed` flows into `propose.py` as a
+  **per-generation derived seed (`seed + gen_index`)**, seeding both `random` and `numpy`;
+  modern-side survivor selection breaks score ties **deterministically** (by canonical
+  SMILES). Same task + same seed → same offspring each generation → identical trajectory.
+  (A constant seed reused every generation would make generations correlate; deriving per
+  generation keeps each one distinct yet reproducible.)
 
 ## Architecture
 
@@ -69,7 +74,12 @@ packages/core/tests/        unit tests + one end-to-end CLI test (real harness Q
 ```
 
 New modern deps (`packages/core`): `rdkit`, `langgraph`, `langfuse`,
-`sqlalchemy[asyncio]`, `asyncpg`. New harness dep: `numpy`. No PyTorch anywhere.
+`sqlalchemy[asyncio]`, `asyncpg`. Pin the modern `rdkit` to the **same major.minor as the
+harness RDKit (2026.3.x)** — validation/canonicalization happens modern-side while proposing
+canonicalizes harness-side, and canonical-SMILES form (the dedup key) can drift across RDKit
+versions, which would break both dedup and G6. `numpy` is already present in the harness env
+(transitive via PyTDC); declare it explicitly in `harness/pyproject.toml` for hygiene — it
+adds no resolution risk. No PyTorch anywhere.
 
 `capychem` remains a PEP 420 namespace package (no `__init__.py`); the new submodules
 (`db`, `loop`) are ordinary sub-packages *under* `capychem` and may carry their own
@@ -80,22 +90,44 @@ New modern deps (`packages/core`): `rdkit`, `langgraph`, `langfuse`,
 `score.py` is unchanged. New **`propose.py`** (the only new crossing of the boundary):
 
 - Request (stdin): `{"population": [{"smiles": "...", "score": 0.61}, ...],
-  "n_offspring": 32, "mutation_rate": 0.01, "seed": 42}`
-- Response (stdout): `{"offspring": ["...", "..."], "error": null}`
-- Internals: seed `random` + `numpy`; fitness-weighted parent selection; `crossover` then
-  probabilistic `mutate`; emit offspring SMILES. Library chatter → stderr; only the final
-  JSON line reaches stdout (same discipline as `score.py`). On failure: exit 1 +
-  `{"offspring": [], "error": "<msg>"}`.
+  "n_offspring": 32, "mutation_rate": 0.01, "seed": 42}`. The modern client passes a
+  **per-generation seed** (`base_seed + gen_index`) so each generation's RNG is distinct yet
+  reproducible.
+- Response (stdout): `{"offspring": [{"smiles": "...", "parents": [i, j]}, ...],
+  "error": null}` — each offspring carries the **indices (into the request `population`
+  array) of the two crossover parents it was bred from**. (Jensen `reproduce` always runs
+  crossover; `mutate` is applied probabilistically afterward and does not change parentage —
+  so every offspring has exactly two parent indices.) Modern code maps `parents[0]` back to
+  the parent's `Candidate` ID to populate `parent_candidate_id` (FR-006); the second parent
+  is recoverable from the trace.
+- Internals: seed `random` + `numpy` from the request seed; fitness-weighted parent
+  selection; `crossover(parent_a, parent_b)` then probabilistic `mutate`; emit offspring
+  SMILES **plus parent indices**. Crossover can fail RDKit ring/validity checks and yield
+  nothing for a slot, so a generation may return **fewer than `n_offspring`** offspring —
+  the loop's validate + zero-progress guards already tolerate a short or empty batch, and
+  the determinism test compares the *resulting* offspring list (dropped slots included), not
+  a fixed count. Library chatter → stderr; only the final JSON line reaches stdout (same
+  discipline as `score.py`). On failure: exit 1 + `{"offspring": [], "error": "<msg>"}`.
 
 Modern client `propose_offspring(population, n_offspring, *, mutation_rate, seed)` in
 `oracle.py` mirrors `score_smiles`: shells out to `harness/.venv/bin/python`, parses the
-last JSON line, raises `HarnessError` on failure.
+last JSON line, raises `HarnessError` on failure, and returns the structured offspring
+(SMILES + parent indices).
 
 ## LangGraph loop
 
 **State** (`loop/state.py`): `run_id`, `task`, `budget`, `calls_used`, `gen_index`,
 `population: list[Scored]` (the survivor pool, kept at `pop_size`), `seed`, plus
-run-config echoes (`pop_size`, `offspring`, `mutation_rate`, `plateau_window`).
+run-config echoes (`pop_size`, `offspring`, `mutation_rate`, `plateau_window`) and the
+active Langfuse span IDs (`run_span_id`, `gen_span_id`) threaded explicitly so node spans
+nest correctly across `async` boundaries (see Langfuse note below).
+
+**Defaults:** `pop_size=100`, `offspring=32`, `mutation_rate=0.01` (the Jensen Graph-GA
+default), `seed=42`. These are the production-ish defaults; the **end-to-end test overrides
+them to a small pop** (`pop_size≈20`, `offspring≈10`) with a budget that comfortably covers
+gen 0 + ≥2 offspring generations, so the monotonicity assertion is actually exercised
+(see Testing). A `max_generations` safety cap (default 100) bounds the loop given no plateau
+detection this slice.
 
 Two distinct K's, kept separate to avoid confusion: `pop_size` is the survivor-pool
 size carried generation to generation; the reporting top-K (top-10) is computed only
@@ -103,28 +135,42 @@ for `summary_json` / the G1 AUC metric.
 
 **Nodes** (each wrapped in a Langfuse span; spans nest run → generation → node):
 
-1. `propose` — gen 0: load `data/starting_pop.smi` (truncated to `pop_size`); gen ≥1:
-   `propose_offspring(population, offspring, ...)`.
+1. `propose` — **gen 0**: load `data/starting_pop.smi` (truncated to `pop_size`), with no
+   parents. **gen ≥1**: `propose_offspring(population, offspring, mutation_rate, seed +
+   gen_index)`, yielding offspring SMILES + parent indices.
 2. `validate` — modern RDKit: canonicalize, drop invalid + intra-batch duplicates
    **before** spending oracle calls (FR-004). Graph-GA rarely emits invalid, but the gate
-   is mandatory per CLAUDE.md.
-3. `score` — `score_smiles(valid_smiles, task)`; increment `calls_used` by the number of
-   oracle calls actually made.
-4. `persist` — write the `Generation` row, its `Candidate` rows (with `proposer`,
-   `parent` provenance where available, `valid`, `score`), and one `OracleCall` per scored
-   candidate; merge offspring + survivors and truncate to the top `pop_size` by score.
-5. `stop_check` — **budget exhausted → terminate** (FR-002, partial generation persisted
-   and counted); else route back to `propose`.
+   is mandatory per CLAUDE.md. Carry each surviving candidate's parent indices forward.
+3. `score` — **trim** the validated batch to `min(len, budget − calls_used)` so a
+   generation never overshoots the budget (FR-002); then `score_smiles(trimmed, task)` and
+   increment `calls_used` by the oracle calls actually made.
+4. `persist` — write the `Generation` row, its `Candidate` rows (`smiles`, `proposer`,
+   `valid`, `score`, and **`parent_candidate_id` resolved from the parent indices** —
+   crossover stores the first parent; both parents are recoverable from the trace), one
+   `OracleCall` per scored candidate (`compute_cost_usd` = 0.0 for the local subprocess
+   oracle this slice — see note), then merge offspring + survivors and truncate to the top
+   `pop_size` by score with a **deterministic tiebreak (canonical SMILES)**.
+5. `stop_check` — terminate when **budget exhausted** (FR-002, partial generation persisted
+   and counted), **`max_generations` reached**, or a generation made **zero forward
+   progress** (empty validated/scored batch — guards against an infinite loop on a fully
+   invalid or fully duplicate batch); else route back to `propose`.
 
 **Langfuse:** SDK wired through `loop/trace.py`. When `LANGFUSE_*` env keys are absent the
 helpers degrade to no-ops, so pytest / CI never require a running Langfuse. When enabled,
-every node emits a span (CLAUDE.md: "No silent loop steps").
+every node emits a span (CLAUDE.md: "No silent loop steps"). Nesting is maintained by
+**threading the parent span IDs explicitly through `LoopState`** (`run_span_id`,
+`gen_span_id`) rather than relying on contextvars, which can be lost across `await`
+boundaries in the async loop — each node creates its span as a child of the current
+`gen_span_id`. The "Langfuse shows a nested trace" exit criterion verifies this end to end.
 
 ## Persistence + CLI
 
 **Async SQLAlchemy 2.0**, typed `Mapped[...]` declarative models for the four entities,
-shaped per SPEC §6.2 **minus `RunCost`** (slice 4). Indexes: `(run_id, generation_index)`,
-`(run_id, score DESC)`. `db/session.py` builds the async engine from
+shaped per SPEC §6.2 **minus `RunCost`** (slice 4). `OracleCall` keeps `compute_cost_usd`
+(SPEC §6.2) but it is `0.0` for the local subprocess oracle this slice — Modal billing
+arrives in slice 4. Indexes: `Generation(run_id, index)` and `OracleCall(run_id, score
+DESC)` (score lives on `Candidate` and `OracleCall`; the top-K query reads `OracleCall`,
+which carries `run_id` directly). `db/session.py` builds the async engine from
 `CAPYCHEM_DATABASE_URL` (the Docker Postgres) and runs `Base.metadata.create_all` on first
 connect.
 
@@ -133,18 +179,32 @@ connect.
 a final summary — top-K SMILES + scores, generation count, oracle calls used. This is the
 slice's end-to-end proof.
 
-## Scope calls (the three deferrals, signed off)
+## Scope calls (the deferrals, signed off)
 
 1. **Plateau detection (FR-003): deferred to milestone 02.** `plateau_window` is stored on
-   the `Run` row (config is "from day one" per PRD) but only budget-exhaustion stops the
-   loop this slice. Tuning plateau needs the real multi-gen runs that arrive in 02.
+   the `Run` row (config is "from day one" per PRD) but only budget-exhaustion (plus the
+   `max_generations` cap and zero-progress guard) stops the loop this slice. Tuning plateau
+   needs the real multi-gen runs that arrive in 02.
 2. **AUC metric: no authoritative eval harness this slice.** Persist everything AUC needs
-   (scored candidates + ordered oracle calls) and write a simple `summary_json` (top-K +
-   running top-10-mean points). The canonical `packages/core/eval` AUC implementation
-   stays in milestone 01/02; recomputing it ad hoc is explicitly a CLAUDE.md gotcha.
+   (scored candidates + ordered oracle calls) and write a simple `summary_json` of shape
+   `{"top_k": [{"smiles": str, "score": float}, ...], "auc_curve": [{"oracle_calls": int,
+   "top10_mean": float}, ...], "generations": int, "oracle_calls": int}`. The `auc_curve`
+   here is the **un-authoritative** running top-10-mean; the canonical `packages/core/eval`
+   AUC implementation lands in milestone 01/02, and recomputing it ad hoc is explicitly a
+   CLAUDE.md gotcha — slice 3's reader and milestone 02's eval consume this shape but treat
+   the curve as illustrative, not the G1 number.
 3. **Seed population: vendor a small static starting set.** `data/starting_pop.smi`
-   (~100-250 drug-like SMILES) is the default. CLI `--seed` controls only the RNG. No CLI
-   override of the *population* yet — that is the FR-001 launch form (milestone 02).
+   (~100-250 drug-like SMILES) is the default, sourced from `mol_opt`'s own Graph-GA
+   starting set (a ZINC-derived, public/permissively-licensed sample — same provenance as
+   the vendored Jensen operators; attribute the source in a header comment in the `.smi`
+   file per PRD N3 / SPEC public-data requirement). CLI `--seed` controls only the RNG. No
+   CLI override of the *population* yet — that is the FR-001 launch form (milestone 02).
+4. **Cross-generation dedup / oracle memoization: deferred, consciously.** `validate` drops
+   intra-batch duplicates only; offspring that re-derive an existing survivor or a
+   previously-scored molecule are re-scored (wasting cheap local oracle calls). The
+   memoization/caching layer is the backend story (PROJECT.md §10) and lands with the Modal
+   oracle in slice 4; the tiny local oracle makes the waste affordable for the skeleton.
+   Noted here so it is a deliberate deferral, not a silent gap.
 
 ## Deferred (not this slice)
 
@@ -157,12 +217,20 @@ slice's end-to-end proof.
 
 ## Testing & verification
 
-- **Unit:** `validate` (canonical / invalid / duplicate handling); `propose_offspring`
-  determinism (same seed → identical offspring); `stop_check` budget logic; `summary_json`
-  top-K computation.
-- **End-to-end:** one CLI test on a tiny budget (~50 oracle calls) against the **real**
-  harness QED oracle, asserting a run + generations + candidates + oracle calls land in
-  Postgres and best-score is monotonic non-decreasing across the run's top-K.
+- **Unit:** `validate` (canonical / invalid / duplicate handling, incl. an all-invalid and
+  an all-duplicate batch hitting the zero-progress path); `propose_offspring` determinism
+  (same seed → identical offspring **and** identical parent indices); `score`-node budget
+  trim (batch larger than remaining budget is trimmed, never overshoots); `stop_check`
+  termination logic (budget / max-gen / zero-progress); `summary_json` top-K + curve
+  computation; deterministic survivor tiebreak on equal scores.
+- **End-to-end:** one CLI test against the **real** harness QED oracle with a **small pop
+  (`pop_size≈20`, `offspring≈10`) and a budget that covers gen 0 + ≥2 offspring
+  generations** (so monotonicity is non-vacuous). Asserts a run + generations + candidates +
+  oracle calls land in Postgres; that `parent_candidate_id` is populated for gen-≥1
+  candidates and NULL for gen-0; that `calls_used` never exceeds `budget`; and that
+  best-score-so-far is monotonic non-decreasing across generations.
+- **Determinism (G6, slice-local):** two CLI runs with the same task + same seed produce
+  identical top-K SMILES + scores.
 - **Gate:** `scripts/smoke.sh` gains a loop check (CLI run on a tiny budget → rows in DB).
   mypy strict + ruff stay green on all new modern code.
 
