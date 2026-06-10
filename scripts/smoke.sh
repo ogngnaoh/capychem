@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# CapyChem walking-skeleton smoke test — the slice-1 (00-foundation) exit gate.
+# CapyChem walking-skeleton smoke test — the slice-2 (01-local-loop) exit gate.
 #
 # Proves every seam end to end:
 #   - the isolated harness exists and a REAL QED score crosses the subprocess bridge
 #   - modern code passes strict types + lint + the bridge test
 #   - the Next.js web app compiles
 #   - the Postgres + Langfuse containers are reachable
+#   - a tiny CLI run lands rows in Postgres (loop e2e, slice 2 gate)
 #
 # Usage: scripts/smoke.sh   (from anywhere; it cd's to the repo root)
 set -uo pipefail
@@ -46,6 +47,11 @@ check "web lint" pnpm --filter web lint
 # 5. Infra containers reachable (idempotent up; nothing reads them yet in slice 1).
 docker compose -f infra/compose.yml up -d >/dev/null 2>&1 || true
 check "postgres pg_isready" docker exec capychem-postgres pg_isready -U "${POSTGRES_USER:-capychem}"
+
+# 6. End-to-end loop: a tiny CLI run lands rows in Postgres (slice 2 gate).
+check "loop e2e (capychem-run QED, tiny budget)" \
+  uv run capychem-run --task qed --budget 40 --pop-size 20 --offspring 10 --seed 42
+
 docker compose -f infra/langfuse-compose.yml up -d >/dev/null 2>&1 || true
 check "langfuse health" bash -c \
   'curl -fsS --retry 30 --retry-delay 2 --retry-connrefused http://localhost:3001/api/public/health'
