@@ -8,6 +8,7 @@ version = "0.0.0"
 source = { virtual = "." }
 dependencies = [
     { name = "networkx" },
+    { name = "numpy" },
     { name = "pytdc" },
     { name = "rdkit" },
     { name = "requests" },
@@ -17,6 +18,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "networkx" },
+    { name = "numpy" },
     { name = "pytdc", specifier = "==0.3.6" },
     { name = "rdkit" },
     { name = "requests" },
