@@ -44,6 +44,9 @@ async def test_runner_runs_to_completion_and_emits_events() -> None:
                 break
 
     assert any(e["type"] == "generation.complete" for e in events)
+    gen_complete = next(e for e in events if e["type"] == "generation.complete")
+    assert "cost_so_far_usd" in gen_complete
+    assert gen_complete["cost_so_far_usd"] >= 0.0
     final = events[-1]
     assert final["type"] == "run.complete"
     # Exactly-40 / status=="exhausted" is NOT guaranteed by the loop code:

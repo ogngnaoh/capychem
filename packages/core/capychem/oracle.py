@@ -10,6 +10,7 @@ This module is the only sanctioned crossing of the harness↔modern boundary.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import subprocess
@@ -36,6 +37,7 @@ class OracleResult:
     score: float | None
     valid: bool
     wall_ms: int
+    cost_usd: float = 0.0  # 0 for local; modal backend fills from wall_ms × rate
 
 
 @dataclass(frozen=True)
@@ -171,3 +173,56 @@ def _parse_last_json_line(stdout: str) -> dict[str, Any] | None:
         if isinstance(parsed, dict):
             return parsed
     return None
+
+
+# ---------------------------------------------------------------------------
+# Backend-selected async scoring
+# ---------------------------------------------------------------------------
+
+_DEFAULT_ORACLE_USD_PER_SEC = 4e-5  # placeholder ~Modal CPU core-second; configure via env.
+# NOT a price guarantee (PRD N6 / cost-discipline framing).
+_MODAL_APP = "capychem-worker"
+_MODAL_FN = "score"
+
+
+def _oracle_backend() -> str:
+    return os.environ.get("CAPYCHEM_ORACLE_BACKEND", "local")
+
+
+def oracle_usd_per_sec() -> float:
+    return float(os.environ.get("CAPYCHEM_ORACLE_USD_PER_SEC", _DEFAULT_ORACLE_USD_PER_SEC))
+
+
+def _modal_score_fn() -> Any:
+    """Look up the deployed/serving Modal worker function. Imported lazily so the
+    ``local`` backend (CI) never needs ``modal`` and never imports it at module load."""
+    import modal
+
+    return modal.Function.from_name(_MODAL_APP, _MODAL_FN)
+
+
+async def score_batch_async(smiles: list[str], task: str) -> list[OracleResult]:
+    """Score a batch via the configured backend. ``local`` wraps the harness
+    subprocess in a thread (non-blocking); ``modal`` awaits the worker."""
+    backend = _oracle_backend()
+    if backend == "local":
+        return await asyncio.to_thread(score_smiles, smiles, task)
+    if backend == "modal":
+        rate = oracle_usd_per_sec()
+        rows = await _modal_score_fn().remote.aio(smiles, task)
+        try:
+            return [
+                OracleResult(
+                    smiles=row["smiles"],
+                    score=row["score"],
+                    valid=row["valid"],
+                    wall_ms=row["wall_ms"],
+                    cost_usd=(row["wall_ms"] / 1000.0) * rate,
+                )
+                for row in rows
+            ]
+        except (KeyError, TypeError) as exc:
+            raise HarnessError(
+                f"Modal worker returned a malformed row ({exc}): {repr(rows)[:500]}"
+            ) from exc
+    raise ValueError(f"Set CAPYCHEM_ORACLE_BACKEND to 'local' or 'modal' (got {backend!r})")

@@ -45,7 +45,7 @@ class LoopState(TypedDict, total=False):
     proposed: list[tuple[str, tuple[int, int] | None]]
     validated: list[ValidCandidate]
     _proposer: str
-    _scored: list[tuple[ValidCandidate, float]]
+    _scored: list[tuple[ValidCandidate, float, float]]  # (candidate, score, cost_usd)
     _made_progress: bool
     auc_curve: list[tuple[int, float]]
     done: bool

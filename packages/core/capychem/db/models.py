@@ -1,8 +1,8 @@
-"""Async SQLAlchemy 2.0 models for CapyChem run state (SPEC §6.2, minus RunCost).
+"""Async SQLAlchemy 2.0 models for CapyChem run state (SPEC §6.2).
 
-Four entities for slice 2: Run, Generation, Candidate, OracleCall. RunCost +
-AnalyzerHypothesis arrive in later slices. Schema is bootstrapped via
-metadata.create_all (db/session.py); Alembic lands with the first additive change.
+Five entities: Run, Generation, Candidate, OracleCall, RunCost. AnalyzerHypothesis
+arrives in a later slice. Schema is bootstrapped via metadata.create_all
+(db/session.py); Alembic lands with the first additive change.
 """
 
 from __future__ import annotations
@@ -73,3 +73,13 @@ class OracleCall(Base):
     score: Mapped[float]
     wall_ms: Mapped[int]
     compute_cost_usd: Mapped[float] = mapped_column(default=0.0)  # 0 for local oracle
+
+
+class RunCost(Base):
+    __tablename__ = "run_costs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"), unique=True)
+    llm_cost_usd: Mapped[float] = mapped_column(default=0.0)
+    oracle_cost_usd: Mapped[float] = mapped_column(default=0.0)
+    total_usd: Mapped[float] = mapped_column(default=0.0)

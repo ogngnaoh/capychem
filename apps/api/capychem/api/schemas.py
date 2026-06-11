@@ -38,6 +38,7 @@ class RunSnapshot(BaseModel):
     best_score: float | None
     top_k: list[TopMolecule]
     auc_curve: list[CurvePoint]
+    cost_so_far_usd: float = 0.0
 
 
 class GenerationCompleteEvent(BaseModel):
@@ -46,6 +47,7 @@ class GenerationCompleteEvent(BaseModel):
     best_score: float
     top10_mean: float
     oracle_calls_used: int
+    cost_so_far_usd: float = 0.0
     top_k: list[TopMolecule]
 
 

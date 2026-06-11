@@ -28,6 +28,7 @@ dev = [
     "ruff>=0.8",
     "httpx>=0.27",
     "httpx-ws>=0.6",
+    "aiosqlite>=0.20",
 ]
 
 [tool.pytest.ini_options]
@@ -61,3 +62,7 @@ exclude = ["harness/"]
 module = "rdkit.*"
 follow_imports = "skip"
 follow_imports_for_stubs = true
+
+[[tool.mypy.overrides]]
+module = ["modal", "modal.*"]
+ignore_missing_imports = true

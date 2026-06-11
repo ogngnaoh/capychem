@@ -22,6 +22,7 @@ const TERMINAL = new Set([
   "no_progress",
   "stopped",
   "errored",
+  "cost_capped",
 ]);
 
 export function LiveRun({ runId }: { runId: number }) {
@@ -118,7 +119,7 @@ export function LiveRun({ runId }: { runId: number }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <Stat label="Generation" value={String(snap.generation_index)} />
         <Stat
           label="Oracle calls"
@@ -127,6 +128,10 @@ export function LiveRun({ runId }: { runId: number }) {
         <Stat
           label="Best score"
           value={snap.best_score?.toFixed(4) ?? "—"}
+        />
+        <Stat
+          label="Cost ($)"
+          value={(snap.cost_so_far_usd ?? 0).toFixed(4)}
         />
       </div>
 

@@ -12,6 +12,7 @@ export type RunSnapshot = {
   best_score: number | null;
   top_k: TopMolecule[];
   auc_curve: CurvePoint[];
+  cost_so_far_usd?: number;
 };
 export type CreateRunBody = {
   task: string;
