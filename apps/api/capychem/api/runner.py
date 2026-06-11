@@ -104,6 +104,11 @@ class RunRegistry:
         handle = self._runs.get(run_id)
         return handle.snapshot if handle is not None else None
 
+    def terminal_event(self, run_id: int) -> dict[str, Any] | None:
+        """The stored run.complete event for a finished run, else None."""
+        handle = self._runs.get(run_id)
+        return handle.terminal_event if handle is not None else None
+
     def is_live(self, run_id: int) -> bool:
         return run_id in self._runs
 
