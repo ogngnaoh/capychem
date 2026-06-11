@@ -27,8 +27,8 @@ Ship a thin end-to-end CapyChem run on one PMO task (QED), browser-launched, wit
 
 1. `00-foundation` — shipped (2026-05-30). Monorepo, isolated harness uv env, subprocess QED bridge, Docker (Postgres + Langfuse), hello-world web + api.
 2. `01-local-loop` — shipped (2026-06-11). LangGraph propose→validate→score→persist→stop with Graph-GA proposer; `capychem-run` CLI runs QED for a small budget end-to-end locally (Postgres + Langfuse no-op).
-3. `02-web-surface` — planned (next). FastAPI REST + WS + Next.js launch/live view; browser-driven local run.
-4. `03-cloudify` — planned. Modal-hosted oracle worker; API swaps local subprocess for Modal; RunCost wiring. (WS cold-start heartbeat owned by slice 3, not here — see Integration notes.)
+3. `02-web-surface` — shipped (2026-06-11). FastAPI REST + WS + Next.js launch/live view; browser-driven local QED run, watched live over a WebSocket, stoppable mid-run.
+4. `03-cloudify` — planned (next). Modal-hosted oracle worker; API swaps local subprocess for Modal; RunCost wiring. (WS cold-start heartbeat owned by slice 3, not here — see Integration notes.)
 
 ## Integration notes
 
