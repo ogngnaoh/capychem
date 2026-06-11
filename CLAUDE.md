@@ -37,7 +37,7 @@ Test single:
 - `pnpm --filter web test -- --runTestsByPath app/runs/[id]/page.test.tsx`
 
 Typecheck:
-- `uv run mypy -p capychem` — strict; `-p` (not paths) because `capychem` is a PEP 420 namespace split across packages/core + apps/api
+- `uv run mypy -p capychem -p capychem.api` — strict; `capychem` is a PEP 420 namespace split across packages/core + apps/api, and mypy's `-p capychem` only resolves the FIRST `mypy_path` root (packages/core), so apps/api needs the explicit second `-p capychem.api`
 - `pnpm --filter web typecheck`
 
 Lint:

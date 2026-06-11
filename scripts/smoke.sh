@@ -38,7 +38,7 @@ check "oracle bridge (QED via PyTDC)" uv run pytest packages/core/tests -q
 
 # 3. Modern code quality gates.
 check "ruff" uv run ruff check packages apps/api
-check "mypy (strict)" uv run mypy -p capychem
+check "mypy (strict)" uv run mypy -p capychem -p capychem.api
 
 # 4. Web app compiles.
 check "web typecheck" pnpm --filter web typecheck
