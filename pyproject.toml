@@ -62,3 +62,7 @@ exclude = ["harness/"]
 module = "rdkit.*"
 follow_imports = "skip"
 follow_imports_for_stubs = true
+
+[[tool.mypy.overrides]]
+module = ["modal", "modal.*"]
+ignore_missing_imports = true
