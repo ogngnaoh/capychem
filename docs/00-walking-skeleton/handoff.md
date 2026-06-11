@@ -2,64 +2,59 @@
 
 ## Completed this session
 
-- **Shipped slice 2 (`01-local-loop`)** via subagent-driven development — 16 tasks, each with a
-  fresh implementer + spec-compliance review + code-quality review. 18 commits, `2bfcbc1..dfd5460`
-  (planning artifacts: `a7ac849`; ship-docs commit follows this handoff).
-- End-to-end loop runs locally: `capychem-run --task qed --budget <n> --seed 42` →
-  propose (Graph-GA via harness bridge) → validate (RDKit) → score → persist (Postgres) → stop.
-- Full green gate: **22 pytest pass**, mypy strict clean (12 files), ruff check + format clean,
-  `scripts/smoke.sh` **9/9**.
-- Two review catches worth remembering (now fixed/decided):
-  - `loop/trace.py` `span()` masked with-body exceptions on the enabled path (second `yield` →
-    `RuntimeError`); fixed + regression test added (`73f02eb`).
-  - rdkit 2026.3 `rdkit-stubs` has a broken `.pyi` that halts mypy → scoped `rdkit.*` mypy
-    override (`3af42f8`).
+- **Slice 3 (`02-web-surface`) backend complete — plan Tasks 1–6 of 11** via subagent-driven
+  development (fresh implementer + spec review + quality review per task, fix loops re-reviewed).
+  Commits `1302027..2404a97` (12 commits). Full green gate: **30 pytest** (23 core + 7 api,
+  real harness + Postgres), mypy strict clean (20 files), ruff clean.
+- Shipped: `capychem.run` helpers (CLI refactored onto them); FastAPI lifespan + healthz;
+  pydantic schemas (constrained: task Literal["qed"], mutation_rate (0,1]); RunRegistry +
+  astream-driven background runner (cooperative stop, errored path, stored terminal_event,
+  durable stopped-run summary via build_summary); REST POST/GET/stop + stranded-row startup
+  sweep + shutdown-before-dispose; WS `/ws/runs/{id}` (15 s heartbeat, terminal replay,
+  Origin allowlist vs CSWSH, disconnect-safe sends) + 7 integration tests.
+- **Gate fix:** `mypy -p capychem` never covered `apps/api` (namespace `-p` resolves only the
+  first mypy_path root). Canonical gate is now `uv run mypy -p capychem -p capychem.api`
+  (CLAUDE.md + smoke.sh updated, commit `bc57c56`).
 
 ## Slice status across milestone
 
 - `00-foundation` → shipped (2026-05-30)
-- `01-local-loop` → **shipped (2026-06-11)**
-- `02-web-surface` → planned (next)
+- `01-local-loop` → shipped (2026-06-11)
+- `02-web-surface` → **in-progress (backend done; frontend Tasks 7–11 remain)**
 - `03-cloudify` → planned
 
 ## Current state
 
-- Branch `main`. Slice-2 code merged. Postgres + Langfuse containers up via
-  `docker compose -f infra/compose.yml up -d` (+ `infra/langfuse-compose.yml`).
-- `01-local-loop.md` slice doc is frozen. The loop is CLI-only (no API/WS/UI yet).
-- The slice-3 design spec + implementation plan are written, committed, and **APPROVED by two
-  independent subagent reviews** (architecture + plan-executability; both verified against the
-  installed stack). Reviewer refinements (durable stopped-run summary, generation-count
-  convention) are already folded into the plan.
+- Branch `main`, clean tree at `2404a97`. Loop dir byte-unchanged since slice 2 (verified per task).
+- Postgres + Langfuse up via docker compose. API boots: `uv run uvicorn capychem.api.main:app`.
 
 ## Next session start here
 
-Execute the **slice 3 (`02-web-surface`)** implementation plan at
-`docs/superpowers/plans/2026-06-11-web-surface.md` (design spec:
-`docs/superpowers/specs/2026-06-11-web-surface-design.md`) via
-**superpowers:subagent-driven-development**. It grafts the committed in-process LangGraph loop
-behind a FastAPI REST + WebSocket surface (in-process background runner observing the loop via
-`astream`, never modifying it) with a shadcn Next.js launch + watch-live view on QED, plus a
-cooperative Stop. First action = plan Task 1 (extract `capychem.run` helpers + refactor CLI).
-Confirmed scope decisions: simple stop control, snapshot-on-load reconnect, SMILES+score display,
-shadcn UI, WS heartbeat in this slice.
+Execute plan Tasks 7–11 of `docs/superpowers/plans/2026-06-11-web-surface.md` (design spec
+`docs/superpowers/specs/2026-06-11-web-surface-design.md`) via subagent-driven development:
+Task 7 (shadcn setup + `lib/api.ts` + `lib/runEvents.ts`), 8 (launch form), 9 (live view),
+10 (vitest + Playwright), 11 (smoke.sh + final gate + ship docs). Frontend contract notes
+from backend reviews — fold into Tasks 7/9:
+- Reducer needs a `default: return snap` (future event types: analyzer.hypothesis etc.).
+- `run.complete.summary` is nullable (errored runs persist null).
+- WS close semantics: 4404 unknown run / 4403 foreign Origin (pre-accept, surfaces as HTTP 403);
+  normal close after run.complete → don't reconnect; web dev server MUST be on localhost:3000
+  (`apps/api/capychem/api/config.py` ALLOWED_ORIGINS).
+- Heartbeat pings can gap >15 s (sync oracle subprocess blocks the event loop) — no client
+  staleness logic keyed to ping cadence.
+- `POST /runs/{id}/stop` on a terminal run returns the run's real status, not "stopping".
 
 ## Active concerns
 
-- **Langfuse enabled-path trace is unverified.** The no-op path (no keys) is CI-covered; the
-  nested run→generation→node trace against a live Langfuse has NOT been manually checked (no
-  `LANGFUSE_*` keys set this session). Set keys + run once when convenient (slice-2 design exit
-  criterion, deferred).
-- **`summary.auc_curve` is the running top-10 mean, NOT the canonical PMO AUC** — do not cite it as
-  the G1 number; the authoritative AUC lives in `packages/core/eval` (later milestone).
-- **Plateau (FR-003) is configured but not enforced.** Loop stops on budget / max-generations /
-  zero-progress only. Plateau enforcement is deferred.
-- **Slice 2 vendored only the two Jensen operators (no PyTorch)** — full `mol_opt` + `BaseOptimizer`
-  baseline reproduction remains in milestone 01, not here.
-- langgraph pin floor is loose (`>=0.2`, resolves to 1.2.x); builder generics are `[Any,…]`.
-  Consider tightening to `>=1` when next touching loop deps.
+- Task 11 slice-doc deferrals must record: sync harness subprocess blocks the API event loop
+  (to_thread wrapper at oracle.py or Modal offload in 03-cloudify); `ended_at` never set;
+  errored runs show zeroed snapshots after restart (summary null); top-10 sort key triplicated
+  (consolidate in loop/logic.py when the loop freeze lifts).
+- Langfuse enabled-path trace still unverified (no keys set; slice-2 deferred criterion).
+- Plateau (FR-003) configured but not enforced; `summary.auc_curve` ≠ canonical PMO AUC.
 
 ## Slice log
 
+- 2026-06-11 — Slice 3 backend (plan Tasks 1–6) done; frontend pending.
 - 2026-06-11 — Slice 2 (`01-local-loop`) shipped.
 - 2026-05-30 — Slice 1 (`00-foundation`) shipped.
