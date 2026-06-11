@@ -4,9 +4,9 @@
 >
 > Phases referenced below correspond to SPEC §9.
 
-01. 00-walking-skeleton → docs/00-walking-skeleton/ ← active
+01. 00-walking-skeleton → docs/00-walking-skeleton/ — shipped (2026-06-12)
     Thin end-to-end slice (1 PMO task, no analyzer, minimal UI). Surfaces integration risk before rigor.
-02. 01-harness-reproducibility → docs/01-harness-reproducibility/ — planned
+02. 01-harness-reproducibility → docs/01-harness-reproducibility/ ← active
     SPEC Phase 1. Pinned harness env reproduces a Graph-GA PMO result; trivial LangGraph + Langfuse loop spike; >80% valid-SMILES gate.
 03. 02-end-to-end-loop → docs/02-end-to-end-loop/ — planned
     SPEC Phase 2. Modal LLM + worker pool; FastAPI REST + WS; Postgres; launch + watch-live on one PMO task; first beat-Graph-GA attempt.
