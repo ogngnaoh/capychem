@@ -8,13 +8,13 @@ from pydantic import BaseModel, Field
 
 
 class CreateRunRequest(BaseModel):
-    task: str = "qed"
+    task: Literal["qed"] = "qed"
     budget: int = Field(gt=0)  # FR-015
     seed: int = 42
     pop_size: int = Field(default=100, gt=1)  # crossover needs two parents
     offspring: int = Field(default=32, gt=0)
-    mutation_rate: float = 0.01
-    plateau_window: int = 5
+    mutation_rate: float = Field(default=0.01, gt=0, le=1)
+    plateau_window: int = Field(default=5, gt=0)
     max_generations: int = Field(default=100, gt=0)
 
 
