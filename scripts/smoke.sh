@@ -41,6 +41,10 @@ check "oracle bridge (QED via PyTDC)" uv run pytest packages/core/tests -q
 check "ruff" uv run ruff check packages apps/api
 check "mypy (strict)" uv run mypy -p capychem -p capychem.api
 
+# 3b. Modal worker app parses and the modal client is importable (no deploy/cloud).
+check "worker app parses" uv run python -m py_compile apps/worker/app.py
+check "modal importable" uv run python -c "import modal"
+
 # 4. Web app compiles; FastAPI app imports; the web app builds (slice 3 seams).
 check "web typecheck" pnpm --filter web typecheck
 check "web lint" pnpm --filter web lint

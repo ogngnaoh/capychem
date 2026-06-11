@@ -210,14 +210,19 @@ async def score_batch_async(smiles: list[str], task: str) -> list[OracleResult]:
     if backend == "modal":
         rate = oracle_usd_per_sec()
         rows = await _modal_score_fn().remote.aio(smiles, task)
-        return [
-            OracleResult(
-                smiles=row["smiles"],
-                score=row["score"],
-                valid=row["valid"],
-                wall_ms=row["wall_ms"],
-                cost_usd=(row["wall_ms"] / 1000.0) * rate,
-            )
-            for row in rows
-        ]
+        try:
+            return [
+                OracleResult(
+                    smiles=row["smiles"],
+                    score=row["score"],
+                    valid=row["valid"],
+                    wall_ms=row["wall_ms"],
+                    cost_usd=(row["wall_ms"] / 1000.0) * rate,
+                )
+                for row in rows
+            ]
+        except (KeyError, TypeError) as exc:
+            raise HarnessError(
+                f"Modal worker returned a malformed row ({exc}): {repr(rows)[:500]}"
+            ) from exc
     raise ValueError(f"Set CAPYCHEM_ORACLE_BACKEND to 'local' or 'modal' (got {backend!r})")
