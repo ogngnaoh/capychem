@@ -14,11 +14,11 @@ import argparse
 import asyncio
 from typing import Any
 
-from capychem.db.models import Run
 from capychem.db.session import init_schema, make_engine, make_sessionmaker
 from capychem.loop import trace
 from capychem.loop.graph import build_graph
 from capychem.loop.state import LoopState
+from capychem.run import RunConfig, create_run, finalize_run
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -44,21 +44,18 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
     await init_schema(engine)
     sessionmaker = make_sessionmaker(engine)
 
+    cfg = RunConfig(
+        task=args.task,
+        budget=args.budget,
+        seed=args.seed,
+        pop_size=args.pop_size,
+        offspring=args.offspring,
+        mutation_rate=args.mutation_rate,
+        plateau_window=args.plateau_window,
+        max_generations=args.max_generations,
+    )
     async with sessionmaker() as session:
-        run_row = Run(
-            task=args.task,
-            budget=args.budget,
-            mutation_strategy="graph_ga",
-            plateau_window=args.plateau_window,
-            pop_size=args.pop_size,
-            offspring=args.offspring,
-            mutation_rate=args.mutation_rate,
-            seed=args.seed,
-            status="running",
-        )
-        session.add(run_row)
-        await session.commit()
-        run_id = run_row.id
+        run_id = await create_run(session, cfg)
 
     run_span_id = trace.trace_run(run_id, args.task)
     graph = build_graph(sessionmaker)
@@ -88,11 +85,7 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
     )
 
     async with sessionmaker() as session:
-        row = await session.get(Run, run_id)
-        assert row is not None
-        row.status = final.get("stop_reason") or "exhausted"
-        row.summary_json = final.get("summary")
-        await session.commit()
+        await finalize_run(session, run_id, final)
 
     trace.flush()
     await engine.dispose()
