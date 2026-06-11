@@ -1,6 +1,6 @@
 # Slice 4 — `03-cloudify`
 
-**Status:** planned (next). **Milestone:** `00-walking-skeleton` (final slice — shipping it closes the milestone).
+**Status:** implemented + fully reviewed + locally green on branch `slice4-cloudify` (2026-06-12); **NOT shipped** — the milestone-closing Modal cloud run (deploy + browser QED run) is pending Modal credentials. **Milestone:** `00-walking-skeleton` (final slice — shipping it closes the milestone).
 **Design spec:** `../superpowers/specs/2026-06-11-cloudify-design.md` · **Plan:** `../superpowers/plans/2026-06-11-cloudify.md`
 
 ## Goal
@@ -26,13 +26,13 @@ Testing: unit (cost helpers, backend selection, loop cost-threading) + integrati
 
 ## Tasks
 
-- [ ] T1 — `RunCost` model + `cost.py` (aggregate/cap helpers) + tests.
-- [ ] T2 — `OracleResult.cost_usd` + `score_batch_async` backend selection + tests.
-- [ ] T3 — thread per-call cost through `loop/state.py` + `loop/graph.py` (async score node) + test; e2e still green.
-- [ ] T4 — cost gate + RunCost upsert + `cost_so_far_usd` on event/snapshot in `runner.py` + forced-cap test.
-- [ ] T5 — `apps/worker/app.py` Modal worker + `modal` dep + `modal run`/`deploy` cloud smoke (milestone-closing) + smoke.sh.
-- [ ] T6 — thin cost UI (counter + `cost_capped` badge) + reducer test.
-- [ ] T7 — full gate green + slice-ship doc updates (close milestone).
+- [x] T1 — `RunCost` model + `cost.py` (aggregate/cap helpers) + tests. (`f8be08f`)
+- [x] T2 — `OracleResult.cost_usd` + `score_batch_async` backend selection + tests. (`09a158d`)
+- [x] T3 — thread per-call cost through `loop/state.py` + `loop/graph.py` (async score node) + test; e2e still green. (`2271f47`)
+- [x] T4 — cost gate + RunCost upsert + `cost_so_far_usd` on event/snapshot in `runner.py` + forced-cap test. (`e34cc3b`)
+- [x] T5 — `apps/worker/app.py` Modal worker + `modal` dep + smoke.sh check (CODE done, `41552af`); **`modal run`/`deploy` cloud smoke deferred — needs `MODAL_TOKEN_*`.**
+- [x] T6 — thin cost UI (counter + `cost_capped` badge) + reducer test. (`cd20ee9`)
+- [~] T7 — full **local** gate green (pytest 39 / mypy / ruff check+format / web test+typecheck+lint+build) + ruff format `bab00d7`; **slice-ship doc updates + milestone close still pending the cloud run.**
 
 ## Notes / open questions
 
