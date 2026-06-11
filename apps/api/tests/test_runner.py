@@ -11,6 +11,7 @@ import asyncio
 from typing import Any
 
 from capychem.api.runner import RunRegistry
+from capychem.db.models import Run
 from capychem.db.session import init_schema, make_engine, make_sessionmaker
 from capychem.run import RunConfig
 
@@ -45,6 +46,11 @@ async def test_runner_runs_to_completion_and_emits_events() -> None:
     assert any(e["type"] == "generation.complete" for e in events)
     final = events[-1]
     assert final["type"] == "run.complete"
+    # Exactly-40 / status=="exhausted" is NOT guaranteed by the loop code:
+    # propose_offspring may return fewer than `offspring` (crossover validity),
+    # validate_batch drops invalids/duplicates, and the score node only counts
+    # candidates the oracle marked valid — so a generation can score fewer calls
+    # than budgeted, and the run may end via no_progress/max_generations instead.
     assert final["status"] in {"exhausted", "max_generations", "no_progress"}
     snap = reg.snapshot(run_id)
     assert snap is not None and snap["oracle_calls_used"] <= 40
@@ -80,4 +86,10 @@ async def test_runner_stop_halts_run() -> None:
             if ev["type"] == "run.complete":
                 assert ev["status"] == "stopped"
                 break
+    # The stopped run's partial state must be durable, not just in-memory:
+    # finalize_run commits status + summary_json BEFORE run.complete broadcasts.
+    async with sm() as s:
+        row = await s.get(Run, run_id)
+    assert row is not None and row.status == "stopped"
+    assert row.summary_json is not None and row.summary_json["top_k"]
     await engine.dispose()

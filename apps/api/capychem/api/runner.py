@@ -9,6 +9,7 @@ cancel Event is set. The loop code itself is never modified — we only observe 
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
 from typing import Any, cast
@@ -20,6 +21,8 @@ from capychem.loop.logic import build_summary
 from capychem.loop.state import LoopState
 from capychem.run import RunConfig, create_run, finalize_run
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+logger = logging.getLogger(__name__)
 
 
 def _snapshot_from_state(run_id: int, cfg: RunConfig, state: dict[str, Any]) -> dict[str, Any]:
@@ -51,6 +54,10 @@ class RunHandle:
     subscribers: set[asyncio.Queue[dict[str, Any]]] = field(default_factory=set)
     snapshot: dict[str, Any] | None = None
     task: asyncio.Task[None] | None = None
+    # The run.complete event dict, set just before broadcast. Lets a subscriber
+    # that connects after completion get the terminal event replayed (handles
+    # are never evicted).
+    terminal_event: dict[str, Any] | None = None
 
     def broadcast(self, event: dict[str, Any]) -> None:
         for q in list(self.subscribers):
@@ -73,6 +80,15 @@ class RunRegistry:
         return run_id
 
     def subscribe(self, run_id: int) -> asyncio.Queue[dict[str, Any]]:
+        """Subscribe to a run's event stream.
+
+        Contract:
+        - An unknown ``run_id`` returns an orphan queue that never yields.
+        - The queue itself does no replay: a subscriber joining after completion
+          gets nothing from it — callers must check ``terminal_event`` /
+          ``snapshot`` first (the WS endpoint does).
+        - Callers must ``unsubscribe`` in a ``finally`` block.
+        """
         q: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
         handle = self._runs.get(run_id)
         if handle is not None:
@@ -95,6 +111,8 @@ class RunRegistry:
         handle = self._runs.get(run_id)
         if handle is None:
             return False
+        if handle.terminal_event is not None or (handle.task is not None and handle.task.done()):
+            return False  # already finished — nothing to stop
         handle.cancel.set()
         return True
 
@@ -141,6 +159,7 @@ class RunRegistry:
                 initial, config={"recursion_limit": recursion_limit}, stream_mode="values"
             ),
         )
+        errored = False
         try:
             async for state in stream:
                 final_state = state
@@ -148,11 +167,13 @@ class RunRegistry:
                     last_curve_len = len(state["auc_curve"])
                     handle.snapshot = _snapshot_from_state(handle.run_id, cfg, state)
                     snap = handle.snapshot
-                    best = snap["best_score"]
                     handle.broadcast(
                         GenerationCompleteEvent(
                             generation_index=snap["generation_index"],
-                            best_score=best if best is not None else 0.0,
+                            # The population is non-empty at a generation boundary
+                            # (the curve only grows after a scored generation), so
+                            # best_score is always set here.
+                            best_score=snap["best_score"],
                             oracle_calls_used=snap["oracle_calls_used"],
                             top_k=[TopMolecule(**m) for m in snap["top_k"]],
                         ).model_dump()
@@ -160,29 +181,40 @@ class RunRegistry:
                     if handle.cancel.is_set():
                         stopped = True
                         break
+        except Exception:
+            # NOT asyncio.CancelledError — that derives from BaseException in 3.12,
+            # so shutdown cancellation propagates past this handler. Keep it that way.
+            errored = True
+            logger.exception("run %d errored mid-loop", handle.run_id)
         finally:
             await stream.aclose()
 
-        status = "stopped" if stopped else (final_state.get("stop_reason") or "exhausted")
-        summary = final_state.get("summary")
-        if summary is None and final_state:
-            # The cooperative-stop break happens after persist but BEFORE stop_check
-            # populates state["summary"], so build it here from the final state.
-            # This makes the stopped run's partial state durable in summary_json
-            # (design §8 exit criterion), not just live in the in-memory handle.
-            summary = build_summary(
-                final_state.get("population", []),
-                final_state.get("auc_curve", []),
-                generations=last_curve_len,
-                oracle_calls=final_state.get("calls_used", 0),
-            )
+        if errored:
+            status = "errored"
+            summary = None
+        else:
+            status = "stopped" if stopped else (final_state.get("stop_reason") or "exhausted")
+            summary = final_state.get("summary")
+            if summary is None and final_state:
+                # The cooperative-stop break happens after persist but BEFORE stop_check
+                # populates state["summary"], so build it here from the final state.
+                # This makes the stopped run's partial state durable in summary_json
+                # (design §8 exit criterion), not just live in the in-memory handle.
+                summary = build_summary(
+                    final_state.get("population", []),
+                    final_state.get("auc_curve", []),
+                    generations=last_curve_len,
+                    oracle_calls=final_state.get("calls_used", 0),
+                )
         async with self._sm() as session:
             await finalize_run(session, handle.run_id, {"stop_reason": status, "summary": summary})
         trace.flush()
         if handle.snapshot is not None:
             handle.snapshot["status"] = status  # terminal status for a post-completion GET
-        handle.broadcast(
-            RunCompleteEvent(run_id=handle.run_id, status=status, summary=summary).model_dump()
-        )
+        terminal = RunCompleteEvent(
+            run_id=handle.run_id, status=status, summary=summary
+        ).model_dump()
+        handle.terminal_event = terminal  # replay source for late WS subscribers
+        handle.broadcast(terminal)
         # The handle stays in the registry (never evicted) so a post-completion GET/WS
         # reads the terminal in-memory snapshot. Acceptable for single-user MVP.
