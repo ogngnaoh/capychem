@@ -79,9 +79,7 @@ class RunCost(Base):
     __tablename__ = "run_costs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    run_id: Mapped[int] = mapped_column(
-        ForeignKey("runs.id", ondelete="CASCADE"), unique=True
-    )
+    run_id: Mapped[int] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"), unique=True)
     llm_cost_usd: Mapped[float] = mapped_column(default=0.0)
     oracle_cost_usd: Mapped[float] = mapped_column(default=0.0)
     total_usd: Mapped[float] = mapped_column(default=0.0)

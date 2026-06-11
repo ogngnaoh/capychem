@@ -17,6 +17,7 @@ same stdin/stdout JSON contract used locally, relocated into the container.
 #   - Async call surface fn.remote.aio(...) (used by capychem.oracle) still valid in
 #     1.5.0 — Function.remote exposes .aio for the async variant.
 """
+
 from __future__ import annotations
 
 import modal
@@ -70,9 +71,7 @@ def score(smiles: list[str], task: str) -> list[dict]:
             raise RuntimeError(f"harness error scoring task {task!r}: {payload['error']}")
         if isinstance(payload, dict) and "results" in payload:
             return payload["results"]
-    raise RuntimeError(
-        f"harness returned no JSON (exit {proc.returncode}): {proc.stderr[-500:]}"
-    )
+    raise RuntimeError(f"harness returned no JSON (exit {proc.returncode}): {proc.stderr[-500:]}")
 
 
 @app.local_entrypoint()

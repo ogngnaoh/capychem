@@ -4,6 +4,7 @@ oracle_cost_usd is summed from OracleCall.compute_cost_usd; the runner upserts a
 RunCost row each generation and trips a clean termination over cost_cap_usd().
 LLM cost is 0 until milestone 02.
 """
+
 from __future__ import annotations
 
 import os

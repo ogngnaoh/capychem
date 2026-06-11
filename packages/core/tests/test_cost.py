@@ -1,4 +1,5 @@
 """Cost aggregation + cap config (slice 4)."""
+
 from __future__ import annotations
 
 import pytest
@@ -17,8 +18,15 @@ async def sm():
 
 
 async def _seed_run_with_costs(session, costs: list[float]) -> int:
-    run = Run(task="qed", budget=100, plateau_window=5, pop_size=10,
-              offspring=4, mutation_rate=0.01, seed=42)
+    run = Run(
+        task="qed",
+        budget=100,
+        plateau_window=5,
+        pop_size=10,
+        offspring=4,
+        mutation_rate=0.01,
+        seed=42,
+    )
     session.add(run)
     await session.flush()
     gen = Generation(run_id=run.id, index=0, proposer_used="graph_ga")
@@ -28,8 +36,16 @@ async def _seed_run_with_costs(session, costs: list[float]) -> int:
         cand = Candidate(generation_id=gen.id, smiles="CCO", proposer="graph_ga", score=0.5)
         session.add(cand)
         await session.flush()
-        session.add(OracleCall(run_id=run.id, candidate_id=cand.id, task="qed",
-                               score=0.5, wall_ms=1, compute_cost_usd=c))
+        session.add(
+            OracleCall(
+                run_id=run.id,
+                candidate_id=cand.id,
+                task="qed",
+                score=0.5,
+                wall_ms=1,
+                compute_cost_usd=c,
+            )
+        )
     await session.commit()
     return run.id
 
@@ -53,9 +69,9 @@ async def test_record_oracle_cost_upserts(sm):
         run_id = await _seed_run_with_costs(session, [0.4])
         await record_oracle_cost(session, run_id, 0.4)
         await record_oracle_cost(session, run_id, 0.9)  # update, not duplicate
-        rows = (await session.execute(
-            RunCost.__table__.select().where(RunCost.run_id == run_id)
-        )).all()
+        rows = (
+            await session.execute(RunCost.__table__.select().where(RunCost.run_id == run_id))
+        ).all()
     assert len(rows) == 1
     assert rows[0].oracle_cost_usd == pytest.approx(0.9)
     assert rows[0].total_usd == pytest.approx(0.9)  # llm=0 in slice 4
