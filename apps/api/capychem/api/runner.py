@@ -14,6 +14,7 @@ from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
 from typing import Any, cast
 
+from capychem import cost
 from capychem.api.schemas import GenerationCompleteEvent, RunCompleteEvent, TopMolecule
 from capychem.loop import trace
 from capychem.loop.graph import build_graph
@@ -43,6 +44,7 @@ def _snapshot_from_state(run_id: int, cfg: RunConfig, state: dict[str, Any]) -> 
         "best_score": (top[0].score if top else None),
         "top_k": [{"smiles": m.smiles, "score": m.score} for m in top],
         "auc_curve": [{"oracle_calls": c, "top10_mean": v} for c, v in curve],
+        "cost_so_far_usd": 0.0,
     }
 
 
@@ -156,6 +158,7 @@ class RunRegistry:
         last_curve_len = 0
         final_state: dict[str, Any] = {}
         stopped = False
+        cost_capped = False
         # astream is an async generator at runtime; its declared AsyncIterator type
         # lacks aclose(), so cast for the explicit close in the finally block.
         stream = cast(
@@ -172,6 +175,12 @@ class RunRegistry:
                     last_curve_len = len(state["auc_curve"])
                     handle.snapshot = _snapshot_from_state(handle.run_id, cfg, state)
                     snap = handle.snapshot
+                    # Aggregate the run's oracle cost from persisted OracleCalls and
+                    # upsert the RunCost row (record_oracle_cost commits internally).
+                    async with self._sm() as session:
+                        total = await cost.oracle_cost_so_far(session, handle.run_id)
+                        await cost.record_oracle_cost(session, handle.run_id, total)
+                    snap["cost_so_far_usd"] = total
                     handle.broadcast(
                         GenerationCompleteEvent(
                             generation_index=snap["generation_index"],
@@ -183,9 +192,13 @@ class RunRegistry:
                             # snapshot returns, not the top-1 best_score.
                             top10_mean=snap["auc_curve"][-1]["top10_mean"],
                             oracle_calls_used=snap["oracle_calls_used"],
+                            cost_so_far_usd=total,
                             top_k=[TopMolecule(**m) for m in snap["top_k"]],
                         ).model_dump()
                     )
+                    if total >= cost.cost_cap_usd():
+                        cost_capped = True
+                        break
                     if handle.cancel.is_set():
                         stopped = True
                         break
@@ -200,6 +213,20 @@ class RunRegistry:
         if errored:
             status = "errored"
             summary = None
+        elif cost_capped:
+            status = "cost_capped"
+            summary = final_state.get("summary")
+            if summary is None and final_state:
+                # The cost-cap break happens after persist but before stop_check
+                # populates state["summary"], so build it here from the final state
+                # to keep the capped run's partial state durable (mirrors the
+                # cooperative-stop path below).
+                summary = build_summary(
+                    final_state.get("population", []),
+                    final_state.get("auc_curve", []),
+                    generations=last_curve_len,
+                    oracle_calls=final_state.get("calls_used", 0),
+                )
         else:
             status = "stopped" if stopped else (final_state.get("stop_reason") or "exhausted")
             summary = final_state.get("summary")
