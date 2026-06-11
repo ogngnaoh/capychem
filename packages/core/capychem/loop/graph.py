@@ -20,7 +20,7 @@ from capychem.loop.logic import (
     trim_to_budget,
 )
 from capychem.loop.state import LoopState, Scored
-from capychem.oracle import propose_offspring, score_smiles
+from capychem.oracle import propose_offspring, score_batch_async
 from capychem.validate import validate_batch
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
@@ -75,9 +75,9 @@ def build_graph(
             )
             if not batch:
                 return {"_scored": [], "calls_used": state["calls_used"]}
-            results = score_smiles([c.smiles for c in batch], task=state["task"])
+            results = await score_batch_async([c.smiles for c in batch], task=state["task"])
             scored = [
-                (c, r.score)
+                (c, r.score, r.cost_usd)
                 for c, r in zip(batch, results, strict=True)
                 if r.valid and r.score is not None
             ]
@@ -100,7 +100,7 @@ def build_graph(
 
                 pop = state["population"]
                 new_scored: list[Scored] = []
-                for vc, sc in scored:
+                for vc, sc, cost in scored:
                     parent_cid = None
                     if vc.parents is not None and pop:
                         parent_idx = vc.parents[0]
@@ -123,7 +123,7 @@ def build_graph(
                             task=state["task"],
                             score=sc,
                             wall_ms=0,
-                            compute_cost_usd=0.0,
+                            compute_cost_usd=cost,
                         )
                     )
                     new_scored.append(Scored(smiles=vc.smiles, score=sc, candidate_id=cand.id))
