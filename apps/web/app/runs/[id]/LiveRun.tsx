@@ -37,6 +37,9 @@ export function LiveRun({ runId }: { runId: number }) {
     let ws: WebSocket | null = null;
     let closed = false;
 
+    // Reset view state for the incoming runId so a dep change never shows stale data.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSnap(null); setLoadErr(null); setConn("connecting");
     getRun(runId)
       .then((s) => {
         if (closed) return;
@@ -47,8 +50,9 @@ export function LiveRun({ runId }: { runId: number }) {
           return;
         }
         ws = new WebSocket(wsUrl(runId));
-        ws.onopen = () => setConn("live");
+        ws.onopen = () => { if (closed) return; setConn("live"); };
         ws.onmessage = (e) => {
+          if (closed) return;
           const ev: RunEvent = JSON.parse(e.data as string) as RunEvent;
           if (ev.type === "ping") return;
           const next = applyEvent(snapRef.current!, ev);
@@ -56,7 +60,7 @@ export function LiveRun({ runId }: { runId: number }) {
           setSnap(next);
           if (ev.type === "run.complete") setConn("done");
         };
-        ws.onclose = () => setConn((c) => (c === "live" ? "done" : c));
+        ws.onclose = () => { if (closed) return; setConn((c) => (c !== "done" ? "done" : c)); };
       })
       .catch((e: unknown) => {
         if (closed) return;

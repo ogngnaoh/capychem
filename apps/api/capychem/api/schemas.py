@@ -44,6 +44,7 @@ class GenerationCompleteEvent(BaseModel):
     type: Literal["generation.complete"] = "generation.complete"
     generation_index: int
     best_score: float
+    top10_mean: float
     oracle_calls_used: int
     top_k: list[TopMolecule]
 

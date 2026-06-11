@@ -179,6 +179,9 @@ class RunRegistry:
                             # (the curve only grows after a scored generation), so
                             # best_score is always set here.
                             best_score=snap["best_score"],
+                            # Backend-authoritative top-10 mean: same value the REST
+                            # snapshot returns, not the top-1 best_score.
+                            top10_mean=snap["auc_curve"][-1]["top10_mean"],
                             oracle_calls_used=snap["oracle_calls_used"],
                             top_k=[TopMolecule(**m) for m in snap["top_k"]],
                         ).model_dump()
