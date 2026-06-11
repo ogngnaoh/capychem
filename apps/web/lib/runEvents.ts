@@ -8,6 +8,7 @@ export type RunEvent =
       best_score: number;
       top10_mean: number;
       oracle_calls_used: number;
+      cost_so_far_usd?: number;
       top_k: TopMolecule[];
     }
   | { type: "run.complete"; run_id: number; status: string; summary: unknown };
@@ -23,6 +24,7 @@ export function applyEvent(snap: RunSnapshot, ev: RunEvent): RunSnapshot {
         oracle_calls_used: ev.oracle_calls_used,
         best_score: ev.best_score,
         top_k: ev.top_k,
+        cost_so_far_usd: ev.cost_so_far_usd ?? snap.cost_so_far_usd,
         auc_curve: [
           ...snap.auc_curve,
           { oracle_calls: ev.oracle_calls_used, top10_mean: ev.top10_mean },
