@@ -27,17 +27,22 @@
 - Branch `main`. Slice-2 code merged. Postgres + Langfuse containers up via
   `docker compose -f infra/compose.yml up -d` (+ `infra/langfuse-compose.yml`).
 - `01-local-loop.md` slice doc is frozen. The loop is CLI-only (no API/WS/UI yet).
-- The slice-3 design spec + implementation plan are drafted under `docs/superpowers/` and have
-  passed an independent subagent review (see "Next session start here").
+- The slice-3 design spec + implementation plan are written, committed, and **APPROVED by two
+  independent subagent reviews** (architecture + plan-executability; both verified against the
+  installed stack). Reviewer refinements (durable stopped-run summary, generation-count
+  convention) are already folded into the plan.
 
 ## Next session start here
 
 Execute the **slice 3 (`02-web-surface`)** implementation plan at
-`docs/superpowers/plans/<date>-web-surface.md` (design spec:
-`docs/superpowers/specs/<date>-web-surface-design.md`) via
+`docs/superpowers/plans/2026-06-11-web-surface.md` (design spec:
+`docs/superpowers/specs/2026-06-11-web-surface-design.md`) via
 **superpowers:subagent-driven-development**. It grafts the committed in-process LangGraph loop
-behind a FastAPI REST + WebSocket surface with a minimal Next.js launch + watch-live view on QED.
-First action = plan Task 1.
+behind a FastAPI REST + WebSocket surface (in-process background runner observing the loop via
+`astream`, never modifying it) with a shadcn Next.js launch + watch-live view on QED, plus a
+cooperative Stop. First action = plan Task 1 (extract `capychem.run` helpers + refactor CLI).
+Confirmed scope decisions: simple stop control, snapshot-on-load reconnect, SMILES+score display,
+shadcn UI, WS heartbeat in this slice.
 
 ## Active concerns
 

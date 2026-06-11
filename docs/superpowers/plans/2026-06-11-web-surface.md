@@ -409,6 +409,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from capychem.loop.graph import build_graph
+from capychem.loop.logic import build_summary
 from capychem.loop.state import LoopState
 from capychem.run import RunConfig, create_run, finalize_run
 
@@ -422,7 +423,11 @@ def _snapshot_from_state(run_id: int, cfg: RunConfig, state: dict[str, Any]) -> 
         "task": cfg.task,
         "status": "running",
         "budget": cfg.budget,
-        "generation_index": state.get("gen_index", 0),
+        # completed-generation COUNT (== summary["generations"]); len(curve) grows
+        # by one per persisted generation, whereas state["gen_index"] lags by one at
+        # the moment the curve grows. Using len(curve) keeps the live UI and the
+        # final summary_json["generations"] in agreement.
+        "generation_index": len(curve),
         "oracle_calls_used": state.get("calls_used", 0),
         "best_score": (top[0].score if top else None),
         "top_k": [{"smiles": m.smiles, "score": m.score} for m in top],
@@ -524,17 +529,30 @@ class RunRegistry:
 
         status = "stopped" if stopped else (final_state.get("stop_reason") or "exhausted")
         summary = final_state.get("summary")
+        if summary is None and final_state:
+            # The cooperative-stop break happens after persist but BEFORE stop_check
+            # populates state["summary"], so build it here from the final state.
+            # This makes the stopped run's partial state durable in summary_json
+            # (design §8 exit criterion), not just live in the in-memory handle.
+            summary = build_summary(
+                final_state.get("population", []),
+                final_state.get("auc_curve", []),
+                generations=len(final_state.get("auc_curve", [])),
+                oracle_calls=final_state.get("calls_used", 0),
+            )
         async with self._sm() as session:
             await finalize_run(session, handle.run_id,
                                {"stop_reason": status, "summary": summary})
+        if handle.snapshot is not None:
+            handle.snapshot["status"] = status  # terminal status for a post-completion GET
         handle.broadcast({"type": "run.complete", "run_id": handle.run_id,
                           "status": status, "summary": summary})
-        # Keep the handle briefly so late subscribers can read the terminal snapshot,
-        # then drop it. For MVP simplicity we leave it in the registry; GET falls back
-        # to the DB once it's gone (Task 5).
+        # The handle is left in the registry (never evicted) so a post-completion GET /WS
+        # reads the terminal in-memory snapshot. Acceptable for single-user MVP; eviction
+        # + DB-only reads can come with the run-list view in milestone 04.
 ```
 
-Notes for the implementer: `graph.astream` on the installed langgraph 1.2.x yields the full state dict each super-step with `stream_mode="values"`. A generation completes when `auc_curve` grows (the `persist` node appended a point). Stopping breaks at that boundary — `persist` has committed and `stop_check` has run, so the DB is consistent. If `astream`'s kwarg/stream-mode name differs in the installed version, confirm via `uv run python -c "from capychem.loop.graph import build_graph; help(build_graph.__wrapped__)"` or the langgraph docs and adjust minimally; the contract (observe per-generation state, cancel at boundary) stays the same. If mypy flags `state` as `Any`/`dict`, annotate `state: dict[str, Any]` in the loop.
+Notes for the implementer: `graph.astream(initial, config, stream_mode="values")` on the installed langgraph **1.2.4** yields the full accumulated state dict after every node (super-step) — this was verified against the installed version during plan review, so no further introspection is needed. A generation completes when `auc_curve` grows (the `persist` node appended a point, after its `session.commit()`). Stopping breaks at that boundary — `persist` has committed and `stop_check` has run, so the DB is consistent. At most one generation runs after the stop request (the in-flight one finishes); that is the intended cooperative semantics. If mypy flags `state` as `Any`/`dict`, annotate `state: dict[str, Any]` in the `async for`.
 
 - [ ] **Step 4: Run the tests** — `uv run pytest apps/api/tests/test_runner.py -v` → 2 PASS (takes ~10-30 s; real QED). If `test_runner_stop_halts_run` hangs, confirm the cancel check runs at the generation boundary and `astream` actually yields between generations.
 
@@ -1280,4 +1298,11 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   2. `httpx-ws` ASGI transport + `app.router.lifespan_context` is the lifespan-in-test idiom; if the installed httpx/httpx-ws differ, use `asgi-lifespan`'s `LifespanManager` instead (Task 6).
   3. shadcn init under Tailwind v4 + Next 16 may prompt; run interactively or with the current non-interactive flags and accept defaults (Task 7).
   4. Playwright needs a browser binary + the API running; if the sandbox can't, mark the e2e as a documented manual check (don't fake a pass) (Task 10 Step 5).
-  5. pnpm lockfile path (root vs `apps/web`) — `git add` whichever actually changed (Tasks 7, 10).
+  5. pnpm lockfile path — this repo uses pnpm **workspaces**, so the lockfile is the repo-root `pnpm-lock.yaml`, not `apps/web/pnpm-lock.yaml`; `git add` the root one (Tasks 7, 10).
+
+- **From the two independent plan reviews (both APPROVED) — fold these in during execution:**
+  1. **Stopped-run durable partial state** — DONE in Task 4 above (the stopped branch now builds `summary` via `build_summary`, so `summary_json` is persisted, satisfying the design §8 "partial state persisted" exit criterion durably, not just in-process). The Task 6 stop test should additionally assert `GET /runs/{id}` for the stopped run returns a non-empty `top_k` (add that assertion).
+  2. **`generation_index` convention** — DONE in Task 4 (`len(curve)` = completed-generation count, agreeing with `summary["generations"]` and the CLI's printed count).
+  3. **`schemas.py` event models are otherwise dead code** — `GenerationCompleteEvent`/`RunCompleteEvent` (Task 3) are not used to serialize (the runner broadcasts raw dicts; `ws_runs` sends them as-is). Either (preferred) have the runner build the event via the pydantic model and broadcast `model.model_dump()` so the model enforces the shape, OR drop the two event models from `schemas.py`. Decide in Task 4/3; don't leave them as drift-prone dead code.
+  4. **Clean shutdown** — `RunRegistry` should expose a `shutdown()` that cancels outstanding `handle.task`s; call it in the `main.py` lifespan `finally` BEFORE `engine.dispose()`, so disposing the engine doesn't raise inside an in-flight `_drive`. Add in Task 5 (registry wiring) or Task 2.
+  5. **Late-subscriber race (optional hardening)** — bounded and already mitigated by snapshot-on-load (the live page never opens a WS for an already-terminal run). If hardening: add an `is_terminal` flag to `RunHandle` set at finalize; the WS endpoint, after `subscribe()`, checks it and sends the stored `run.complete` + closes. Not required for single-user MVP.
