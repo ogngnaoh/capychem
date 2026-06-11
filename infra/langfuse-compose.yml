@@ -10,13 +10,13 @@ services:
     container_name: capychem-langfuse-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: langfuse
-      POSTGRES_PASSWORD: langfuse
-      POSTGRES_DB: langfuse
+      POSTGRES_USER: ${LANGFUSE_DB_USER:-langfuse}
+      POSTGRES_PASSWORD: ${LANGFUSE_DB_PASSWORD:-langfuse}
+      POSTGRES_DB: ${LANGFUSE_DB_NAME:-langfuse}
     volumes:
       - capychem-langfuse-pg:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U langfuse"]
+      test: ["CMD-SHELL", "pg_isready -U ${LANGFUSE_DB_USER:-langfuse}"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -31,12 +31,12 @@ services:
     ports:
       - "3001:3000"
     environment:
-      DATABASE_URL: postgresql://langfuse:langfuse@langfuse-db:5432/langfuse
+      DATABASE_URL: postgresql://${LANGFUSE_DB_USER:-langfuse}:${LANGFUSE_DB_PASSWORD:-langfuse}@langfuse-db:5432/${LANGFUSE_DB_NAME:-langfuse}
       NEXTAUTH_URL: http://localhost:3001
-      # Local dev throwaway values — NOT secrets. Override in real deployments.
-      NEXTAUTH_SECRET: capychem-local-dev-nextauth-secret
-      SALT: capychem-local-dev-salt
-      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      # Local dev throwaway defaults — NOT secrets. Override via .env.local (see .env.example).
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-capychem-local-dev-nextauth-secret}
+      SALT: ${LANGFUSE_SALT:-capychem-local-dev-salt}
+      ENCRYPTION_KEY: "${LANGFUSE_ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}"
       TELEMETRY_ENABLED: "false"
 
 volumes:
