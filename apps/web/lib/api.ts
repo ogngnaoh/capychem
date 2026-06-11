@@ -1,0 +1,53 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+export type TopMolecule = { smiles: string; score: number };
+export type CurvePoint = { oracle_calls: number; top10_mean: number };
+export type RunSnapshot = {
+  run_id: number;
+  task: string;
+  status: string;
+  budget: number;
+  generation_index: number;
+  oracle_calls_used: number;
+  best_score: number | null;
+  top_k: TopMolecule[];
+  auc_curve: CurvePoint[];
+};
+export type CreateRunBody = {
+  task: string;
+  budget: number;
+  seed: number;
+  pop_size: number;
+  offspring: number;
+  mutation_rate: number;
+  max_generations: number;
+};
+
+export async function createRun(
+  body: CreateRunBody,
+): Promise<{ run_id: number }> {
+  const r = await fetch(`${API_URL}/runs`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok)
+    throw new Error(
+      (await r.json().catch(() => ({}))).detail ?? `HTTP ${r.status}`,
+    );
+  return r.json();
+}
+
+export async function getRun(id: number): Promise<RunSnapshot> {
+  const r = await fetch(`${API_URL}/runs/${id}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+export async function stopRun(id: number): Promise<void> {
+  await fetch(`${API_URL}/runs/${id}/stop`, { method: "POST" });
+}
+
+export function wsUrl(id: number): string {
+  return `${API_URL.replace(/^http/, "ws")}/ws/runs/${id}`;
+}
