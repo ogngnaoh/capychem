@@ -31,10 +31,14 @@ export async function createRun(
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!r.ok)
+  if (!r.ok) {
+    const detail = (await r.json().catch(() => ({}))).detail;
     throw new Error(
-      (await r.json().catch(() => ({}))).detail ?? `HTTP ${r.status}`,
+      Array.isArray(detail)
+        ? detail.map((e: { msg?: string }) => e.msg ?? JSON.stringify(e)).join("; ")
+        : (detail ?? `HTTP ${r.status}`),
     );
+  }
   return r.json();
 }
 
@@ -45,7 +49,8 @@ export async function getRun(id: number): Promise<RunSnapshot> {
 }
 
 export async function stopRun(id: number): Promise<void> {
-  await fetch(`${API_URL}/runs/${id}/stop`, { method: "POST" });
+  const r = await fetch(`${API_URL}/runs/${id}/stop`, { method: "POST" });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
 }
 
 export function wsUrl(id: number): string {
