@@ -6,6 +6,7 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+from capychem.api.config import ALLOWED_ORIGINS
 from capychem.api.routes_runs import router as runs_router
 from capychem.api.runner import RunRegistry
 from capychem.api.ws_runs import router as ws_router
@@ -47,7 +48,7 @@ app = FastAPI(title="CapyChem API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )

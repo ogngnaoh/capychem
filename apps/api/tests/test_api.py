@@ -3,6 +3,10 @@
 Real app lifespan, real Postgres, real QED scoring via the harness subprocess —
 slow (~10-60 s per run) by design; httpx's ASGI WebSocket transport drives both
 HTTP and WS against the in-process app.
+
+Shared-DB caveat: each test's lifespan sweep marks stranded `running` rows
+`stopped` in the shared dev DB — don't run the suite while a dev server has an
+active run.
 """
 
 from __future__ import annotations
@@ -10,8 +14,9 @@ from __future__ import annotations
 import asyncio
 
 import httpx
+import pytest
 from capychem.api.main import app
-from httpx_ws import aconnect_ws
+from httpx_ws import WebSocketDisconnect, aconnect_ws
 from httpx_ws.transport import ASGIWebSocketTransport
 
 _BODY = {
@@ -92,3 +97,18 @@ async def test_get_unknown_run_404() -> None:
     async with app.router.lifespan_context(app):
         async with _client() as c:
             assert (await c.get("/runs/99999999")).status_code == 404
+
+
+async def test_ws_unknown_run_closes_4404() -> None:
+    # The server accepts, then closes with 4404. httpx-ws surfaces a
+    # server-initiated close as WebSocketDisconnect(code, reason) raised from
+    # receive() (httpx_ws._api converts wsproto CloseConnection events). Catch
+    # it INSIDE the aconnect_ws block: letting it propagate through the context
+    # exit wraps it in the session task group's ExceptionGroup.
+    async with app.router.lifespan_context(app):
+        async with _client() as c:
+            async with asyncio.timeout(10):
+                async with aconnect_ws("http://test/ws/runs/99999999", c) as ws:
+                    with pytest.raises(WebSocketDisconnect) as exc_info:
+                        await ws.receive_json()
+                    assert exc_info.value.code == 4404
