@@ -22,7 +22,7 @@
 
 ## Current state
 
-- `main` holds the merged slice-4 work. Default `CAPYCHEM_ORACLE_BACKEND=local` keeps CI/dev Modal-free.
+- `main` holds the merged slice-4 work and is **pushed to `origin/main`** (`7613f19`). Default `CAPYCHEM_ORACLE_BACKEND=local` keeps CI/dev Modal-free.
 - Modal app `capychem-worker` is DEPLOYED (https://modal.com/apps/ogngnaoh/main/deployed/capychem-worker).
 - `docs/milestones.md`: `00-walking-skeleton` shipped; `01-harness-reproducibility` ← active.
 
