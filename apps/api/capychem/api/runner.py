@@ -133,7 +133,7 @@ class RunRegistry:
 
     async def _drive(self, handle: RunHandle) -> None:
         cfg = handle.config
-        run_span_id = trace.trace_run(handle.run_id, cfg.task)  # None when Langfuse is off
+        run_trace_id = trace.trace_run(handle.run_id, cfg.task)  # None when Langfuse is off
         graph = build_graph(self._sm)
         initial: LoopState = {
             "run_id": handle.run_id,
@@ -148,8 +148,8 @@ class RunRegistry:
             "calls_used": 0,
             "gen_index": 0,
             "population": [],
-            "run_span_id": run_span_id,
-            "gen_span_id": run_span_id,
+            "run_trace_id": run_trace_id,
+            "gen_span_id": None,
             "auc_curve": [],
             "done": False,
         }
@@ -209,6 +209,10 @@ class RunRegistry:
             logger.exception("run %d errored mid-loop", handle.run_id)
         finally:
             await stream.aclose()
+            # Guarantee no generation span is left open before flush(): a node error
+            # or a cost-cap / cooperative-stop break exits BEFORE that generation's
+            # stop_check, which is the only happy-path caller of end_gen_span.
+            trace.end_all_gen_spans(handle.run_id)
 
         if errored:
             status = "errored"

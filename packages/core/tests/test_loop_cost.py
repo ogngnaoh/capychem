@@ -57,7 +57,7 @@ async def test_cost_lands_on_oracle_calls(sm, monkeypatch):
         "calls_used": 0,
         "gen_index": 0,
         "population": [],
-        "run_span_id": None,
+        "run_trace_id": None,
         "gen_span_id": None,
         "auc_curve": [],
         "done": False,

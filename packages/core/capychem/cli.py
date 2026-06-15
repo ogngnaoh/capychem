@@ -57,7 +57,7 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
     async with sessionmaker() as session:
         run_id = await create_run(session, cfg)
 
-    run_span_id = trace.trace_run(run_id, args.task)
+    run_trace_id = trace.trace_run(run_id, args.task)
     graph = build_graph(sessionmaker)
 
     initial: LoopState = {
@@ -73,21 +73,26 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
         "calls_used": 0,
         "gen_index": 0,
         "population": [],
-        "run_span_id": run_span_id,
-        "gen_span_id": run_span_id,
+        "run_trace_id": run_trace_id,
+        "gen_span_id": None,
         "auc_curve": [],
         "done": False,
     }
     # Each generation is 5 node-steps; allow headroom over the cap.
     recursion_limit = args.max_generations * 6 + 10
-    final: dict[str, Any] = await graph.ainvoke(
-        initial, config={"recursion_limit": recursion_limit}
-    )
+    try:
+        final: dict[str, Any] = await graph.ainvoke(
+            initial, config={"recursion_limit": recursion_limit}
+        )
 
-    async with sessionmaker() as session:
-        await finalize_run(session, run_id, final)
-
-    trace.flush()
+        async with sessionmaker() as session:
+            await finalize_run(session, run_id, final)
+    finally:
+        # Belt-and-suspenders, symmetric with runner.py: stop_check ends gen spans on
+        # the happy path, but a node error exits before it — end any leftover gen span
+        # before flush() so no unclosed span lands in the trace.
+        trace.end_all_gen_spans(run_id)
+        trace.flush()
     await engine.dispose()
     summary = final.get("summary") or {}
     return {
@@ -102,6 +107,9 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> None:
+    from capychem.env import load_local_env
+
+    load_local_env()
     args = parse_args(argv)
     result = asyncio.run(run(args))
     summary = result["summary"] or {}
