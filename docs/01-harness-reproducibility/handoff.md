@@ -45,8 +45,10 @@ number within a chosen tolerance. Produce the slice's design spec + implementati
 
 ## Active concerns
 
-- **User action required:** provision real Langfuse keys (self-hosted via `infra/langfuse-compose.yml` or
-  cloud) before slice 2 can close. Keys go in `.env.local` / env only — never commit (SPEC §8.1).
+- **Prereqs DONE (2026-06-15):** harness bridge verified (test_oracle_bridge green); Langfuse v2 self-hosted
+  up on :3001 with real keys in `.env.local` (gitignored) that authenticate (SDK 2.60.10, auth_check True).
+  Slice 2's first task: wire python-dotenv so the loop auto-loads `.env.local` (it doesn't yet — the keys only
+  load if exported into the shell or via that wiring). Never commit keys (SPEC §8.1).
 - **Reproduction gotchas (from the reference note) the slice MUST honor:** pass `mutation_rate=0.067` to the
   harness proposer (the `propose.py` docstring example shows `0.01` — wrong; mismatch shifts AUC). Implement
   `top_auc` faithfully: trapezoidal, sampled every `freq_log=100`, `finish=True` to pad the tail, normalized
