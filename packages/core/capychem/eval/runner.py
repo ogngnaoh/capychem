@@ -48,7 +48,12 @@ def run_reproduction(
     mol_buffer: dict[str, tuple[float, int]] = {}
 
     def score_unique(smiles_list: list[str]) -> list[tuple[str, float]]:
-        """Score only unseen SMILES; memoize; return (smiles, score) for all known."""
+        """Score only unseen SMILES; memoize; return (smiles, score) for all known.
+
+        Precondition: ``smiles_list`` is already canonicalized + intra-batch
+        deduped by ``validate_batch`` upstream, so ``unseen[:room]`` cannot waste
+        a headroom slot on an intra-batch duplicate.
+        """
         unseen = [s for s in smiles_list if s not in mol_buffer]
         # respect the unique-call budget: only score up to remaining headroom
         room = budget - len(mol_buffer)
