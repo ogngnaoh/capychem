@@ -25,7 +25,7 @@ Prove CapyChem's eval and trace claims are trustworthy: the isolated harness rep
 ## Slices
 
 1. `01-reproduce-graph-ga` — **shipped (2026-06-16)**. Built `packages/core/capychem/eval` (canonical AUC-of-top-10) + the `capychem-eval` CLI; ran vanilla Graph-GA on QED through the harness. Verified AUC **0.9384** vs published **0.940** (diff −0.16%, within ±0.02). **The load-bearing deliverable** the walking skeleton skipped.
-2. `02-langfuse-end-to-end` — planned. Provision real Langfuse keys (self-hosted via `infra/langfuse-compose.yml` or cloud); confirm a real nested per-generation trace lands and is viewable for a loop run (FR-014).
+2. `02-langfuse-end-to-end` — **shipped (2026-06-16)**. `.env.local` auto-load; `parent_observation_id` nesting + per-generation span registry (gen-span leak fixed). Verified a real nested trace (run→generation:0–4→node:5, 0 orphans) viewable in the UI (FR-014).
 3. `03-valid-smiles-measurement` — planned. Plumb RDKit validation-rate tracking into the validate node and surface it per run; exercise against Graph-GA. Gate check vs the LLM proposer is explicitly milestone 02.
 
 ## Integration notes

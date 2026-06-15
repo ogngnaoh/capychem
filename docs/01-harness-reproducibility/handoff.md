@@ -2,49 +2,38 @@
 
 ## Completed this session
 
-- **PLAN phase complete for slices 1 & 2** (concurrent tracks). Each has, all committed to `main`:
-  design spec (`docs/superpowers/specs/2026-06-15-{reproduce-graph-ga,langfuse-end-to-end}-design.md`),
-  implementation plan (`docs/superpowers/plans/2026-06-15-*.md`), project slice doc
-  (`docs/01-harness-reproducibility/0{1,2}-*.md`).
-- **Architecture decided (via AskUserQuestion):**
-  - Slice 1 — headless memoized eval runner (pure `top_auc` + no-DB runner, **unique-call** budget);
-    product-loop memoization deferred to milestone 02; full 10k QED repro run in-slice.
-  - Slice 2 — lightweight structural trace content; programmatic + manual-UI FR-014 verification;
-    true run→generation→node nesting via `parent_observation_id` + an in-process gen-span registry.
-- **Commits:** `f848583` spec-01 · `4728d03` spec-02 · `5a99f1c` both plans · (this commit) slice docs + handoff.
+- **Slices 1 & 2 SHIPPED to `main`** (orchestrated via superpowers subagent teams: TDD implementers + fresh-context spec/code-quality reviewers + fix rounds + integration review).
+  - **Slice 1 `01-reproduce-graph-ga`** — canonical `packages/core/capychem/eval/` (faithful PMO `top_auc`, headless memoized unique-call runner, baselines, `capychem-eval` CLI). Merge `236fbc4`, docs `667af3b`. **Full 10k QED repro: AUC 0.9384 vs published 0.940 (diff −0.16%, within ±0.02).**
+  - **Slice 2 `02-langfuse-end-to-end`** — `.env.local` auto-load, `parent_observation_id` nesting + per-generation span registry, gen-span leak fix. Merge `5d05c18`, docs (this commit). **Real trace run 259: run→generation:0–4→node:5, 0 orphans (FR-014).**
+- Both verified together on a throwaway integration branch BEFORE merge (both touch `graph.py` — auto-merged clean, gate green): `pytest` 57 passed · `mypy` clean (28 files) · `ruff` clean. Confirmed shipped code == gated code (byte-identical).
 
 ## Slice status across milestone
 
-- `01-reproduce-graph-ga` → planned (PLAN done; ready to implement) — Track A
-- `02-langfuse-end-to-end` → planned (PLAN done; ready to implement) — Track B (worktree-isolated, concurrent with A)
-- `03-valid-smiles-measurement` → planned (not yet planned; Track A, sequential after slice 1)
+- `01-reproduce-graph-ga` → **shipped (2026-06-16)** — frozen
+- `02-langfuse-end-to-end` → **shipped (2026-06-16)** — frozen
+- `03-valid-smiles-measurement` → planned (NOT yet planned) — Track A, next
 
 ## Current state
 
-- `main` clean. No code yet — planning artifacts only. Modal oracle idle-cheap; `CAPYCHEM_ORACLE_BACKEND=local`.
-- Langfuse v2 self-hosted on `:3001`; real keys in `.env.local` authenticate (SDK 2.60.10).
+- `main` clean, ahead of `origin/main` (not pushed). Worktrees + `integration-m01` cleaned up.
+- Langfuse v2 on `:3001` (keys in `.env.local`, auto-loaded). Postgres on `:5432` (`capychem-postgres`). `CAPYCHEM_ORACLE_BACKEND` unset (local harness).
+- Eval authority lives in `packages/core/capychem/eval/`; `loop/logic.py` running curve stays a UI estimate only.
 
-## Next session start here — IMPLEMENT phase, deploy the agent teams
+## Next session start here — SLICE 3 (Phase D), full loop
 
-Orchestrate IMPLEMENT for slices 1 & 2 **concurrently** via `superpowers:subagent-driven-development`. Per slice:
-ONE TDD implementer through the plan tasks, then TWO fresh-context reviewers (spec-compliance vs the
-spec/reference note + code-quality). **Slice 2's implementer runs WORKTREE-ISOLATED** (concurrent with slice 1).
-YOU (orchestrator) own ALL doc writes + run the verification gate; teammates return structured results only.
-- Load: this handoff · both specs · both plans · both slice docs · `agent_docs/pmo-auc-and-baselines.md`.
-- Slice 1 worktree env: `CAPYCHEM_HARNESS_PYTHON=/Users/hoangngo/Documents/personal-projects/CapyChem/harness/.venv/bin/python`; leave `CAPYCHEM_ORACLE_BACKEND` unset.
-- Gate per slice (paste REAL output): `uv run pytest` · `uv run mypy -p capychem -p capychem.api` · `uv run ruff check .`
-- Checkpoints: STOP after each slice's VERIFY (before SHIP) and after SHIP. Stop at 40% context — overwrite this handoff.
-- SHIP ritual (one commit on `main` per slice): milestone status flip · handoff overwrite + dated log line + commit refs · freeze slice file.
+Run the FULL slice loop for `03-valid-smiles-measurement` (Track A, after slice 1):
+`superpowers:brainstorming` (ask clarifying Qs; Explore subagent maps the `validate` node first) → `superpowers:writing-plans` → orchestrator writes `docs/01-harness-reproducibility/03-valid-smiles-measurement.md` → ⏸ PLAN CHECKPOINT → implement (TDD + 2 reviewers) → verify → ship.
+**Scope:** plumb RDKit validation-rate tracking into the `validate` node; surface a per-run valid-SMILES rate; exercise on Graph-GA. The **>80% GATE CHECK is milestone 02** — measure only here. Keep the field stable (it's the exact input the milestone-02 LLM-proposer gate compares against).
 
 ## Active concerns
 
-- Slice 1: confirm `ValidCandidate`/`Scored` fields, `merge_and_truncate` sig, `load_starting_pop` path before finalizing the runner (adapter lines only — never the memoization logic).
-- Slice 2: verify `parent_observation_id` accepted by `langfuse 2.60.10` (fallback: v2 stateful chaining).
-- `pyproject.toml` shared edit: slice 1 `[project.scripts]`, slice 2 `[project.dependencies]` — trivial merge.
-- Don't let a 2nd AUC definition drift: `eval/` is authoritative; `loop/logic.py`'s running curve = UI estimate only.
+- Slice 3 touches the shared loop/`validate` surface that slices 1 & 2 also modified — read merged `graph.py` + `validate.py` before planning.
+- Deferred to milestone 02 (do NOT do here): product-loop memoization / unique-call budget (G1 beat attempt); the >80% valid-SMILES gate check; LLM proposer.
+- FastAPI `_drive` gen-span cleanup now covered by `end_all_gen_spans` in `finally`; LLM-call generation spans still milestone 02.
 - Carried from 00: `GET /runs/{id}` cost_so_far_usd=0.0 fallback; top-10 sort triplicated; `Run.ended_at` unset — milestone-04 polish.
 
 ## Slice log
 
 - 2026-06-12 — Milestone 01 scoped.
-- 2026-06-15 — Slices 1 & 2 PLAN complete (specs + plans + slice docs committed); IMPLEMENT teams not yet deployed.
+- 2026-06-15 — Slices 1 & 2 PLAN complete (specs + plans + slice docs).
+- 2026-06-16 — **Slice 1 shipped** (`236fbc4`/`667af3b`; AUC 0.9384). **Slice 2 shipped** (`5d05c18`; FR-014 nested trace verified).
