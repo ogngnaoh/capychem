@@ -48,17 +48,30 @@ def trace_run(run_id: int, task: str) -> str | None:
 
 
 @contextmanager
-def span(name: str, *, parent_id: str | None, **metadata: Any) -> Iterator[str | None]:
+def span(
+    name: str,
+    *,
+    trace_id: str | None,
+    parent_observation_id: str | None = None,
+    **metadata: Any,
+) -> Iterator[str | None]:
     """Context manager yielding the new span's id (or None when disabled/failed).
 
-    ``parent_id`` is the enclosing trace or span id, threaded via LoopState.
+    Nests under ``trace_id`` (the run trace) and, when given, under
+    ``parent_observation_id`` (the enclosing generation span). Both ids are
+    threaded via LoopState so nesting survives async ``await`` boundaries.
     """
     if not is_enabled():
         yield None
         return
     sp = None
     try:
-        sp = _get_client().span(name=name, trace_id=parent_id, metadata=metadata or None)
+        sp = _get_client().span(
+            name=name,
+            trace_id=trace_id,
+            parent_observation_id=parent_observation_id,
+            metadata=metadata or None,
+        )
     except Exception:  # noqa: BLE001 - tracing must never break the loop
         sp = None
     try:
@@ -69,6 +82,42 @@ def span(name: str, *, parent_id: str | None, **metadata: Any) -> Iterator[str |
                 sp.end()
             except Exception:  # noqa: BLE001
                 pass
+
+
+# Live generation-span handles, keyed by (run_id, gen_index). The five LangGraph
+# node calls of one generation are separate async invocations, so the span handle
+# can't live on the stack; it lives here and is ended at the generation boundary.
+_gen_spans: dict[tuple[int, int], Any] = {}
+
+
+def gen_span(
+    run_trace_id: str | None, run_id: int, gen_index: int, **metadata: Any
+) -> str | None:
+    """Open a generation-level span as a direct child of the run trace; register
+    its live handle so it can be ended at the generation boundary. None when
+    disabled or the trace is absent."""
+    if not is_enabled() or run_trace_id is None:
+        return None
+    try:
+        sp = _get_client().span(
+            name=f"generation:{gen_index}",
+            trace_id=run_trace_id,
+            metadata=metadata or None,
+        )
+    except Exception:  # noqa: BLE001 - tracing must never break the loop
+        return None
+    _gen_spans[(run_id, gen_index)] = sp
+    return str(sp.id)
+
+
+def end_gen_span(run_id: int, gen_index: int) -> None:
+    """End + de-register a generation span. Safe no-op if missing/disabled."""
+    sp = _gen_spans.pop((run_id, gen_index), None)
+    if sp is not None:
+        try:
+            sp.end()
+        except Exception:  # noqa: BLE001
+            pass
 
 
 def flush() -> None:
