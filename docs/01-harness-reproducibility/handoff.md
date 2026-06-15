@@ -2,63 +2,49 @@
 
 ## Completed this session
 
-- **Milestone `01-harness-reproducibility` scoped.** Synthesized `milestone.md` (goal · scope · non-goals ·
-  3-slice index · integration notes · exit criteria) at milestone altitude; slice details deferred to their
-  own sessions per the planning-scope rule.
-- **Two scoping decisions resolved** (via AskUserQuestion):
-  - Valid-SMILES: **measure in 01, gate-check in 02.** No LLM exists yet, so 01 ships the measurement
-    plumbing (exercised on Graph-GA, ~100% valid by construction); the >80% pass/fail check rides with the
-    LLM proposer in milestone 02.
-  - Langfuse: **provision real keys now** so the trace-verification slice can actually close in 01.
-- **Key finding:** the canonical AUC harness (`packages/core/eval`) does **not exist yet** — `loop/logic.py`
-  calls its own running curve "un-authoritative" and points at `packages/core/eval` as "later." Slice 1 is
-  where that contract first becomes real. Graph-GA proposer + QED oracle bridge already work; no LLM anywhere.
-- **Reference note written** (subagent, source-verified): `agent_docs/pmo-auc-and-baselines.md` — the exact PMO
-  `top_auc` implementation + published Graph-GA per-task table. QED diff target = **0.940 ± 0.000** (PMO Table 2);
-  reproduction tolerance **±0.02 absolute**. Removes the slice-1 TBDs before they reached the slice session.
+- **PLAN phase complete for slices 1 & 2** (concurrent tracks). Each has, all committed to `main`:
+  design spec (`docs/superpowers/specs/2026-06-15-{reproduce-graph-ga,langfuse-end-to-end}-design.md`),
+  implementation plan (`docs/superpowers/plans/2026-06-15-*.md`), project slice doc
+  (`docs/01-harness-reproducibility/0{1,2}-*.md`).
+- **Architecture decided (via AskUserQuestion):**
+  - Slice 1 — headless memoized eval runner (pure `top_auc` + no-DB runner, **unique-call** budget);
+    product-loop memoization deferred to milestone 02; full 10k QED repro run in-slice.
+  - Slice 2 — lightweight structural trace content; programmatic + manual-UI FR-014 verification;
+    true run→generation→node nesting via `parent_observation_id` + an in-process gen-span registry.
+- **Commits:** `f848583` spec-01 · `4728d03` spec-02 · `5a99f1c` both plans · (this commit) slice docs + handoff.
 
 ## Slice status across milestone
 
-- `01-reproduce-graph-ga` → planned (load-bearing: build `packages/core/eval` + `capychem-eval`, reproduce Graph-GA AUC)
-- `02-langfuse-end-to-end` → planned (provision keys, verify nested trace, FR-014)
-- `03-valid-smiles-measurement` → planned (per-run valid-SMILES rate; gate check is milestone 02)
+- `01-reproduce-graph-ga` → planned (PLAN done; ready to implement) — Track A
+- `02-langfuse-end-to-end` → planned (PLAN done; ready to implement) — Track B (worktree-isolated, concurrent with A)
+- `03-valid-smiles-measurement` → planned (not yet planned; Track A, sequential after slice 1)
 
 ## Current state
 
-- `main` is clean and pushed to `origin/main` (`1105675`). Walking skeleton closed (2026-06-12).
-- Modal `capychem-worker` (oracle) stays DEPLOYED, idle-cheap — left up by default (housekeeping was "your call").
-- Default `CAPYCHEM_ORACLE_BACKEND=local` keeps dev/CI Modal-free.
-- No code written — milestone scoping only. **`docs/01-harness-reproducibility/` and `agent_docs/pmo-auc-and-baselines.md`
-  are UNTRACKED** (not yet on `main`); commit them before/with slice-1 work so they don't vanish.
+- `main` clean. No code yet — planning artifacts only. Modal oracle idle-cheap; `CAPYCHEM_ORACLE_BACKEND=local`.
+- Langfuse v2 self-hosted on `:3001`; real keys in `.env.local` authenticate (SDK 2.60.10).
 
-## Next session start here
+## Next session start here — IMPLEMENT phase, deploy the agent teams
 
-**To run the whole milestone via agent teams:** paste the master orchestrator prompt at
-`~/Documents/personal-vault/meta-workflows/2026-06-15-capychem-milestone-01-agent-team-kickoff.md` into a fresh
-session — one orchestrator drives all 3 slices (plan→implement→verify) with checkpoints, owning all doc writes.
-Otherwise, to do slice 1 solo:
-
-Scope and execute **slice `01-reproduce-graph-ga`** in its own session: build `packages/core/eval` (the
-canonical AUC-of-top-10-mean-vs-oracle-calls harness) + the `capychem-eval` CLI entrypoint, run vanilla
-Graph-GA on QED through the isolated `harness/` env, and diff our AUC against the published PMO Graph-GA
-number within a chosen tolerance. Produce the slice's design spec + implementation plan there (not here).
+Orchestrate IMPLEMENT for slices 1 & 2 **concurrently** via `superpowers:subagent-driven-development`. Per slice:
+ONE TDD implementer through the plan tasks, then TWO fresh-context reviewers (spec-compliance vs the
+spec/reference note + code-quality). **Slice 2's implementer runs WORKTREE-ISOLATED** (concurrent with slice 1).
+YOU (orchestrator) own ALL doc writes + run the verification gate; teammates return structured results only.
+- Load: this handoff · both specs · both plans · both slice docs · `agent_docs/pmo-auc-and-baselines.md`.
+- Slice 1 worktree env: `CAPYCHEM_HARNESS_PYTHON=/Users/hoangngo/Documents/personal-projects/CapyChem/harness/.venv/bin/python`; leave `CAPYCHEM_ORACLE_BACKEND` unset.
+- Gate per slice (paste REAL output): `uv run pytest` · `uv run mypy -p capychem -p capychem.api` · `uv run ruff check .`
+- Checkpoints: STOP after each slice's VERIFY (before SHIP) and after SHIP. Stop at 40% context — overwrite this handoff.
+- SHIP ritual (one commit on `main` per slice): milestone status flip · handoff overwrite + dated log line + commit refs · freeze slice file.
 
 ## Active concerns
 
-- **Prereqs DONE (2026-06-15):** harness bridge verified (test_oracle_bridge green); Langfuse v2 self-hosted
-  up on :3001 with real keys in `.env.local` (gitignored) that authenticate (SDK 2.60.10, auth_check True).
-  Slice 2's first task: wire python-dotenv so the loop auto-loads `.env.local` (it doesn't yet — the keys only
-  load if exported into the shell or via that wiring). Never commit keys (SPEC §8.1).
-- **Reproduction gotchas (from the reference note) the slice MUST honor:** pass `mutation_rate=0.067` to the
-  harness proposer (the `propose.py` docstring example shows `0.01` — wrong; mismatch shifts AUC). Implement
-  `top_auc` faithfully: trapezoidal, sampled every `freq_log=100`, `finish=True` to pad the tail, normalized
-  `÷ max_oracle_calls=10000`; budget counts **unique** (memoized) oracle calls. QED reproduction is a smoke
-  test only — its ±0.000 std makes a broken metric unambiguous, but it has near-zero beat-headroom (that's 02).
-- Don't let a second AUC definition drift: `packages/core/eval` is authoritative; `loop/logic.py`'s curve is
-  demoted to a live-UI estimate only.
-- Carried from 00: `GET /runs/{id}` DB-read fallback reports `cost_so_far_usd=0.0`; top-10 sort key
-  triplicated; `Run.ended_at` unset — all milestone-04 polish.
+- Slice 1: confirm `ValidCandidate`/`Scored` fields, `merge_and_truncate` sig, `load_starting_pop` path before finalizing the runner (adapter lines only — never the memoization logic).
+- Slice 2: verify `parent_observation_id` accepted by `langfuse 2.60.10` (fallback: v2 stateful chaining).
+- `pyproject.toml` shared edit: slice 1 `[project.scripts]`, slice 2 `[project.dependencies]` — trivial merge.
+- Don't let a 2nd AUC definition drift: `eval/` is authoritative; `loop/logic.py`'s running curve = UI estimate only.
+- Carried from 00: `GET /runs/{id}` cost_so_far_usd=0.0 fallback; top-10 sort triplicated; `Run.ended_at` unset — milestone-04 polish.
 
 ## Slice log
 
-- 2026-06-12 — Milestone 01 scoped; decisions logged (valid-SMILES measure-in-01/check-in-02; Langfuse keys now).
+- 2026-06-12 — Milestone 01 scoped.
+- 2026-06-15 — Slices 1 & 2 PLAN complete (specs + plans + slice docs committed); IMPLEMENT teams not yet deployed.
