@@ -22,7 +22,8 @@ def main(argv: list[str] | None = None) -> int:
         description="Reproduce a PMO Graph-GA baseline (AUC top-10).",
     )
     p.add_argument("--task", required=True)
-    p.add_argument("--budget", type=int, default=10000)  # unique-call budget AND metric max_oracle_calls
+    # --budget is BOTH the unique-call run-stop and the metric's max_oracle_calls.
+    p.add_argument("--budget", type=int, default=10000)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--pop-size", type=int, default=120)
     p.add_argument("--offspring", type=int, default=70)

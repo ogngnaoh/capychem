@@ -92,6 +92,4 @@ def run_reproduction(
             patience_left = patience
         prev_top = cur_top
 
-    return ReproResult(
-        mol_buffer=mol_buffer, generations=generations, unique_calls=len(mol_buffer)
-    )
+    return ReproResult(mol_buffer=mol_buffer, generations=generations, unique_calls=len(mol_buffer))

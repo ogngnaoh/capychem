@@ -4,7 +4,9 @@ from capychem.eval.cli import main
 
 
 def test_cli_emits_report(capsys) -> None:  # type: ignore[no-untyped-def]
-    rc = main(["--task", "qed", "--budget", "120", "--seed", "42", "--pop-size", "20", "--offspring", "10"])
+    argv = ["--task", "qed", "--budget", "120", "--seed", "42"]
+    argv += ["--pop-size", "20", "--offspring", "10"]
+    rc = main(argv)
     assert rc == 0
     report = json.loads(capsys.readouterr().out)
     assert report["task"] == "qed"
