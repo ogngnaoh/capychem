@@ -301,6 +301,7 @@ dependencies = [
     { name = "asyncpg" },
     { name = "langfuse" },
     { name = "langgraph" },
+    { name = "python-dotenv" },
     { name = "rdkit" },
     { name = "sqlalchemy", extra = ["asyncio"] },
 ]
@@ -310,6 +311,7 @@ requires-dist = [
     { name = "asyncpg", specifier = ">=0.29" },
     { name = "langfuse", specifier = ">=2,<3" },
     { name = "langgraph", specifier = ">=0.2" },
+    { name = "python-dotenv", specifier = ">=1.0" },
     { name = "rdkit", specifier = "==2026.3.*" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
 ]
