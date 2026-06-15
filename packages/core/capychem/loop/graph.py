@@ -8,7 +8,6 @@ oracle.py (subprocess); this module never imports harness code.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from capychem.db.models import Candidate, Generation, OracleCall
@@ -19,26 +18,13 @@ from capychem.loop.logic import (
     stop_reason,
     trim_to_budget,
 )
+from capychem.loop.seeds import load_starting_pop as _load_starting_pop
 from capychem.loop.state import LoopState, Scored
 from capychem.oracle import propose_offspring, score_batch_async
 from capychem.validate import validate_batch
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-
-_STARTING_POP = (
-    Path(__file__).resolve().parents[4]
-    / "harness"
-    / "capychem_harness"
-    / "data"
-    / "starting_pop.smi"
-)
-
-
-def _load_starting_pop(limit: int) -> list[str]:
-    lines = _STARTING_POP.read_text().splitlines()
-    smis = [ln.strip() for ln in lines if ln.strip() and not ln.startswith("#")]
-    return smis[:limit]
 
 
 def build_graph(

@@ -13,6 +13,7 @@ dependencies = [
 
 [project.scripts]
 capychem-run = "capychem.cli:main"
+capychem-eval = "capychem.eval.cli:main"
 
 [build-system]
 requires = ["hatchling"]
