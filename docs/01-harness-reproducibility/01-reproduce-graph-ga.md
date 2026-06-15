@@ -1,6 +1,6 @@
 # Slice 01 — reproduce-graph-ga
 
-> Status: **planned** (ready to implement). Track A (sequential before slice 3).
+> Status: **shipped (2026-06-16)** — FROZEN. Track A. Merge `236fbc4`; impl `d594ea2`,`4eda510`,`a099fb5`,`cf3875a`,`3d6ef3b`.
 > Design spec: `docs/superpowers/specs/2026-06-15-reproduce-graph-ga-design.md`
 > Implementation plan: `docs/superpowers/plans/2026-06-15-reproduce-graph-ga.md`
 
@@ -23,13 +23,13 @@ New `eval/` package, headless and Postgres-free, reusing the existing oracle/val
 
 ## Tasks
 
-- [ ] Task 1 — `eval/metric.py` pure `top_auc` port + unit tests (4 hand-computed cases)
-- [ ] Task 2 — `eval/baselines.py` published table + `compare_to_baseline`
-- [ ] Task 3 — `eval/runner.py` headless memoized GA runner (memoization unit test + harness smoke)
-- [ ] Task 4 — `eval/cli.py` + `[project.scripts]` + report-shape test
-- [ ] Task 5 — full `--budget 10000` QED reproduction; assert 0.92–0.96; record the number (orchestrator-run)
-- [ ] Gate — `uv run pytest` · `uv run mypy -p capychem -p capychem.api` · `uv run ruff check .` green with real output
-- [ ] Reviews — spec-compliance (vs the reference note) + code-quality, fresh context
+- [x] Task 1 — `eval/metric.py` pure `top_auc` port + unit tests (verified bit-identical to PMO across 500 fuzz cases)
+- [x] Task 2 — `eval/baselines.py` published table + `compare_to_baseline`
+- [x] Task 3 — `eval/runner.py` headless memoized GA runner (memoization + patience-stop unit tests + harness smoke)
+- [x] Task 4 — `eval/cli.py` + `[project.scripts]` + report-shape test
+- [x] Task 5 — full `--budget 10000` QED repro: **AUC 0.9384** (diff −0.0016, within_tolerance), 2118 unique calls / 31 gens / 63.9s
+- [x] Gate — `pytest` 57 passed · `mypy` clean (28 files) · `ruff` clean (integrated tree, real output)
+- [x] Reviews — spec-compliance APPROVE (all 8 invariants PASS) + code-quality APPROVE-WITH-NITS (fixed) + integration APPROVE-FOR-MERGE
 
 ## Notes
 
