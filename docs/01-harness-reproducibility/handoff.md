@@ -33,6 +33,11 @@
 
 ## Next session start here
 
+**To run the whole milestone via agent teams:** paste the master orchestrator prompt at
+`~/Documents/personal-vault/meta-workflows/2026-06-15-capychem-milestone-01-agent-team-kickoff.md` into a fresh
+session — one orchestrator drives all 3 slices (plan→implement→verify) with checkpoints, owning all doc writes.
+Otherwise, to do slice 1 solo:
+
 Scope and execute **slice `01-reproduce-graph-ga`** in its own session: build `packages/core/eval` (the
 canonical AUC-of-top-10-mean-vs-oracle-calls harness) + the `capychem-eval` CLI entrypoint, run vanilla
 Graph-GA on QED through the isolated `harness/` env, and diff our AUC against the published PMO Graph-GA
