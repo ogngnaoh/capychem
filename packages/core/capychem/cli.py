@@ -57,7 +57,7 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
     async with sessionmaker() as session:
         run_id = await create_run(session, cfg)
 
-    run_span_id = trace.trace_run(run_id, args.task)
+    run_trace_id = trace.trace_run(run_id, args.task)
     graph = build_graph(sessionmaker)
 
     initial: LoopState = {
@@ -73,8 +73,8 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
         "calls_used": 0,
         "gen_index": 0,
         "population": [],
-        "run_span_id": run_span_id,
-        "gen_span_id": run_span_id,
+        "run_trace_id": run_trace_id,
+        "gen_span_id": None,
         "auc_curve": [],
         "done": False,
     }

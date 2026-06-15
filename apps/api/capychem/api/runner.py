@@ -133,7 +133,7 @@ class RunRegistry:
 
     async def _drive(self, handle: RunHandle) -> None:
         cfg = handle.config
-        run_span_id = trace.trace_run(handle.run_id, cfg.task)  # None when Langfuse is off
+        run_trace_id = trace.trace_run(handle.run_id, cfg.task)  # None when Langfuse is off
         graph = build_graph(self._sm)
         initial: LoopState = {
             "run_id": handle.run_id,
@@ -148,8 +148,8 @@ class RunRegistry:
             "calls_used": 0,
             "gen_index": 0,
             "population": [],
-            "run_span_id": run_span_id,
-            "gen_span_id": run_span_id,
+            "run_trace_id": run_trace_id,
+            "gen_span_id": None,
             "auc_curve": [],
             "done": False,
         }

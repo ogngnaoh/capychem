@@ -36,8 +36,10 @@ class LoopState(TypedDict, total=False):
     calls_used: int
     gen_index: int
     population: list[Scored]  # survivor pool, kept at pop_size
-    # langfuse span ids threaded for nesting across async nodes
-    run_span_id: str | None
+    # langfuse ids threaded for nesting across async nodes:
+    #   run_trace_id — the run-level trace id (set once at run start)
+    #   gen_span_id  — the CURRENT generation span id (updated each generation)
+    run_trace_id: str | None
     gen_span_id: str | None
     # transient per-iteration carriers (read across nodes — MUST be declared, or
     # mypy errors `TypedDict has no key`; the leading underscore is just a naming

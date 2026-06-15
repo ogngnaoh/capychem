@@ -99,7 +99,8 @@ def test_gen_span_opens_under_trace_and_ends(monkeypatch: pytest.MonkeyPatch) ->
     class _Client:
         def span(self, **kw: object) -> _Span:
             assert kw["trace_id"] == "trace-1"
-            assert kw.get("parent_observation_id") is None  # gen span is a direct child of the trace
+            # gen span is a direct child of the trace (no parent observation)
+            assert kw.get("parent_observation_id") is None
             return _Span()
 
     monkeypatch.setattr(trace, "_get_client", lambda: _Client())
