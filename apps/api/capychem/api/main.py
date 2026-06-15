@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    from capychem.env import load_local_env
+
+    load_local_env()
     engine = make_engine()
     await init_schema(engine)
     app.state.engine = engine

@@ -102,6 +102,9 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> None:
+    from capychem.env import load_local_env
+
+    load_local_env()
     args = parse_args(argv)
     result = asyncio.run(run(args))
     summary = result["summary"] or {}
