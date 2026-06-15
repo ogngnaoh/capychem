@@ -104,10 +104,10 @@ def gen_span(
             trace_id=run_trace_id,
             metadata=metadata or None,
         )
+        _gen_spans[(run_id, gen_index)] = sp
+        return str(sp.id)
     except Exception:  # noqa: BLE001 - tracing must never break the loop
         return None
-    _gen_spans[(run_id, gen_index)] = sp
-    return str(sp.id)
 
 
 def end_gen_span(run_id: int, gen_index: int) -> None:
@@ -118,6 +118,23 @@ def end_gen_span(run_id: int, gen_index: int) -> None:
             sp.end()
         except Exception:  # noqa: BLE001
             pass
+
+
+def end_all_gen_spans(run_id: int) -> None:
+    """End + de-register every still-open generation span for ``run_id``.
+
+    Belt-and-suspenders cleanup for paths that never reach ``stop_check`` (a node
+    error, or the FastAPI driver's cost-cap / cooperative-stop break at a
+    generation boundary). Call this before ``flush()`` so no unclosed generation
+    span lands in the trace. Fully exception-safe; no-op when disabled/empty.
+    """
+    for key in [k for k in _gen_spans if k[0] == run_id]:
+        sp = _gen_spans.pop(key, None)
+        if sp is not None:
+            try:
+                sp.end()
+            except Exception:  # noqa: BLE001
+                pass
 
 
 def flush() -> None:

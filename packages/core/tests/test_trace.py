@@ -109,3 +109,53 @@ def test_gen_span_opens_under_trace_and_ends(monkeypatch: pytest.MonkeyPatch) ->
     trace.end_gen_span(run_id=7, gen_index=0)
     assert ended == [True]
     trace.end_gen_span(run_id=7, gen_index=0)  # idempotent: second end is a safe no-op
+
+
+def test_end_all_gen_spans_ends_orphaned_spans_for_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Guards the leak: when stop_check never runs (node error / cost-cap break /
+    # cooperative-stop break), the last generation's span must still be ended +
+    # de-registered before flush(), and must NOT touch other runs' spans.
+    monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk")
+    monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk")
+    ended: list[str] = []
+
+    def _make_client(span_id: str) -> object:
+        class _Span:
+            id = span_id
+
+            def end(self) -> None:
+                ended.append(span_id)
+
+        class _Client:
+            def span(self, **kw: object) -> _Span:
+                return _Span()
+
+        return _Client()
+
+    # Open two spans for run 11 (never ended) and one for an unrelated run 22.
+    monkeypatch.setattr(trace, "_get_client", lambda: _make_client("s-11-0"))
+    trace.gen_span("trace-1", run_id=11, gen_index=0)
+    monkeypatch.setattr(trace, "_get_client", lambda: _make_client("s-11-1"))
+    trace.gen_span("trace-1", run_id=11, gen_index=1)
+    monkeypatch.setattr(trace, "_get_client", lambda: _make_client("s-22-0"))
+    trace.gen_span("trace-2", run_id=22, gen_index=0)
+
+    trace.end_all_gen_spans(11)
+    # both of run 11's spans ended; run 22 untouched
+    assert sorted(ended) == ["s-11-0", "s-11-1"]
+    assert (11, 0) not in trace._gen_spans
+    assert (11, 1) not in trace._gen_spans
+    assert (22, 0) in trace._gen_spans
+
+    # second call is a safe no-op (nothing left for run 11)
+    trace.end_all_gen_spans(11)
+    assert sorted(ended) == ["s-11-0", "s-11-1"]
+
+    # clean up the unrelated run so the module-global registry stays pristine
+    trace.end_gen_span(run_id=22, gen_index=0)
+
+
+def test_end_all_gen_spans_is_safe_when_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    for k in ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY"):
+        monkeypatch.delenv(k, raising=False)
+    trace.end_all_gen_spans(999)  # no keys, empty registry: must not raise

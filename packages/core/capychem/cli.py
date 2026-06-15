@@ -80,14 +80,19 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
     }
     # Each generation is 5 node-steps; allow headroom over the cap.
     recursion_limit = args.max_generations * 6 + 10
-    final: dict[str, Any] = await graph.ainvoke(
-        initial, config={"recursion_limit": recursion_limit}
-    )
+    try:
+        final: dict[str, Any] = await graph.ainvoke(
+            initial, config={"recursion_limit": recursion_limit}
+        )
 
-    async with sessionmaker() as session:
-        await finalize_run(session, run_id, final)
-
-    trace.flush()
+        async with sessionmaker() as session:
+            await finalize_run(session, run_id, final)
+    finally:
+        # Belt-and-suspenders, symmetric with runner.py: stop_check ends gen spans on
+        # the happy path, but a node error exits before it — end any leftover gen span
+        # before flush() so no unclosed span lands in the trace.
+        trace.end_all_gen_spans(run_id)
+        trace.flush()
     await engine.dispose()
     summary = final.get("summary") or {}
     return {

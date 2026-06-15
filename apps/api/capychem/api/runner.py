@@ -209,6 +209,10 @@ class RunRegistry:
             logger.exception("run %d errored mid-loop", handle.run_id)
         finally:
             await stream.aclose()
+            # Guarantee no generation span is left open before flush(): a node error
+            # or a cost-cap / cooperative-stop break exits BEFORE that generation's
+            # stop_check, which is the only happy-path caller of end_gen_span.
+            trace.end_all_gen_spans(handle.run_id)
 
         if errored:
             status = "errored"
