@@ -71,3 +71,33 @@ def test_build_summary_shape() -> None:
         {"oracle_calls": 30, "top10_mean": 0.7},
     ]
     assert summary["generations"] == 3 and summary["oracle_calls"] == 30
+
+
+def test_build_summary_includes_valid_smiles_when_stats_given() -> None:
+    pop = [s("c1ccccc1", 0.9, 3)]
+    summary = build_summary(
+        pop,
+        [(10, 0.9)],
+        generations=1,
+        oracle_calls=10,
+        validation_stats={"proposed": 40, "valid": 38},
+    )
+    assert summary["valid_smiles"] == {"proposed": 40, "valid": 38, "rate": 38 / 40}
+
+
+def test_build_summary_valid_smiles_rate_zero_when_no_proposals() -> None:
+    pop = [s("c1ccccc1", 0.9, 3)]
+    summary = build_summary(
+        pop,
+        [(10, 0.9)],
+        generations=1,
+        oracle_calls=10,
+        validation_stats={"proposed": 0, "valid": 0},
+    )
+    assert summary["valid_smiles"] == {"proposed": 0, "valid": 0, "rate": 0.0}
+
+
+def test_build_summary_omits_valid_smiles_when_stats_absent() -> None:
+    pop = [s("c1ccccc1", 0.9, 3)]
+    summary = build_summary(pop, [(10, 0.9)], generations=1, oracle_calls=10)
+    assert "valid_smiles" not in summary

@@ -59,15 +59,29 @@ def build_summary(
     *,
     generations: int,
     oracle_calls: int,
+    validation_stats: dict[str, int] | None = None,
     top_k: int = 10,
 ) -> dict[str, Any]:
     """Build the (un-authoritative) summary_json. The auc_curve here is the
     running top-10-mean; the canonical AUC lives in packages/core/eval (later
-    milestone) — do not treat this as the G1 number."""
+    milestone) — do not treat this as the G1 number.
+
+    When ``validation_stats`` (cumulative {"proposed","valid"}) is supplied, a
+    stable ``valid_smiles`` block is added. This is the field milestone 02's
+    >80% gate reads; keep its shape stable."""
     top = sorted(population, key=_sort_key)[:top_k]
-    return {
+    summary: dict[str, Any] = {
         "top_k": [{"smiles": m.smiles, "score": m.score} for m in top],
         "auc_curve": [{"oracle_calls": c, "top10_mean": v} for c, v in auc_curve],
         "generations": generations,
         "oracle_calls": oracle_calls,
     }
+    if validation_stats is not None:
+        proposed = validation_stats.get("proposed", 0)
+        valid = validation_stats.get("valid", 0)
+        summary["valid_smiles"] = {
+            "proposed": proposed,
+            "valid": valid,
+            "rate": valid / proposed if proposed else 0.0,
+        }
+    return summary
