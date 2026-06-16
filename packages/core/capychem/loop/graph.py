@@ -178,6 +178,7 @@ async def stop_check(state: LoopState) -> dict[str, Any]:
                 state.get("auc_curve", []),
                 generations=state["gen_index"] + 1,
                 oracle_calls=state["calls_used"],
+                validation_stats=state.get("_validation_stats"),
             )
             result = {"done": True, "stop_reason": reason, "summary": summary}
         else:
