@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from capychem.validate import (
     ValidCandidate,
-    ValidationStats,
     canonicalize,
     validate_batch,
     validate_batch_with_stats,

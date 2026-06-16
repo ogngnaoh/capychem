@@ -116,6 +116,9 @@ def main(argv: list[str] | None = None) -> None:
     top = summary.get("top_k", [])[:10]
     print(f"\nRun {result['run_id']} — {result['stop_reason']}")
     print(f"  oracle calls used: {result['calls_used']}  generations: {result['generations']}")
+    vs = summary.get("valid_smiles")
+    if vs:
+        print(f"  valid SMILES: {vs['rate']:.1%} ({vs['valid']}/{vs['proposed']} parseable)")
     print("  top molecules:")
     for i, m in enumerate(top, 1):
         print(f"    {i:2d}. {m['score']:.4f}  {m['smiles']}")
