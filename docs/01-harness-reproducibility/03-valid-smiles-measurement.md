@@ -25,15 +25,17 @@ Testing: TDD per task — `test_validate.py` (parse-validity math), `test_loop_l
 
 ## Tasks
 
-- [ ] Task 1 — `ValidationStats` + `validate_batch_with_stats` in `validate.py` (TDD)
-- [ ] Task 2 — `build_summary` emits stable `valid_smiles` block (TDD)
-- [ ] Task 3 — `_validation_stats` field + `validate` node accumulation (TDD)
-- [ ] Task 4 — `stop_check` passes stats to summary + in-suite integration guard (TDD)
-- [ ] Task 5 — CLI prints the per-run valid-SMILES rate
-- [ ] Verify — `pytest` · `mypy -p capychem -p capychem.api` · `ruff check .` all green (real output)
-- [ ] Verify — real Graph-GA run; record measured per-run valid-SMILES rate as evidence
-- [ ] Review — one fresh-context code review over the slice diff
-- [ ] Ship — milestone/handoff status flips, freeze this file, advance `docs/milestones.md` to milestone 02
+- [x] Task 1 — `ValidationStats` + `validate_batch_with_stats` in `validate.py` (TDD) — `5f3276f`
+- [x] Task 2 — `build_summary` emits stable `valid_smiles` block (TDD) — `ed7a970`
+- [x] Task 3 — `_validation_stats` field + `validate` node accumulation (TDD) — `66cd020`
+- [x] Task 4 — `stop_check` passes stats to summary + in-suite integration guard (TDD) — `b8a5a99`
+- [x] Task 5 — CLI prints the per-run valid-SMILES rate — `dbfa998`
+- [x] Verify — `pytest` 65 passed · `mypy` clean (28 files) · `ruff` clean (real output)
+- [x] Verify — real Graph-GA run (Run 269, QED, budget 200): valid SMILES **100.0% (228/228)**, persisted to `summary_json`
+- [x] Review — fresh-context code review: **Ready to merge: Yes** (no Critical/Important)
+- [x] Ship — milestone/handoff status flips, this file frozen, `docs/milestones.md` advanced to milestone 02
+
+> **FROZEN** — slice shipped 2026-06-16. Status lives in `handoff.md`.
 
 ## Notes
 

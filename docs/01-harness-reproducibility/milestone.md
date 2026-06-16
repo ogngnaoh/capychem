@@ -26,7 +26,7 @@ Prove CapyChem's eval and trace claims are trustworthy: the isolated harness rep
 
 1. `01-reproduce-graph-ga` — **shipped (2026-06-16)**. Built `packages/core/capychem/eval` (canonical AUC-of-top-10) + the `capychem-eval` CLI; ran vanilla Graph-GA on QED through the harness. Verified AUC **0.9384** vs published **0.940** (diff −0.16%, within ±0.02). **The load-bearing deliverable** the walking skeleton skipped.
 2. `02-langfuse-end-to-end` — **shipped (2026-06-16)**. `.env.local` auto-load; `parent_observation_id` nesting + per-generation span registry (gen-span leak fixed). Verified a real nested trace (run→generation:0–4→node:5, 0 orphans) viewable in the UI (FR-014).
-3. `03-valid-smiles-measurement` — planned. Plumb RDKit validation-rate tracking into the validate node and surface it per run; exercise against Graph-GA. Gate check vs the LLM proposer is explicitly milestone 02.
+3. `03-valid-smiles-measurement` — **shipped (2026-06-16)**. Plumbed RDKit parse-validity tracking into the validate node (`validate_batch_with_stats`); per-run `valid_smiles {proposed, valid, rate}` accumulated across generations and persisted in `summary_json` + printed by the CLI. Exercised on Graph-GA (Run 269: **100.0%, 228/228**). Gate check vs the LLM proposer is explicitly milestone 02.
 
 ## Integration notes
 
@@ -41,3 +41,5 @@ Prove CapyChem's eval and trace claims are trustworthy: the isolated harness rep
 - Our QED AUC-of-top-10, computed by the canonical `packages/core/eval` harness and invoked via `capychem-eval`, lands within **±0.02** of the published PMO Graph-GA **0.940** (i.e. ≈0.92–0.96). A faithful `top_auc` (trapezoidal, `freq_log=100`, `finish=True`, `÷max_oracle_calls`) and `mutation_rate=0.067` are prerequisites — see the reference note.
 - A real Langfuse trace for a loop run is viewable, showing the nested structure per-run → per-generation → per-node (FR-014 verified, no longer a no-op).
 - A per-run valid-SMILES rate is measured and surfaced (gate check vs LLM deferred to milestone 02, documented as such).
+
+**All exit criteria met — milestone 01 complete (2026-06-16):** QED AUC 0.9384 (slice 1); nested Langfuse trace verified (slice 2); per-run valid-SMILES rate measured + surfaced, Run 269 = 100.0% 228/228 (slice 3).

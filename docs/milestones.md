@@ -6,9 +6,9 @@
 
 01. 00-walking-skeleton → docs/00-walking-skeleton/ — shipped (2026-06-12)
     Thin end-to-end slice (1 PMO task, no analyzer, minimal UI). Surfaces integration risk before rigor.
-02. 01-harness-reproducibility → docs/01-harness-reproducibility/ ← active
-    SPEC Phase 1. Pinned harness env reproduces a Graph-GA PMO result; trivial LangGraph + Langfuse loop spike; >80% valid-SMILES gate.
-03. 02-end-to-end-loop → docs/02-end-to-end-loop/ — planned
+02. 01-harness-reproducibility → docs/01-harness-reproducibility/ — shipped (2026-06-16)
+    SPEC Phase 1. Pinned harness env reproduces a Graph-GA PMO result; trivial LangGraph + Langfuse loop spike; per-run valid-SMILES measurement plumbed (>80% gate check rides with the LLM proposer in milestone 02).
+03. 02-end-to-end-loop → docs/02-end-to-end-loop/ ← active
     SPEC Phase 2. Modal LLM + worker pool; FastAPI REST + WS; Postgres; launch + watch-live on one PMO task; first beat-Graph-GA attempt.
 04. 03-analyzer-and-scale → docs/03-analyzer-and-scale/ — planned
     SPEC Phase 3. Analyzer agent (the differentiator); all 23 PMO tasks; cost gate; Week-8 bar (≥3/23 beat → on track).
