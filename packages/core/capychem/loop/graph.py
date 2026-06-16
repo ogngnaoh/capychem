@@ -21,7 +21,7 @@ from capychem.loop.logic import (
 from capychem.loop.seeds import load_starting_pop as _load_starting_pop
 from capychem.loop.state import LoopState, Scored
 from capychem.oracle import propose_offspring, score_batch_async
-from capychem.validate import validate_batch
+from capychem.validate import validate_batch_with_stats
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -64,7 +64,15 @@ async def validate(state: LoopState) -> dict[str, Any]:
         trace_id=state.get("run_trace_id"),
         parent_observation_id=state.get("gen_span_id"),
     ):
-        return {"validated": validate_batch(state["proposed"])}
+        validated, stats = validate_batch_with_stats(state["proposed"])
+        prev = state.get("_validation_stats", {"proposed": 0, "valid": 0})
+        return {
+            "validated": validated,
+            "_validation_stats": {
+                "proposed": prev["proposed"] + stats.proposed,
+                "valid": prev["valid"] + stats.valid,
+            },
+        }
 
 
 async def score(state: LoopState) -> dict[str, Any]:

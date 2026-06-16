@@ -46,6 +46,7 @@ class LoopState(TypedDict, total=False):
     # convention for "internal", it does not exempt them from declaration)
     proposed: list[tuple[str, tuple[int, int] | None]]
     validated: list[ValidCandidate]
+    _validation_stats: dict[str, int]  # cumulative {"proposed","valid"} across gens
     _proposer: str
     _scored: list[tuple[ValidCandidate, float, float]]  # (candidate, score, cost_usd)
     _made_progress: bool
