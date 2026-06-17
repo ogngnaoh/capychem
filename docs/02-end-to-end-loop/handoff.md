@@ -1,20 +1,23 @@
-# Handoff — 02-end-to-end-loop (PLANNED — not yet started)
+# Handoff — 02-end-to-end-loop (IN PROGRESS — slice 03)
 
 ## Completed this session
 
 - **Milestone 02 scoped** via an agent-team planning run (3 read-only dimension planners —
-  agent-loop / backend / eval-web — + an adversarial verifier; 2 rounds; clean SIGN-OFF). No code.
-- Synthesized `docs/02-end-to-end-loop/milestone.md` (Goal / Scope / Non-goals / 6-slice index /
-  Integration notes / Exit criteria) and this handoff.
-- User decisions locked: **task = jnk3**; **baseline = our own same-seed Graph-GA control** (not the
-  published number); **G6 honored for the LLM path** (pinned temp/seed + abstraction reachable from
-  product loop *and* headless eval); **plateau-stop included** in m02 (the 6th slice).
+  agent-loop / backend / eval-web — + an adversarial verifier; 2 rounds; clean SIGN-OFF).
+- Synthesized `docs/02-end-to-end-loop/milestone.md` + this handoff. User decisions locked:
+  **task = jnk3**; **baseline = our own same-seed Graph-GA control**; **G6 honored for the LLM path**
+  (pinned temp/seed + abstraction reachable from product loop *and* headless eval); **plateau-stop
+  included** in m02 (the 6th slice).
+- **Slice 03 `modal-llm-propose-endpoint` started:** brainstorm → design spec
+  (`docs/superpowers/specs/2026-06-17-modal-llm-propose-endpoint-design.md`) → implementation plan
+  (`docs/superpowers/plans/2026-06-17-modal-llm-propose-endpoint.md`, 6 TDD tasks) → slice doc. Awaiting
+  execution-mode choice before code lands. Decisions: wrap DeepSeek API in Modal; prove the real path once.
 
 ## Slice status across milestone
 
 - `01-launch-and-watch-jnk3` → planned
 - `02-plateau-stop-and-signal` → planned
-- `03-modal-llm-propose-endpoint` → planned
+- `03-modal-llm-propose-endpoint` → in-progress (spec + plan written; pre-code)
 - `04-llm-proposer-with-ga-fallback` → planned
 - `05-unique-call-budget-and-cost-ledger` → planned
 - `06-beat-graph-ga-on-jnk3` → planned
@@ -30,11 +33,11 @@ Build order: `01 ∥ 02 ∥ 03 → 04 → 05 → 06`.
 
 ## Next session start here
 
-Start **slice 03 `modal-llm-propose-endpoint`** — front-loads the biggest integration risk (net-new
-Modal LLM serving + cold-start) and is the longest critical path (03→04→05→06). Begin its slice session
-by writing `docs/02-end-to-end-loop/03-modal-llm-propose-endpoint.md` (brainstorm → design spec → plan →
-slice doc), then implement. Slices 01 and 02 are dependency-free and can be picked up in any order
-alongside it.
+**Execute the slice-03 plan** (`docs/superpowers/plans/2026-06-17-modal-llm-propose-endpoint.md`)
+task-by-task via subagent-driven-development or executing-plans, then run the one-time manual real-API
+smoke (Task 6: `deepseek-api-key` Modal secret + `modal run apps/worker/app.py::propose_smoke`). On
+ship, freeze the slice doc and flip status to shipped. Slices 01 and 02 are dependency-free and can be
+picked up in any order afterward.
 
 ## Active concerns
 
@@ -52,3 +55,4 @@ alongside it.
 ## Slice log
 
 - 2026-06-16 — Milestone 02 scoped (agent-team planning; 6 slices, clean verifier sign-off).
+- 2026-06-17 — Slice 03 design spec + implementation plan + slice doc written (pre-code).
