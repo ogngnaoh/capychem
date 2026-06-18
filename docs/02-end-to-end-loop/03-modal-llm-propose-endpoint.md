@@ -1,6 +1,6 @@
 # Slice 03 — modal-llm-propose-endpoint
 
-**Status:** in-progress · **Milestone:** 02 `end-to-end-loop` · **Deps:** none · **Consumed by:** slice 04
+**Status:** shipped 2026-06-18 (code + stub-verified; real-API smoke pending) · FROZEN · **Milestone:** 02 `end-to-end-loop` · **Deps:** none · **Consumed by:** slice 04
 
 ## Goal
 
@@ -29,12 +29,12 @@ integration risk.
 
 ## Tasks
 
-- [ ] T1 — `proposer.py` foundations: `ProposalResult`, `ProposerError`, config, `_clean_smiles` (+test)
-- [ ] T2 — stub backend + `propose_batch_async` dispatch (+ stub/unknown tests)
-- [ ] T3 — modal backend: token→USD cost + malformed handling (+ modal tests)
-- [ ] T4 — Modal `propose()` worker function + `llm_image` + `propose_smoke`
-- [ ] T5 — full quality gate (pytest / mypy / ruff / format; whole-suite regression check)
-- [ ] T6 — one-time manual real-API smoke (Modal secret + `modal run`) — retires the integration risk
+- [x] T1 — `proposer.py` foundations: `ProposalResult`, `ProposerError`, config, `_clean_smiles` (+test)
+- [x] T2 — stub backend + `propose_batch_async` dispatch (+ stub/unknown tests)
+- [x] T3 — modal backend: token→USD cost + malformed handling (+ modal tests)
+- [x] T4 — Modal `propose()` worker function + `llm_image` + `propose_smoke`
+- [x] T5 — full quality gate (pytest 71 passed / mypy clean / ruff clean / format applied to new files)
+- [ ] T6 — one-time manual real-API smoke (Modal secret + `modal run`) — **PENDING operator key**; retires the integration risk
 
 ## Notes
 
