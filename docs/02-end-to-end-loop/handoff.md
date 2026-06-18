@@ -33,21 +33,25 @@ Build order: `01 ∥ 02 ∥ 03 → 04 → 05 → 06`.
 
 ## Current state
 
-- `main` clean and **pushed to `origin/main`** (at `09cbb0e`). Slice 03 code lives in
+- `main` clean and **pushed to `origin/main`**. Slice 03 code lives in
   `packages/core/capychem/proposer.py` (+ `tests/test_proposer.py`) and `apps/worker/app.py` (`propose()`).
-- New env knobs (all optional, defaults safe): `CAPYCHEM_PROPOSER_BACKEND` (default `stub`),
-  `CAPYCHEM_LLM_USD_PER_1K_IN` / `_OUT`, `CAPYCHEM_LLM_MODEL`. The real path needs a `deepseek-api-key`
-  Modal secret (not yet created).
+- Proposer has **three backends** via `CAPYCHEM_PROPOSER_BACKEND`: `stub` (default, deterministic,
+  no network) · `modal` (DeepSeek via the worker) · `direct` (DeepSeek via local `httpx`, **no Modal** —
+  added because Modal is unavailable). Other knobs: `CAPYCHEM_LLM_USD_PER_1K_IN`/`_OUT`, `CAPYCHEM_LLM_MODEL`
+  (default `deepseek-v4-pro`). The real path needs a `DEEPSEEK_API_KEY` (operator key not yet created);
+  Modal is NOT required.
 - Carried infra (from milestone 01): Langfuse v2 on `:3001`, Postgres on `:5432`, `CAPYCHEM_ORACLE_BACKEND`
   unset (local harness). Eval authority is `packages/core/capychem/eval/`.
 
 ## Next session start here
 
 Two threads, in priority order:
-1. **Close slice 03's real-API smoke (Task 6, manual):** `modal secret create deepseek-api-key
-   DEEPSEEK_API_KEY=<key>`, then `modal run apps/worker/app.py::propose_smoke`. Confirm SMILES + token
-   counts return; if DeepSeek rejects `n`/`seed`, adjust the worker payload. This retires the integration
-   risk and fully closes 03.
+1. **Close slice 03's real-API smoke (Task 6, manual — Modal-free):** create a DeepSeek key at
+   platform.deepseek.com, then `export DEEPSEEK_API_KEY=<key> CAPYCHEM_PROPOSER_BACKEND=direct` and call
+   `propose_batch_async("Propose one drug-like SMILES. Output only the SMILES.", 2, temperature=0.7, seed=0)`
+   (e.g. via `uv run python -c`). Confirm SMILES + token counts + cost return. If `deepseek-v4-pro` 404s,
+   set `CAPYCHEM_LLM_MODEL` to a valid model; if DeepSeek rejects `n`/`seed`, adjust `_direct_propose`'s
+   payload. This retires the integration risk and fully closes 03.
 2. **Start slice 04 `llm-proposer-with-ga-fallback`** — the next critical-path slice (consumes the
    proposer adapter). Begin with brainstorm → spec → plan. Slices 01 and 02 are dependency-free and can
    slot in any time. A kickoff prompt for slice 04 is saved in the Obsidian vault (`prompts/`).
@@ -62,6 +66,13 @@ Two threads, in priority order:
 - **`valid_smiles {proposed, valid, rate}`** is a frozen contract (slice 04 reads, never reshapes).
 - **Beat risk:** without the analyzer (m03), this is the MOLLEO-minus-analysis config; the LLM may not
   beat Graph-GA on jnk3. That IS the week-7 kill-switch — on failure, narrow scope, don't abandon.
+- **`direct` backend hardening (deferred, non-blocking):** a malformed/error DeepSeek body (missing
+  `choices`, or an HTTP error) currently surfaces a raw `KeyError`/httpx error rather than a clean
+  `ProposerError`. Harden when slice 04/06 runs the real loop. Also: `deepseek-v4-pro` may not be a real
+  model id — `CAPYCHEM_LLM_MODEL` is env-configurable; first real call confirms.
+- **SPEC drift (note):** SPEC Alt D locked "Modal-served inference"; the `direct` backend is a conscious
+  re-decision forced by no-Modal access. Modal remains the optional scaling path; revisit the SPEC line
+  if Modal stays unavailable.
 - **Doc hygiene (non-blocking):** SPEC §9 Phase 2 prose says "first ≥6/23 … on a single task" — treat
   as known-stale; m02's bar is ONE task.
 
@@ -71,3 +82,5 @@ Two threads, in priority order:
 - 2026-06-17 — Slice 03 design spec + implementation plan + slice doc written (pre-code).
 - 2026-06-18 — **Slice 03 shipped** (code; real-API smoke pending). Subagent-driven TDD, all reviews
   approved; `pytest` 71 passed; merged + pushed `5f50e03..09cbb0e`.
+- 2026-06-19 — **Slice 03 follow-up:** added Modal-free `direct` DeepSeek backend (Modal unavailable);
+  `pytest` 73 passed, reviewed READY TO MERGE; commit `90d2b9c`. Real path now runs without Modal.

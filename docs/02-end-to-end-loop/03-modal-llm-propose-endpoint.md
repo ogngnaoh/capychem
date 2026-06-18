@@ -34,7 +34,24 @@ integration risk.
 - [x] T3 — modal backend: token→USD cost + malformed handling (+ modal tests)
 - [x] T4 — Modal `propose()` worker function + `llm_image` + `propose_smoke`
 - [x] T5 — full quality gate (pytest 71 passed / mypy clean / ruff clean / format applied to new files)
-- [ ] T6 — one-time manual real-API smoke (Modal secret + `modal run`) — **PENDING operator key**; retires the integration risk
+- [ ] T6 — one-time manual real-API smoke — **PENDING operator DeepSeek key**. Now runnable **without
+  Modal** via the `direct` backend (see Follow-up): `export DEEPSEEK_API_KEY=… CAPYCHEM_PROPOSER_BACKEND=direct`.
+
+## Follow-up — Modal-free `direct` backend (2026-06-19)
+
+Modal turned out to be unavailable to the operator. Added a third proposer backend `direct` that calls
+DeepSeek's OpenAI-compatible API straight from the local process via `httpx.AsyncClient` (key from the
+`DEEPSEEK_API_KEY` env var) — mirroring the oracle's Modal-free `local` path. `modal` and `direct` now
+share a `_rows_to_results` helper (cleaning + token→USD cost). Commit `90d2b9c`; tests 8 passed (added
+`test_direct_backend_maps_response_and_cost`, `test_direct_backend_missing_key_raises`). Modal stays as
+an optional future scaling path behind the same contract. **To run the real proposer locally:**
+`export DEEPSEEK_API_KEY=… ; CAPYCHEM_PROPOSER_BACKEND=direct` then call `propose_batch_async`. The
+model id is env-configurable (`CAPYCHEM_LLM_MODEL`, default `deepseek-v4-pro`) — point it at a valid
+DeepSeek model if that id 404s.
+
+**Deferred (when slice 04/06 runs the real loop):** harden `direct` so a malformed/error DeepSeek body
+(missing `choices`, or an HTTP error) raises a clean `ProposerError` instead of a raw `KeyError`/httpx
+error (code-review Minor, non-blocking for this slice).
 
 ## Notes
 
