@@ -68,9 +68,7 @@ def _clean_smiles(raw: str) -> str:
     """
     text = raw.strip()
     if text.startswith("```"):
-        text = " ".join(
-            ln for ln in text.splitlines() if not ln.strip().startswith("```")
-        ).strip()
+        text = " ".join(ln for ln in text.splitlines() if not ln.strip().startswith("```")).strip()
     tokens = text.split()
     return tokens[0] if tokens else ""
 
@@ -78,27 +76,32 @@ def _clean_smiles(raw: str) -> str:
 # --- stub backend (deterministic, network-free) ----------------------------
 
 _STUB_POOL = (
-    "CCO", "c1ccccc1", "CC(=O)O", "CCN", "C1CCCCC1",
-    "CCOC(=O)C", "c1ccncc1", "CC(C)O", "CCCCO", "c1ccc(O)cc1",
+    "CCO",
+    "c1ccccc1",
+    "CC(=O)O",
+    "CCN",
+    "C1CCCCC1",
+    "CCOC(=O)C",
+    "c1ccncc1",
+    "CC(C)O",
+    "CCCCO",
+    "c1ccc(O)cc1",
 )
 
 
-def _stub_propose(
-    prompt: str, n: int, *, temperature: float, seed: int
-) -> list[ProposalResult]:
+def _stub_propose(prompt: str, n: int, *, temperature: float, seed: int) -> list[ProposalResult]:
     """Deterministic proposer for CI + later-slice development. Same (prompt,
     seed, index) -> same SMILES from a fixed pool; cost is zero."""
     results: list[ProposalResult] = []
     for i in range(n):
         digest = hashlib.sha256(f"{seed}:{prompt}:{i}".encode()).digest()
         smi = _STUB_POOL[int.from_bytes(digest[:4], "big") % len(_STUB_POOL)]
-        results.append(
-            ProposalResult(raw=smi, smiles=smi, tokens_in=0, tokens_out=0, cost_usd=0.0)
-        )
+        results.append(ProposalResult(raw=smi, smiles=smi, tokens_in=0, tokens_out=0, cost_usd=0.0))
     return results
 
 
 # --- public API -------------------------------------------------------------
+
 
 async def propose_batch_async(
     prompt: str, n: int, *, temperature: float = 0.7, seed: int = 0
@@ -114,12 +117,11 @@ async def propose_batch_async(
         return _stub_propose(prompt, n, temperature=temperature, seed=seed)
     if backend == "modal":
         return await _modal_propose(prompt, n, temperature=temperature, seed=seed)
-    raise ValueError(
-        f"Set CAPYCHEM_PROPOSER_BACKEND to 'stub' or 'modal' (got {backend!r})"
-    )
+    raise ValueError(f"Set CAPYCHEM_PROPOSER_BACKEND to 'stub' or 'modal' (got {backend!r})")
 
 
 # --- modal backend (DeepSeek via the worker) --------------------------------
+
 
 def _modal_propose_fn() -> Any:
     """Look up the deployed Modal worker ``propose`` function. Imported lazily so

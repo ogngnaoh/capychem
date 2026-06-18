@@ -51,8 +51,7 @@ async def test_modal_backend_maps_tokens_to_cost(monkeypatch):
     class FakeRemote:
         async def aio(self, *, prompt, n, temperature, seed, model):
             return [
-                {"raw": "```\nCCO\n```", "tokens_in": 1000, "tokens_out": 500}
-                for _ in range(n)
+                {"raw": "```\nCCO\n```", "tokens_in": 1000, "tokens_out": 500} for _ in range(n)
             ]
 
     class FakeFn:
