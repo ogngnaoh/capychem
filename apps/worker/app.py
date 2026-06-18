@@ -41,6 +41,10 @@ image = (
     .add_local_dir("harness/capychem_harness", "/root/capychem_harness", copy=True)
 )
 
+# Lightweight image for the LLM proposer (NOT the harness env). Modern Python +
+# a single HTTP client; the DeepSeek API key arrives via a Modal secret.
+llm_image = modal.Image.debian_slim(python_version="3.12").pip_install("requests==2.34.2")
+
 app = modal.App("capychem-worker")
 
 
@@ -74,9 +78,68 @@ def score(smiles: list[str], task: str) -> list[dict]:
     raise RuntimeError(f"harness returned no JSON (exit {proc.returncode}): {proc.stderr[-500:]}")
 
 
+@app.function(
+    image=llm_image,
+    timeout=300,
+    secrets=[modal.Secret.from_name("deepseek-api-key")],
+)
+def propose(prompt: str, n: int, temperature: float, seed: int, model: str) -> list[dict]:
+    """Propose n candidate completions via DeepSeek's OpenAI-compatible API.
+
+    Returns [{raw, tokens_in, tokens_out}] — raw completion text + per-choice
+    token usage. SMILES cleaning and USD cost are computed modern-side in
+    capychem.proposer. The DEEPSEEK_API_KEY env var is injected by the Modal
+    secret; never hard-code or commit it."""
+    import os
+
+    import requests
+
+    resp = requests.post(
+        "https://api.deepseek.com/chat/completions",
+        headers={"Authorization": f"Bearer {os.environ['DEEPSEEK_API_KEY']}"},
+        json={
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": temperature,
+            "seed": seed,
+            "n": n,
+        },
+        timeout=240,
+    )
+    resp.raise_for_status()
+    body = resp.json()
+    choices = body["choices"]
+    usage = body.get("usage", {})
+    # Usage is reported per request; attribute evenly across the n choices.
+    per_in = usage.get("prompt_tokens", 0) // max(len(choices), 1)
+    per_out = usage.get("completion_tokens", 0) // max(len(choices), 1)
+    return [
+        {
+            "raw": choice["message"]["content"],
+            "tokens_in": per_in,
+            "tokens_out": per_out,
+        }
+        for choice in choices
+    ]
+
+
 @app.local_entrypoint()
 def smoke() -> None:
     """`modal run apps/worker/app.py` — scores two molecules end to end."""
     out = score.remote(["CCO", "c1ccccc1"], "qed")
     print(out)
     assert len(out) == 2 and all("score" in r for r in out)
+
+
+@app.local_entrypoint()
+def propose_smoke() -> None:
+    """`modal run apps/worker/app.py::propose_smoke` — one real DeepSeek call."""
+    rows = propose.remote(
+        prompt="Propose one drug-like molecule. Output only its SMILES string.",
+        n=2,
+        temperature=0.7,
+        seed=0,
+        model="deepseek-v4-pro",
+    )
+    print(rows)
+    assert len(rows) == 2 and all("raw" in r and "tokens_in" in r for r in rows)
