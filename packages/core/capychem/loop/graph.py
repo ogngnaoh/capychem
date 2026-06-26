@@ -18,7 +18,6 @@ from capychem.loop.logic import (
     build_summary,
     merge_and_truncate,
     stop_reason,
-    trim_to_budget,
 )
 from capychem.loop.seeds import load_starting_pop as _load_starting_pop
 from capychem.loop.state import LoopState, Scored
@@ -122,18 +121,26 @@ async def score(state: LoopState) -> dict[str, Any]:
         parent_observation_id=state.get("gen_span_id"),
     ):
         candidates = [*state["validated"], *state.get("_fallback_validated", [])]
-        batch = trim_to_budget(candidates, budget=state["budget"], calls_used=state["calls_used"])
+        buffer = state.get("mol_buffer", set())
+        # Cross-generation memoization (slice 05): a molecule a prior generation
+        # already scored is a cache hit — not re-scored, not counted, not persisted.
+        # The budget counts UNIQUE oracle calls (FR-002), unifying with eval/runner.py.
+        unseen = [c for c in candidates if c.smiles not in buffer]
+        room = max(state["budget"] - len(buffer), 0)  # remaining unique headroom
+        batch = unseen[:room]
         if not batch:
-            return {"_scored": [], "calls_used": state["calls_used"]}
+            return {"_scored": [], "calls_used": len(buffer), "mol_buffer": buffer}
         results = await score_batch_async([c.smiles for c in batch], task=state["task"])
         scored = [
             (c, r.score, r.cost_usd)
             for c, r in zip(batch, results, strict=True)
             if r.valid and r.score is not None
         ]
+        new_buffer = buffer | {c.smiles for c, _, _ in scored}
         return {
             "_scored": scored,
-            "calls_used": state["calls_used"] + len(scored),
+            "calls_used": len(new_buffer),
+            "mol_buffer": new_buffer,
         }
 
 

@@ -35,6 +35,7 @@ class LoopState(TypedDict, total=False):
     mutation_strategy: str
     # progress
     calls_used: int
+    mol_buffer: set[str]  # canonical SMILES already scored — unique-call budget memo (slice 05)
     gen_index: int
     population: list[Scored]  # survivor pool, kept at pop_size
     # langfuse ids threaded for nesting across async nodes:
