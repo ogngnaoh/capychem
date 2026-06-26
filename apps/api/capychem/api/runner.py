@@ -177,10 +177,15 @@ class RunRegistry:
                     handle.snapshot = _snapshot_from_state(handle.run_id, cfg, state)
                     snap = handle.snapshot
                     # Aggregate the run's oracle cost from persisted OracleCalls and
-                    # upsert the RunCost row (record_oracle_cost commits internally).
+                    # the cumulative LLM proposer cost from loop state; upsert RunCost
+                    # so total_usd = oracle + llm (record_oracle_cost commits internally).
                     async with self._sm() as session:
-                        total = await cost.oracle_cost_so_far(session, handle.run_id)
-                        await cost.record_oracle_cost(session, handle.run_id, total)
+                        oracle = await cost.oracle_cost_so_far(session, handle.run_id)
+                        llm = state.get("llm_cost_usd", 0.0)
+                        row = await cost.record_oracle_cost(
+                            session, handle.run_id, oracle, llm_usd=llm
+                        )
+                        total = row.total_usd
                     snap["cost_so_far_usd"] = total
                     handle.broadcast(
                         GenerationCompleteEvent(

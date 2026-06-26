@@ -49,3 +49,51 @@ async def test_cost_cap_trips_cost_capped(sm, monkeypatch) -> None:  # type: ign
         rc = await session.scalar(select(RunCost).where(RunCost.run_id == run_id))
     assert run is not None and run.status == "cost_capped"
     assert rc is not None and rc.total_usd == pytest.approx(999.0)
+
+
+async def test_cost_cap_trips_on_llm_spend_alone(sm, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    # Oracle cost is 0 (fake scorer); the LLM proposals carry a large cost, so the
+    # gate must trip on total_usd = oracle + llm (slice 05).
+    from capychem.loop import graph as graph_mod
+    from capychem.loop import strategy
+    from capychem.oracle import OracleResult
+    from capychem.proposer import ProposalResult
+
+    async def fake_llm(task, population, *, n, seed):
+        return [
+            ProposalResult(
+                raw="C" * (i + 1), smiles="C" * (i + 1),
+                tokens_in=1000, tokens_out=1000, cost_usd=100.0,
+            )
+            for i in range(n)
+        ]
+
+    async def fake_score(smiles, task):
+        return [
+            OracleResult(smiles=s, score=0.5, valid=True, wall_ms=0, cost_usd=0.0)
+            for s in smiles
+        ]
+
+    monkeypatch.setattr(strategy, "propose_llm_async", fake_llm)
+    monkeypatch.setattr(graph_mod, "score_batch_async", fake_score)
+
+    registry = RunRegistry(sm)
+    cfg = RunConfig(
+        task="qed", budget=20, seed=42, pop_size=6, offspring=6,
+        mutation_rate=0.01, plateau_window=3, max_generations=5,
+        mutation_strategy="llm",
+    )
+    run_id = await registry.start_run(cfg)
+    handle = registry._runs[run_id]
+    await handle.task
+
+    assert handle.terminal_event is not None
+    assert handle.terminal_event["status"] == "cost_capped"
+    async with sm() as session:
+        run = await session.get(Run, run_id)
+        rc = await session.scalar(select(RunCost).where(RunCost.run_id == run_id))
+    assert run is not None and run.status == "cost_capped"
+    assert rc is not None
+    assert rc.oracle_cost_usd == pytest.approx(0.0)
+    assert rc.llm_cost_usd >= 50.0                    # gen-1 LLM spend alone exceeds the $50 cap
+    assert rc.total_usd == pytest.approx(rc.llm_cost_usd)
