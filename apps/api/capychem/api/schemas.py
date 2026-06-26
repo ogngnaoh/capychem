@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 
 class CreateRunRequest(BaseModel):
-    task: Literal["qed"] = "qed"
+    task: Literal["qed", "jnk3"] = "qed"
     budget: int = Field(gt=0)  # FR-015
     seed: int = 42
     pop_size: int = Field(default=100, gt=1)  # crossover needs two parents
