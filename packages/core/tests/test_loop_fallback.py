@@ -43,13 +43,24 @@ async def test_fallback_backfills_gap_for_llm(monkeypatch) -> None:
 
 async def test_fallback_is_noop_for_graph_ga() -> None:
     out = await graph_mod.fallback(_state("graph_ga", [ValidCandidate("CCC", (0, 1))]))  # type: ignore[arg-type]
-    assert out == {}
+    assert out == {"_fallback_validated": []}
 
 
 async def test_fallback_is_noop_when_llm_batch_full(monkeypatch) -> None:
     full = [ValidCandidate(f"C{'C' * i}", None, "llm") for i in range(4)]
     out = await graph_mod.fallback(_state("llm", full))  # type: ignore[arg-type]
-    assert out == {}
+    assert out == {"_fallback_validated": []}
+
+
+async def test_fallback_noop_clears_stale_fallback_validated() -> None:
+    # A prior LLM generation set _fallback_validated; this generation is a full
+    # LLM batch (no gap), so fallback no-ops. The no-op MUST reset the key — else
+    # the next score node re-scores the stale fillers from the prior generation.
+    full = [ValidCandidate(f"C{'C' * i}", None, "llm") for i in range(4)]
+    state = _state("llm", full)
+    state["_fallback_validated"] = [ValidCandidate("CCC", (0, 1), "graph_ga")]  # stale
+    out = await graph_mod.fallback(state)  # type: ignore[arg-type]
+    assert out.get("_fallback_validated") == []
 
 
 @pytest.fixture

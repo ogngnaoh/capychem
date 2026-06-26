@@ -100,7 +100,7 @@ async def fallback(state: LoopState) -> dict[str, Any]:
         parent_observation_id=state.get("gen_span_id"),
     ):
         if state.get("_proposer") != "llm":
-            return {}
+            return {"_fallback_validated": []}
         validated = state["validated"]
         pop = [(m.smiles, m.score) for m in state["population"]]
         fillers = strategy.fallback_fill(
@@ -111,7 +111,7 @@ async def fallback(state: LoopState) -> dict[str, Any]:
             seed=state["seed"] + state["gen_index"],
         )
         if not fillers:
-            return {}
+            return {"_fallback_validated": []}
         return {"_fallback_validated": fillers, "_proposer": "mixed"}
 
 
