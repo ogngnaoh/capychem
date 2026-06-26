@@ -96,3 +96,52 @@ async def test_runner_stop_halts_run() -> None:
     assert row is not None and row.status == "stopped"
     assert row.summary_json is not None and row.summary_json["top_k"]
     await engine.dispose()
+
+
+async def test_drive_threads_mutation_strategy_into_loop_state(monkeypatch) -> None:
+    """The background runner threads cfg.mutation_strategy into the initial LoopState.
+
+    Fast + isolated: a fake compiled graph captures the initial state and completes
+    immediately, so no real loop, Postgres, or harness scoring is exercised.
+    """
+    import asyncio
+
+    from capychem.api import runner as runner_mod
+    from capychem.db.models import Base
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    sm = async_sessionmaker(engine, expire_on_commit=False)
+
+    captured: dict[str, Any] = {}
+
+    class FakeGraph:
+        async def astream(self, initial, *, config, stream_mode):  # type: ignore[no-untyped-def]
+            captured.update(initial)
+            return
+            yield {}  # unreachable; makes astream an async generator
+
+    monkeypatch.setattr(runner_mod, "build_graph", lambda sm_: FakeGraph())
+
+    reg = RunRegistry(sm)
+    run_id = await reg.start_run(
+        RunConfig(
+            task="qed",
+            budget=10,
+            seed=1,
+            pop_size=4,
+            offspring=4,
+            mutation_rate=0.01,
+            plateau_window=2,
+            max_generations=1,
+            mutation_strategy="llm",
+        )
+    )
+    queue = reg.subscribe(run_id)
+    async with asyncio.timeout(10):
+        while (await queue.get())["type"] != "run.complete":
+            pass
+    assert captured["mutation_strategy"] == "llm"
+    await engine.dispose()
