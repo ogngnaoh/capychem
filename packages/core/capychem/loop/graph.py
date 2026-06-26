@@ -81,8 +81,8 @@ async def validate(state: LoopState) -> dict[str, Any]:
         parent_observation_id=state.get("gen_span_id"),
     ):
         validated, stats = validate_batch_with_stats(state["proposed"])
-        proposer = state.get("_proposer", "graph_ga")
-        validated = [replace(vc, proposer=proposer) for vc in validated]
+        proposer_label = state.get("_proposer", "graph_ga")
+        validated = [replace(vc, proposer=proposer_label) for vc in validated]
         prev = state.get("_validation_stats", {"proposed": 0, "valid": 0})
         return {
             "validated": validated,
@@ -122,9 +122,7 @@ async def score(state: LoopState) -> dict[str, Any]:
         parent_observation_id=state.get("gen_span_id"),
     ):
         candidates = [*state["validated"], *state.get("_fallback_validated", [])]
-        batch = trim_to_budget(
-            candidates, budget=state["budget"], calls_used=state["calls_used"]
-        )
+        batch = trim_to_budget(candidates, budget=state["budget"], calls_used=state["calls_used"])
         if not batch:
             return {"_scored": [], "calls_used": state["calls_used"]}
         results = await score_batch_async([c.smiles for c in batch], task=state["task"])
