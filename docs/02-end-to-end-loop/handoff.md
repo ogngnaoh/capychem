@@ -4,7 +4,7 @@
 
 - **Closed slice 03's real-API smoke (T6).** With a funded DeepSeek key, ran the `direct` backend
   end-to-end: 2 distinct, RDKit-valid SMILES + real per-request token counts + cost.
-- **Fixed two bugs the real call surfaced** (branch `slice03-direct-proposer-n1-fanout`, TDD):
+- **Fixed two bugs the real call surfaced** (commit `8928f59`, TDD):
   1. **DeepSeek caps `n=1` per request** (`400 Invalid n value`) — `_direct_propose` now fans out
      **n concurrent single-choice requests**, each with a per-index seed (`seed+i`, G6-friendly) and its
      own token usage. No `n` in the payload; `_one_proposal_row` is the per-request unit.
@@ -28,7 +28,7 @@ Build order: `01 ∥ 02 ∥ 03 → 04 → 05 → 06`.
 
 ## Current state
 
-- Fix on branch `slice03-direct-proposer-n1-fanout` (merge to `main` + push when ready).
+- Slice 03 closure merged to `main` + pushed — commit `8928f59` (working tree clean).
 - `direct` proposer is the real path (no Modal). Real runs need: `CAPYCHEM_PROPOSER_BACKEND=direct` +
   funded `DEEPSEEK_API_KEY` (in `.env.local`); model defaults to `deepseek-v4-pro` (no override).
   `.env.local`'s default backend stays `stub` (slice 04 dev needs no key).
@@ -63,4 +63,4 @@ dependency-free and can slot in anytime. Kickoff prompt saved in the vault
 - 2026-06-18 — Slice 03 shipped (code; real-API smoke pending). Subagent-driven TDD; pytest 71; merged+pushed.
 - 2026-06-19 — Slice 03 follow-up: Modal-free `direct` DeepSeek backend; pytest 73; commit `90d2b9c`.
 - 2026-06-26 — **Slice 03 fully closed:** real-API smoke confirmed on the default `deepseek-v4-pro`;
-  `n=1` fan-out + error-hardening fix (branch `slice03-direct-proposer-n1-fanout`); pytest 75.
+  `n=1` fan-out + error-hardening fix (commit `8928f59`); pytest 75.
