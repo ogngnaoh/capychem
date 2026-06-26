@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from capychem.loop.logic import merge_and_truncate
 from capychem.loop.seeds import load_starting_pop as starting_population  # pure file read
 from capychem.loop.state import Scored
+from capychem.loop.strategy import fallback_fill, propose_llm_sync
 from capychem.oracle import propose_offspring, score_smiles
 from capychem.validate import validate_batch
 
@@ -44,6 +45,7 @@ def run_reproduction(
     mutation_rate: float = 0.067,
     patience: int = 5,
     freq_log: int = 100,
+    mutation_strategy: str = "graph_ga",
 ) -> ReproResult:
     mol_buffer: dict[str, tuple[float, int]] = {}
 
@@ -76,13 +78,23 @@ def run_reproduction(
 
     # --- generations 1..N ---
     while len(mol_buffer) < budget:
-        offs = propose_offspring(
-            [(s.smiles, s.score) for s in population],
-            offspring,
-            mutation_rate=mutation_rate,
-            seed=seed + generations,
-        )
-        valid = validate_batch([(o.smiles, o.parents) for o in offs])
+        pop_pairs = [(s.smiles, s.score) for s in population]
+        if mutation_strategy == "llm":
+            results = propose_llm_sync(task, pop_pairs, n=offspring, seed=seed + generations)
+            valid_llm = validate_batch([(r.smiles, None) for r in results])
+            fillers = fallback_fill(
+                valid_llm, pop_pairs, target=offspring,
+                mutation_rate=mutation_rate, seed=seed + generations,
+            )
+            valid = [*valid_llm, *fillers]
+        else:
+            offs = propose_offspring(
+                pop_pairs,
+                offspring,
+                mutation_rate=mutation_rate,
+                seed=seed + generations,
+            )
+            valid = validate_batch([(o.smiles, o.parents) for o in offs])
         new_scored = score_unique([c.smiles for c in valid])
         population = merge_and_truncate(population, _as_scored(new_scored), pop_size=pop_size)
         generations += 1

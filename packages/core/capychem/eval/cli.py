@@ -28,6 +28,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--pop-size", type=int, default=120)
     p.add_argument("--offspring", type=int, default=70)
     p.add_argument("--mutation-rate", type=float, default=0.067)
+    p.add_argument("--mutation-strategy", choices=["graph_ga", "llm"], default="graph_ga")
     args = p.parse_args(argv)
 
     t0 = time.monotonic()
@@ -38,6 +39,7 @@ def main(argv: list[str] | None = None) -> int:
         pop_size=args.pop_size,
         offspring=args.offspring,
         mutation_rate=args.mutation_rate,
+        mutation_strategy=args.mutation_strategy,
     )
     auc = top_auc(res.mol_buffer, top_n=10, finish=True, freq_log=100, max_oracle_calls=args.budget)
     wall = time.monotonic() - t0

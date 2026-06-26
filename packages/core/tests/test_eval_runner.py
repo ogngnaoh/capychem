@@ -76,3 +76,29 @@ def test_smoke_real_harness_unique_budget(harness: None) -> None:
     # determinism: same seed -> same buffer keys
     res2 = run_reproduction("qed", budget=200, seed=42, pop_size=20, offspring=10)
     assert set(res.mol_buffer) == set(res2.mol_buffer)
+
+
+def test_llm_strategy_runs_to_budget_on_stub(monkeypatch: pytest.MonkeyPatch) -> None:
+    # LLM path, harness-free: stub the LLM proposer + the oracle; no fallback fires
+    # because the LLM returns valid SMILES.
+    from capychem.eval import runner as runner_mod
+    from capychem.oracle import OracleResult
+    from capychem.proposer import ProposalResult
+
+    pool = ["CCO", "c1ccccc1", "CCN", "CCC", "CCCC"]
+
+    def fake_llm_sync(task, population, *, n, seed):
+        return [ProposalResult(raw=pool[i % len(pool)], smiles=pool[i % len(pool)],
+                               tokens_in=0, tokens_out=0) for i in range(n)]
+
+    def fake_score(smiles, task, **kw):
+        return [OracleResult(smiles=s, score=0.5, valid=True, wall_ms=1) for s in smiles]
+
+    monkeypatch.setattr(runner_mod, "propose_llm_sync", fake_llm_sync)
+    monkeypatch.setattr(runner_mod, "score_smiles", fake_score)
+    monkeypatch.setattr(runner_mod, "starting_population", lambda n: pool[:n])
+
+    res = run_reproduction("qed", budget=5, seed=42, pop_size=3, offspring=4,
+                           patience=2, mutation_strategy="llm")
+    assert res.unique_calls == len(res.mol_buffer)
+    assert res.mol_buffer  # produced + scored candidates via the LLM path
