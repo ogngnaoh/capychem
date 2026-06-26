@@ -159,3 +159,40 @@ def test_end_all_gen_spans_is_safe_when_disabled(monkeypatch: pytest.MonkeyPatch
     for k in ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY"):
         monkeypatch.delenv(k, raising=False)
     trace.end_all_gen_spans(999)  # no keys, empty registry: must not raise
+
+
+def test_update_span_is_noop_when_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    for k in ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY"):
+        monkeypatch.delenv(k, raising=False)
+    trace.update_span("anything", cost_usd=1.0)  # must not raise
+
+
+def test_update_span_forwards_metadata_to_live_span(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk")
+    monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk")
+    updates: list[dict[str, object]] = []
+
+    class _Span:
+        id = "span-up"
+
+        def update(self, **kw: object) -> None:
+            updates.append(kw)
+
+        def end(self) -> None: ...
+
+    class _Client:
+        def span(self, **kw: object) -> _Span:
+            return _Span()
+
+    monkeypatch.setattr(trace, "_get_client", lambda: _Client())
+    with trace.span("llm:propose", trace_id="t") as sid:
+        assert sid == "span-up"
+        trace.update_span(sid, tokens_in=10, cost_usd=0.5)
+    assert updates == [{"metadata": {"tokens_in": 10, "cost_usd": 0.5}}]
+    assert trace._live_spans == {}  # de-registered on context exit
+
+
+def test_update_span_noop_for_unknown_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk")
+    monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk")
+    trace.update_span("never-registered", cost_usd=1.0)  # must not raise

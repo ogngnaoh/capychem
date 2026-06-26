@@ -47,6 +47,11 @@ def trace_run(run_id: int, task: str) -> str | None:
         return None
 
 
+# Live span handles created by ``span()``, keyed by span id, so post-await
+# metadata (token/cost) can be attached via ``update_span`` before the span ends.
+_live_spans: dict[str, Any] = {}
+
+
 @contextmanager
 def span(
     name: str,
@@ -74,14 +79,36 @@ def span(
         )
     except Exception:  # noqa: BLE001 - tracing must never break the loop
         sp = None
+    span_id = str(sp.id) if sp is not None else None
+    if sp is not None and span_id is not None:
+        _live_spans[span_id] = sp
     try:
-        yield str(sp.id) if sp is not None else None
+        yield span_id
     finally:
+        if span_id is not None:
+            _live_spans.pop(span_id, None)
         if sp is not None:
             try:
                 sp.end()
             except Exception:  # noqa: BLE001
                 pass
+
+
+def update_span(span_id: str | None, **metadata: Any) -> None:
+    """Attach metadata to a still-open span created by ``span()``.
+
+    No-op when Langfuse is disabled, when ``span_id`` is None, or when the span is
+    no longer live (already exited). Never raises — tracing must not break the loop.
+    """
+    if not is_enabled() or span_id is None:
+        return
+    sp = _live_spans.get(span_id)
+    if sp is None:
+        return
+    try:
+        sp.update(metadata=metadata)
+    except Exception:  # noqa: BLE001 - tracing must never break the loop
+        pass
 
 
 # Live generation-span handles, keyed by (run_id, gen_index). The five LangGraph
