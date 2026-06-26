@@ -31,6 +31,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--mutation-rate", type=float, default=0.01)
     p.add_argument("--plateau-window", type=int, default=5)
     p.add_argument("--max-generations", type=int, default=100)
+    p.add_argument("--mutation-strategy", choices=["graph_ga", "llm"], default="graph_ga")
     args = p.parse_args(argv)
     if args.budget <= 0:
         p.error("--budget must be a positive integer")  # FR-015
@@ -53,6 +54,7 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
         mutation_rate=args.mutation_rate,
         plateau_window=args.plateau_window,
         max_generations=args.max_generations,
+        mutation_strategy=args.mutation_strategy,
     )
     async with sessionmaker() as session:
         run_id = await create_run(session, cfg)
@@ -70,6 +72,7 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
         "mutation_rate": args.mutation_rate,
         "plateau_window": args.plateau_window,
         "max_generations": args.max_generations,
+        "mutation_strategy": args.mutation_strategy,
         "calls_used": 0,
         "gen_index": 0,
         "population": [],

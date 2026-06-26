@@ -23,6 +23,7 @@ class RunConfig:
     mutation_rate: float
     plateau_window: int
     max_generations: int
+    mutation_strategy: str = "graph_ga"
 
 
 async def create_run(session: AsyncSession, config: RunConfig) -> int:
@@ -30,7 +31,7 @@ async def create_run(session: AsyncSession, config: RunConfig) -> int:
     row = Run(
         task=config.task,
         budget=config.budget,
-        mutation_strategy="graph_ga",
+        mutation_strategy=config.mutation_strategy,
         plateau_window=config.plateau_window,
         pop_size=config.pop_size,
         offspring=config.offspring,

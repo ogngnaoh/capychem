@@ -38,6 +38,7 @@ async def create_run_endpoint(body: CreateRunRequest, request: Request) -> dict[
         mutation_rate=body.mutation_rate,
         plateau_window=body.plateau_window,
         max_generations=body.max_generations,
+        mutation_strategy=body.mutation_strategy,
     )
     run_id = await registry_of(request).start_run(cfg)
     return {"run_id": run_id, "status": "running"}

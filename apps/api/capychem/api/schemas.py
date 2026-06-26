@@ -16,6 +16,7 @@ class CreateRunRequest(BaseModel):
     mutation_rate: float = Field(default=0.01, gt=0, le=1)
     plateau_window: int = Field(default=5, gt=0)
     max_generations: int = Field(default=100, gt=0)
+    mutation_strategy: Literal["graph_ga", "llm"] = "graph_ga"
 
 
 class TopMolecule(BaseModel):

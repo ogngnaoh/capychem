@@ -145,6 +145,7 @@ class RunRegistry:
             "mutation_rate": cfg.mutation_rate,
             "plateau_window": cfg.plateau_window,
             "max_generations": cfg.max_generations,
+            "mutation_strategy": cfg.mutation_strategy,
             "calls_used": 0,
             "gen_index": 0,
             "population": [],

@@ -32,6 +32,7 @@ class LoopState(TypedDict, total=False):
     mutation_rate: float
     plateau_window: int
     max_generations: int
+    mutation_strategy: str
     # progress
     calls_used: int
     gen_index: int
@@ -50,6 +51,7 @@ class LoopState(TypedDict, total=False):
     _proposer: str
     _scored: list[tuple[ValidCandidate, float, float]]  # (candidate, score, cost_usd)
     _made_progress: bool
+    _fallback_validated: list[ValidCandidate]  # GA fallback fillers (slice 04)
     auc_curve: list[tuple[int, float]]
     done: bool
     stop_reason: str | None
