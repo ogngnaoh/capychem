@@ -21,7 +21,9 @@ export type CreateRunBody = {
   pop_size: number;
   offspring: number;
   mutation_rate: number;
+  plateau_window: number;
   max_generations: number;
+  mutation_strategy: string;
 };
 
 export async function createRun(
