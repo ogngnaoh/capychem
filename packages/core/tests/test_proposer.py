@@ -80,29 +80,78 @@ async def test_modal_malformed_row_raises(monkeypatch):
         await propose_batch_async("p", 1)
 
 
-async def test_direct_backend_maps_response_and_cost(monkeypatch):
+async def test_direct_backend_fans_out_one_request_per_proposal(monkeypatch):
+    # DeepSeek caps n=1 per request, so n proposals == n single-choice requests,
+    # each carrying a per-index seed (seed+i) and its own token usage.
     monkeypatch.setenv("CAPYCHEM_PROPOSER_BACKEND", "direct")
     monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
     monkeypatch.setenv("CAPYCHEM_LLM_USD_PER_1K_IN", "0.001")
     monkeypatch.setenv("CAPYCHEM_LLM_USD_PER_1K_OUT", "0.002")
 
+    calls = []
+
     async def fake_chat(payload, *, api_key):
         assert api_key == "sk-test"
-        assert payload["n"] == 2
+        calls.append(payload)
+        seed = payload["seed"]
         return {
-            "choices": [
-                {"message": {"content": "```\nCCO\n```"}},
-                {"message": {"content": "c1ccccc1"}},
-            ],
-            "usage": {"prompt_tokens": 2000, "completion_tokens": 1000},
+            "choices": [{"message": {"content": f"CCO{seed}"}}],
+            "usage": {"prompt_tokens": 100, "completion_tokens": 50},
         }
 
     monkeypatch.setattr(proposer, "_deepseek_chat", fake_chat)
-    out = await propose_batch_async("prompt", 2, temperature=0.0, seed=7)
-    assert [r.smiles for r in out] == ["CCO", "c1ccccc1"]
-    # per choice: prompt 2000//2=1000, completion 1000//2=500
-    # 1000/1000*0.001 + 500/1000*0.002 = 0.002
-    assert out[0].cost_usd == pytest.approx(0.002)
+    out = await propose_batch_async("prompt", 3, temperature=0.0, seed=7)
+
+    # one request per proposal, none asking for n>1
+    assert len(calls) == 3
+    assert all(c.get("n", 1) == 1 for c in calls)
+    # per-index seed derivation: seed, seed+1, seed+2
+    assert {c["seed"] for c in calls} == {7, 8, 9}
+    # results preserve request order and carry per-request usage (not divided)
+    assert [r.smiles for r in out] == ["CCO7", "CCO8", "CCO9"]
+    assert all(r.tokens_in == 100 and r.tokens_out == 50 for r in out)
+    # 100/1000*0.001 + 50/1000*0.002 = 0.0002
+    assert out[0].cost_usd == pytest.approx(0.0002)
+
+
+async def test_direct_backend_http_error_raises_proposer_error(monkeypatch):
+    # A 4xx/5xx must surface as a clean ProposerError that includes the API's
+    # response body (e.g. DeepSeek's "Invalid n value" message), not a raw httpx error.
+    monkeypatch.setenv("CAPYCHEM_PROPOSER_BACKEND", "direct")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
+
+    class FakeResp:
+        status_code = 400
+        text = '{"error":{"message":"Invalid n value (currently only n = 1 is supported)"}}'
+
+        def json(self):
+            raise AssertionError("must not parse body on HTTP error")
+
+    async def fake_post(payload, *, api_key):
+        return FakeResp()
+
+    monkeypatch.setattr(proposer, "_post_deepseek", fake_post)
+    with pytest.raises(ProposerError, match="Invalid n value"):
+        await propose_batch_async("p", 2)
+
+
+async def test_direct_backend_non_json_body_raises_proposer_error(monkeypatch):
+    monkeypatch.setenv("CAPYCHEM_PROPOSER_BACKEND", "direct")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
+
+    class FakeResp:
+        status_code = 200
+        text = "<html>gateway timeout</html>"
+
+        def json(self):
+            raise ValueError("not json")
+
+    async def fake_post(payload, *, api_key):
+        return FakeResp()
+
+    monkeypatch.setattr(proposer, "_post_deepseek", fake_post)
+    with pytest.raises(ProposerError, match="non-JSON"):
+        await propose_batch_async("p", 1)
 
 
 async def test_direct_backend_missing_key_raises(monkeypatch):

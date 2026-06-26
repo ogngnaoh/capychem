@@ -1,31 +1,26 @@
-# Handoff — 02-end-to-end-loop (slice 03 shipped — real-API smoke pending)
+# Handoff — 02-end-to-end-loop (slice 03 fully closed; next = slice 04)
 
 ## Completed this session
 
-- **Milestone 02 scoped** via an agent-team planning run (3 read-only dimension planners —
-  agent-loop / backend / eval-web — + an adversarial verifier; 2 rounds; clean SIGN-OFF).
-- Synthesized `docs/02-end-to-end-loop/milestone.md` + this handoff. User decisions locked:
-  **task = jnk3**; **baseline = our own same-seed Graph-GA control**; **G6 honored for the LLM path**
-  (pinned temp/seed + abstraction reachable from product loop *and* headless eval); **plateau-stop
-  included** in m02 (the 6th slice).
-- **Slice 03 `modal-llm-propose-endpoint` SHIPPED (code; real-API smoke pending):** brainstorm →
-  design spec → implementation plan (6 TDD tasks) → slice doc → subagent-driven implementation (per-unit
-  spec + code-quality reviews, all approved; final holistic review READY TO MERGE) → merged to `main`
-  and **pushed to origin** (`5f50e03..09cbb0e`). Code commits `d6a4a41` · `d628b04` · `74a7246`
-  (proposer.py adapter) · `5af173d` (worker `propose()`) · `09cbb0e` (ruff format). Planning docs
-  `9f6977b` (spec) · `4d341e7` (plan + slice doc).
-  - **Gate green (real output):** `pytest` 71 passed · `mypy` clean (29 files) · `ruff check` clean ·
-    `ruff format` applied to the 2 new files (7 pre-existing unformatted files left untouched).
-  - **Outstanding:** Task 6 (one-time real DeepSeek API smoke) — needs a `deepseek-api-key` Modal secret
-    + `modal run apps/worker/app.py::propose_smoke`. The real path is NOT yet proven; CI runs the stub.
-  - Decisions: wrap DeepSeek API in Modal (GPU swap designed-for); SMILES cleaning + cost modern-side.
+- **Closed slice 03's real-API smoke (T6).** With a funded DeepSeek key, ran the `direct` backend
+  end-to-end: 2 distinct, RDKit-valid SMILES + real per-request token counts + cost.
+- **Fixed two bugs the real call surfaced** (branch `slice03-direct-proposer-n1-fanout`, TDD):
+  1. **DeepSeek caps `n=1` per request** (`400 Invalid n value`) — `_direct_propose` now fans out
+     **n concurrent single-choice requests**, each with a per-index seed (`seed+i`, G6-friendly) and its
+     own token usage. No `n` in the payload; `_one_proposal_row` is the per-request unit.
+  2. **Error hardening** (the previously-deferred item) — `_deepseek_chat` maps HTTP / non-JSON errors to
+     a clean `ProposerError` that surfaces the response body; new `_post_deepseek` is the network seam.
+- **Model id confirmed:** `deepseek-v4-pro` **is** live (`GET /models` lists `deepseek-v4-pro` +
+  `deepseek-v4-flash`) and is the code default — real runs need **no** `CAPYCHEM_LLM_MODEL` override.
+  (`deepseek-chat` aliases to the *flash* model, so pin the explicit `deepseek-v4-pro` id.)
+- Gate green: pytest **75 passed**, mypy clean (29 files), ruff clean.
 
 ## Slice status across milestone
 
 - `01-launch-and-watch-jnk3` → planned
 - `02-plateau-stop-and-signal` → planned
-- `03-modal-llm-propose-endpoint` → shipped (code + stub-verified; real-API smoke pending) — frozen
-- `04-llm-proposer-with-ga-fallback` → planned
+- `03-modal-llm-propose-endpoint` → **shipped + real-API confirmed — frozen**
+- `04-llm-proposer-with-ga-fallback` → planned (next)
 - `05-unique-call-budget-and-cost-ledger` → planned
 - `06-beat-graph-ga-on-jnk3` → planned
 
@@ -33,54 +28,39 @@ Build order: `01 ∥ 02 ∥ 03 → 04 → 05 → 06`.
 
 ## Current state
 
-- `main` clean and **pushed to `origin/main`**. Slice 03 code lives in
-  `packages/core/capychem/proposer.py` (+ `tests/test_proposer.py`) and `apps/worker/app.py` (`propose()`).
-- Proposer has **three backends** via `CAPYCHEM_PROPOSER_BACKEND`: `stub` (default, deterministic,
-  no network) · `modal` (DeepSeek via the worker) · `direct` (DeepSeek via local `httpx`, **no Modal** —
-  added because Modal is unavailable). Other knobs: `CAPYCHEM_LLM_USD_PER_1K_IN`/`_OUT`, `CAPYCHEM_LLM_MODEL`
-  (default `deepseek-v4-pro`). The real path needs a `DEEPSEEK_API_KEY` (operator key not yet created);
-  Modal is NOT required.
-- Carried infra (from milestone 01): Langfuse v2 on `:3001`, Postgres on `:5432`, `CAPYCHEM_ORACLE_BACKEND`
-  unset (local harness). Eval authority is `packages/core/capychem/eval/`.
+- Fix on branch `slice03-direct-proposer-n1-fanout` (merge to `main` + push when ready).
+- `direct` proposer is the real path (no Modal). Real runs need: `CAPYCHEM_PROPOSER_BACKEND=direct` +
+  funded `DEEPSEEK_API_KEY` (in `.env.local`); model defaults to `deepseek-v4-pro` (no override).
+  `.env.local`'s default backend stays `stub` (slice 04 dev needs no key).
+- Carried infra (m01): Langfuse v2 :3001, Postgres :5432, `CAPYCHEM_ORACLE_BACKEND` unset (local harness).
+  Eval authority: `packages/core/capychem/eval/`.
 
 ## Next session start here
 
-Two threads, in priority order:
-1. **Close slice 03's real-API smoke (Task 6, manual — Modal-free):** create a DeepSeek key at
-   platform.deepseek.com, then `export DEEPSEEK_API_KEY=<key> CAPYCHEM_PROPOSER_BACKEND=direct` and call
-   `propose_batch_async("Propose one drug-like SMILES. Output only the SMILES.", 2, temperature=0.7, seed=0)`
-   (e.g. via `uv run python -c`). Confirm SMILES + token counts + cost return. If `deepseek-v4-pro` 404s,
-   set `CAPYCHEM_LLM_MODEL` to a valid model; if DeepSeek rejects `n`/`seed`, adjust `_direct_propose`'s
-   payload. This retires the integration risk and fully closes 03.
-2. **Start slice 04 `llm-proposer-with-ga-fallback`** — the next critical-path slice (consumes the
-   proposer adapter). Begin with brainstorm → spec → plan. Slices 01 and 02 are dependency-free and can
-   slot in any time. A kickoff prompt for slice 04 is saved in the Obsidian vault (`prompts/`).
+**Start slice 04 `llm-proposer-with-ga-fallback`** — next critical-path slice (consumes the proposer
+adapter). Begin brainstorm → spec → plan; develops against the `stub` backend (no key). Slices 01 & 02 are
+dependency-free and can slot in anytime. Kickoff prompt saved in the vault
+(`prompts/handoff/2026-06-18-capychem-milestone-02-slice-04-llm-proposer-handoff.md`).
 
 ## Active concerns
 
 - **Slice 04 is the heaviest** (abstraction + dual-reachability + LLM wiring + GA fallback + pinned
-  determinism + valid-SMILES gate + spans). Watch its size during its session; if it exceeds 2 pages,
-  reconsider splitting (the verifier endorsed keeping it whole for now).
-- **Async/sync seam** (slice 04): async LLM client vs synchronous headless eval path — needs a sync
-  bridge or sync client path for G6 reproducibility.
+  determinism + valid-SMILES gate + spans). Watch size; split if >2 pages (verifier endorsed whole for now).
+- **Async/sync seam** (slice 04): async LLM client vs synchronous headless eval path — needs a sync bridge
+  for G6.
 - **`valid_smiles {proposed, valid, rate}`** is a frozen contract (slice 04 reads, never reshapes).
-- **Beat risk:** without the analyzer (m03), this is the MOLLEO-minus-analysis config; the LLM may not
-  beat Graph-GA on jnk3. That IS the week-7 kill-switch — on failure, narrow scope, don't abandon.
-- **`direct` backend hardening (deferred, non-blocking):** a malformed/error DeepSeek body (missing
-  `choices`, or an HTTP error) currently surfaces a raw `KeyError`/httpx error rather than a clean
-  `ProposerError`. Harden when slice 04/06 runs the real loop. Also: `deepseek-v4-pro` may not be a real
-  model id — `CAPYCHEM_LLM_MODEL` is env-configurable; first real call confirms.
-- **SPEC drift (note):** SPEC Alt D locked "Modal-served inference"; the `direct` backend is a conscious
-  re-decision forced by no-Modal access. Modal remains the optional scaling path; revisit the SPEC line
-  if Modal stays unavailable.
-- **Doc hygiene (non-blocking):** SPEC §9 Phase 2 prose says "first ≥6/23 … on a single task" — treat
-  as known-stale; m02's bar is ONE task.
+- **Beat risk:** without the analyzer (m03) this is MOLLEO-minus-analysis; the LLM may not beat Graph-GA on
+  jnk3 — that IS the week-7 kill-switch (narrow scope, don't abandon).
+- **Modal worker `propose()` has the identical `n=1` latent bug** — deliberately deferred (no Modal to
+  test); flagged in an `apps/worker/app.py` comment. Mirror the proposer fan-out if Modal returns.
+- **SPEC drift:** Alt D locked Modal-served inference; `direct` is a conscious no-Modal re-decision. Revisit
+  the SPEC line if Modal stays unavailable.
 
 ## Slice log
 
 - 2026-06-16 — Milestone 02 scoped (agent-team planning; 6 slices, clean verifier sign-off).
-- 2026-06-17 — Slice 03 design spec + implementation plan + slice doc written (pre-code).
-- 2026-06-18 — **Slice 03 shipped** (code; real-API smoke pending). Subagent-driven TDD, all reviews
-  approved; `pytest` 71 passed; merged + pushed `5f50e03..09cbb0e`.
-- 2026-06-19 — **Slice 03 follow-up:** added Modal-free `direct` DeepSeek backend (Modal unavailable);
-  `pytest` 73 passed, reviewed READY TO MERGE; commit `90d2b9c`. Real path now runs without Modal.
+- 2026-06-17 — Slice 03 design spec + implementation plan + slice doc (pre-code).
+- 2026-06-18 — Slice 03 shipped (code; real-API smoke pending). Subagent-driven TDD; pytest 71; merged+pushed.
+- 2026-06-19 — Slice 03 follow-up: Modal-free `direct` DeepSeek backend; pytest 73; commit `90d2b9c`.
+- 2026-06-26 — **Slice 03 fully closed:** real-API smoke confirmed on the default `deepseek-v4-pro`;
+  `n=1` fan-out + error-hardening fix (branch `slice03-direct-proposer-n1-fanout`); pytest 75.

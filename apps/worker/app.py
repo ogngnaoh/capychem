@@ -102,6 +102,8 @@ def propose(prompt: str, n: int, temperature: float, seed: int, model: str) -> l
             "messages": [{"role": "user", "content": prompt}],
             "temperature": temperature,
             "seed": seed,
+            # LATENT BUG (deferred, untestable without Modal): DeepSeek caps n=1 per request
+            # (400 "Invalid n value"). Mirror capychem.proposer's fan-out fix before using this.
             "n": n,
         },
         timeout=240,

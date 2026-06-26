@@ -34,8 +34,9 @@ integration risk.
 - [x] T3 — modal backend: token→USD cost + malformed handling (+ modal tests)
 - [x] T4 — Modal `propose()` worker function + `llm_image` + `propose_smoke`
 - [x] T5 — full quality gate (pytest 71 passed / mypy clean / ruff clean / format applied to new files)
-- [ ] T6 — one-time manual real-API smoke — **PENDING operator DeepSeek key**. Now runnable **without
-  Modal** via the `direct` backend (see Follow-up): `export DEEPSEEK_API_KEY=… CAPYCHEM_PROPOSER_BACKEND=direct`.
+- [x] T6 — one-time manual real-API smoke — **DONE (2026-06-26)** via the `direct` backend on the default
+  `deepseek-v4-pro`: returned 2 distinct, RDKit-valid SMILES with real per-request token counts + cost.
+  Surfaced (and fixed) the `n=1` constraint — see the 2026-06-26 follow-up.
 
 ## Follow-up — Modal-free `direct` backend (2026-06-19)
 
@@ -49,9 +50,30 @@ an optional future scaling path behind the same contract. **To run the real prop
 model id is env-configurable (`CAPYCHEM_LLM_MODEL`, default `deepseek-v4-pro`) — point it at a valid
 DeepSeek model if that id 404s.
 
-**Deferred (when slice 04/06 runs the real loop):** harden `direct` so a malformed/error DeepSeek body
+**Deferred (when slice 04/06 runs the real loop):** ~~harden `direct` so a malformed/error DeepSeek body
 (missing `choices`, or an HTTP error) raises a clean `ProposerError` instead of a raw `KeyError`/httpx
-error (code-review Minor, non-blocking for this slice).
+error~~ — **RESOLVED 2026-06-26** (see below).
+
+## Follow-up — `n=1` fan-out + error hardening (2026-06-26)
+
+The real-API smoke (T6) surfaced two things the stub couldn't:
+
+1. **DeepSeek caps `n=1` per request** (`400 Invalid n value`). The `direct` backend sent `n` in one
+   request, which broke every batch >1. Fixed by fanning out **n concurrent single-choice requests**
+   (`asyncio.gather`), each with a **per-index seed (`seed+i`)** for distinct-yet-deterministic samples
+   (G6-friendly), each carrying its own per-request token usage. `_direct_propose` now has no `n` in the
+   payload; `_one_proposal_row` is the per-request unit.
+2. **Error hardening (the deferred item).** `_deepseek_chat` now maps HTTP errors and non-JSON bodies to
+   a clean `ProposerError` that surfaces the response text (so a 400 is legible, not a raw httpx
+   traceback). New `_post_deepseek` is the network seam tests patch. `_one_proposal_row` also raises
+   `ProposerError` on a missing `choices`/`content` body.
+
+Also confirmed via `GET /models`: **both `deepseek-v4-pro` and `deepseek-v4-flash` are live**, and the
+smoke ran on the default `deepseek-v4-pro` (`_DEFAULT_MODEL`) — no `CAPYCHEM_LLM_MODEL` override needed.
+Caveat: `deepseek-chat` aliases to the *flash* model, so pin the explicit `deepseek-v4-pro` id rather than
+the `-chat` alias. Tests: 75 passed (replaced the old single-request direct test; added fan-out + 2
+error-path tests). mypy/ruff clean. **The Modal worker `propose()` has the identical `n=1` latent bug —
+deliberately deferred** (no Modal access to test it); flagged in a code comment + the handoff.
 
 ## Notes
 

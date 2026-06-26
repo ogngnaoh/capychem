@@ -187,44 +187,73 @@ def _deepseek_api_key() -> str:
     return key
 
 
-async def _deepseek_chat(payload: dict[str, Any], *, api_key: str) -> dict[str, Any]:
-    """POST to DeepSeek's OpenAI-compatible API and return the parsed JSON body.
+async def _post_deepseek(payload: dict[str, Any], *, api_key: str) -> Any:
+    """Raw POST to DeepSeek's chat-completions API, returning the httpx Response.
     Patchable seam: tests monkeypatch this to avoid network."""
     import httpx
 
     async with httpx.AsyncClient(timeout=240.0) as client:
-        resp = await client.post(
+        return await client.post(
             _DEEPSEEK_URL,
             headers={"Authorization": f"Bearer {api_key}"},
             json=payload,
         )
-        resp.raise_for_status()
-        result: dict[str, Any] = resp.json()
-        return result
 
 
-async def _direct_propose(
-    prompt: str, n: int, *, temperature: float, seed: int
-) -> list[ProposalResult]:
-    """Call DeepSeek's API directly from the local process (no Modal). Key from
-    the DEEPSEEK_API_KEY env var. Same {raw, tokens_in, tokens_out} row shape as
-    the Modal worker, so cost + cleaning go through _rows_to_results."""
-    api_key = _deepseek_api_key()
+async def _deepseek_chat(payload: dict[str, Any], *, api_key: str) -> dict[str, Any]:
+    """POST to DeepSeek and return the parsed JSON body, mapping HTTP errors and
+    non-JSON bodies to a clean ProposerError that surfaces the response text (so a
+    400 'Invalid n value' is legible, not a raw httpx traceback)."""
+    resp = await _post_deepseek(payload, api_key=api_key)
+    if resp.status_code >= 400:
+        raise ProposerError(f"DeepSeek API error {resp.status_code}: {resp.text[:500]}")
+    try:
+        body: dict[str, Any] = resp.json()
+    except ValueError as exc:
+        raise ProposerError(f"DeepSeek returned a non-JSON body: {resp.text[:500]}") from exc
+    return body
+
+
+async def _one_proposal_row(
+    prompt: str, *, temperature: float, seed: int, api_key: str
+) -> dict[str, Any]:
+    """One DeepSeek request (the API caps n=1). Returns a {raw, tokens_in,
+    tokens_out} row carrying this request's own token usage."""
     payload = {
         "model": llm_model(),
         "messages": [{"role": "user", "content": prompt}],
         "temperature": temperature,
         "seed": seed,
-        "n": n,
     }
     body = await _deepseek_chat(payload, api_key=api_key)
-    choices = body["choices"]
+    try:
+        raw = body["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise ProposerError(
+            f"DeepSeek response missing choices/content: {repr(body)[:500]}"
+        ) from exc
     usage = body.get("usage", {})
-    # Usage is per request; attribute evenly across the n choices.
-    per_in = usage.get("prompt_tokens", 0) // max(len(choices), 1)
-    per_out = usage.get("completion_tokens", 0) // max(len(choices), 1)
-    rows = [
-        {"raw": c["message"]["content"], "tokens_in": per_in, "tokens_out": per_out}
-        for c in choices
-    ]
-    return _rows_to_results(rows)
+    return {
+        "raw": raw,
+        "tokens_in": usage.get("prompt_tokens", 0),
+        "tokens_out": usage.get("completion_tokens", 0),
+    }
+
+
+async def _direct_propose(
+    prompt: str, n: int, *, temperature: float, seed: int
+) -> list[ProposalResult]:
+    """Call DeepSeek directly (no Modal). DeepSeek allows only n=1 per request, so
+    fan out n single-choice requests concurrently, each with a per-index seed
+    (seed+i) for distinct-yet-deterministic samples. Each request reports its own
+    token usage; rows flow through _rows_to_results for cleaning + cost."""
+    import asyncio
+
+    api_key = _deepseek_api_key()
+    rows = await asyncio.gather(
+        *(
+            _one_proposal_row(prompt, temperature=temperature, seed=seed + i, api_key=api_key)
+            for i in range(n)
+        )
+    )
+    return _rows_to_results(list(rows))

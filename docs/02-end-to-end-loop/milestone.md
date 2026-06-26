@@ -55,8 +55,8 @@ docs (`NN-<slice>.md`) are written when that slice's work starts.
 02. `plateau-stop-and-signal` — enforce FR-003 plateau stop and surface the live plateau signal
     (Story 2). *(planned)* — deps: none
 03. `modal-llm-propose-endpoint` — net-new Modal `llm.propose` (DeepSeek-v4-pro) + async client
-    adapter returning SMILES + token/cost. *(shipped 2026-06-18 — code + stub-verified; real-API smoke
-    pending operator key)* — deps: none
+    adapter returning SMILES + token/cost. *(shipped 2026-06-18; real-API smoke confirmed 2026-06-26 via
+    the Modal-free `direct` backend — `n=1` fan-out + error-hardening fix)* — deps: none
 04. `llm-proposer-with-ga-fallback` — Proposer abstraction selected via `mutation_strategy` (reachable
     from product loop + headless eval), LLM proposer wired into the propose node with Graph-GA fallback,
     pinned determinism, the >80% valid-SMILES gate check, LLM-call spans. *(planned)* — deps: 03
