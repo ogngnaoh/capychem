@@ -5,6 +5,7 @@ from capychem.loop.logic import (
     merge_and_truncate,
     stop_reason,
     trim_to_budget,
+    valid_smiles_gate,
 )
 from capychem.loop.state import Scored
 
@@ -82,7 +83,12 @@ def test_build_summary_includes_valid_smiles_when_stats_given() -> None:
         oracle_calls=10,
         validation_stats={"proposed": 40, "valid": 38},
     )
-    assert summary["valid_smiles"] == {"proposed": 40, "valid": 38, "rate": 38 / 40}
+    assert summary["valid_smiles"] == {
+        "proposed": 40,
+        "valid": 38,
+        "rate": 38 / 40,
+        "gate": {"threshold": 0.80, "passed": True},
+    }
 
 
 def test_build_summary_valid_smiles_rate_zero_when_no_proposals() -> None:
@@ -94,10 +100,34 @@ def test_build_summary_valid_smiles_rate_zero_when_no_proposals() -> None:
         oracle_calls=10,
         validation_stats={"proposed": 0, "valid": 0},
     )
-    assert summary["valid_smiles"] == {"proposed": 0, "valid": 0, "rate": 0.0}
+    assert summary["valid_smiles"] == {
+        "proposed": 0,
+        "valid": 0,
+        "rate": 0.0,
+        "gate": {"threshold": 0.80, "passed": False},
+    }
 
 
 def test_build_summary_omits_valid_smiles_when_stats_absent() -> None:
     pop = [s("c1ccccc1", 0.9, 3)]
     summary = build_summary(pop, [(10, 0.9)], generations=1, oracle_calls=10)
     assert "valid_smiles" not in summary
+
+
+def test_valid_smiles_gate_pass_and_fail() -> None:
+    assert valid_smiles_gate(0.85)["passed"] is True
+    assert valid_smiles_gate(0.80)["passed"] is True
+    assert valid_smiles_gate(0.79)["passed"] is False
+    assert valid_smiles_gate(0.85)["threshold"] == 0.80
+
+
+def test_build_summary_embeds_gate() -> None:
+    summary = build_summary(
+        [Scored(smiles="CCO", score=0.9)],
+        [(1, 0.9)],
+        generations=1,
+        oracle_calls=1,
+        validation_stats={"proposed": 10, "valid": 9},
+    )
+    assert summary["valid_smiles"]["rate"] == 0.9
+    assert summary["valid_smiles"]["gate"] == {"threshold": 0.80, "passed": True}

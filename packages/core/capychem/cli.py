@@ -122,6 +122,10 @@ def main(argv: list[str] | None = None) -> None:
     vs = summary.get("valid_smiles")
     if vs:
         print(f"  valid SMILES: {vs['rate']:.1%} ({vs['valid']}/{vs['proposed']} parseable)")
+        gate = vs.get("gate")
+        if gate:
+            verdict = "PASS" if gate["passed"] else "FAIL"
+            print(f"  valid-SMILES gate (>= {gate['threshold']:.0%}): {verdict}")
     print("  top molecules:")
     for i, m in enumerate(top, 1):
         print(f"    {i:2d}. {m['score']:.4f}  {m['smiles']}")

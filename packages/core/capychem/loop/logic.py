@@ -9,6 +9,14 @@ from typing import Any
 
 from capychem.loop.state import Scored
 
+VALID_SMILES_THRESHOLD = 0.80
+
+
+def valid_smiles_gate(rate: float, threshold: float = VALID_SMILES_THRESHOLD) -> dict[str, Any]:
+    """The milestone-02 >80% valid-SMILES gate. Observational: it reports a verdict,
+    it never halts a run (the Graph-GA fallback guarantees throughput)."""
+    return {"threshold": threshold, "passed": rate >= threshold}
+
 
 def trim_to_budget[T](items: list[T], *, budget: int, calls_used: int) -> list[T]:
     """Cap a validated batch to the remaining budget so a generation never
@@ -79,9 +87,11 @@ def build_summary(
     if validation_stats is not None:
         proposed = validation_stats.get("proposed", 0)
         valid = validation_stats.get("valid", 0)
+        rate = valid / proposed if proposed else 0.0
         summary["valid_smiles"] = {
             "proposed": proposed,
             "valid": valid,
-            "rate": valid / proposed if proposed else 0.0,
+            "rate": rate,
+            "gate": valid_smiles_gate(rate),
         }
     return summary
