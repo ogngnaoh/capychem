@@ -27,3 +27,24 @@ async def test_validate_node_accumulates_stats_across_generations() -> None:
     state2: dict[str, Any] = {**state, "_validation_stats": out1["_validation_stats"]}
     out2 = await validate(state2)  # type: ignore[arg-type]
     assert out2["_validation_stats"] == {"proposed": 6, "valid": 4}
+
+
+async def test_validate_node_tags_candidates_with_proposer() -> None:
+    state: dict[str, Any] = {
+        "proposed": [("CCO", None), ("c1ccccc1", None)],
+        "_proposer": "llm",
+        "run_trace_id": None,
+        "gen_span_id": None,
+    }
+    out = await validate(state)  # type: ignore[arg-type]
+    assert {c.proposer for c in out["validated"]} == {"llm"}
+
+
+async def test_validate_node_defaults_proposer_to_graph_ga() -> None:
+    state: dict[str, Any] = {
+        "proposed": [("CCO", None)],
+        "run_trace_id": None,
+        "gen_span_id": None,
+    }
+    out = await validate(state)  # type: ignore[arg-type]
+    assert out["validated"][0].proposer == "graph_ga"

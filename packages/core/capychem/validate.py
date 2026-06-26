@@ -21,10 +21,13 @@ class ValidCandidate:
     """A canonicalized, unique candidate that survived validation.
 
     ``parents`` carries the proposer's provenance forward (None at gen 0).
+    ``proposer`` records which proposer produced it ("graph_ga" | "llm" |
+    "starting"); defaults to "graph_ga" so the eval + Graph-GA paths need no change.
     """
 
     smiles: str  # canonical SMILES
     parents: tuple[int, int] | None
+    proposer: str = "graph_ga"
 
 
 @dataclass(frozen=True)

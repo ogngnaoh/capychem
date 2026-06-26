@@ -8,6 +8,7 @@ oracle.py (subprocess); this module never imports harness code.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 from capychem.db.models import Candidate, Generation, OracleCall
@@ -65,6 +66,8 @@ async def validate(state: LoopState) -> dict[str, Any]:
         parent_observation_id=state.get("gen_span_id"),
     ):
         validated, stats = validate_batch_with_stats(state["proposed"])
+        proposer = state.get("_proposer", "graph_ga")
+        validated = [replace(vc, proposer=proposer) for vc in validated]
         prev = state.get("_validation_stats", {"proposed": 0, "valid": 0})
         return {
             "validated": validated,
