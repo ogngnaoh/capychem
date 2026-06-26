@@ -233,9 +233,13 @@ Gate green before merge: `uv run pytest` · `uv run mypy -p capychem -p capychem
 Untouched: `LiveRun.tsx`, `runner.py`, `ws_runs.py`, `loop/` (graph/state/logic),
 `eval/`, `validate.py`, `proposer.py`, `strategy.py`, `db/models.py` (no migration).
 
-## Top risk
+## Top risk (verified-neutralized)
 
-`numpy<2` may downgrade the harness's `rdkit` during re-resolution, which *could*
-shift Graph-GA canonical SMILES and nudge the qed reproduction AUC. Mitigation: the
-§1 full-suite re-verification gate; if a reproduction test drifts past tolerance,
-investigate (e.g. pin rdkit too) before proceeding to app code.
+The original concern was that `numpy<2` would downgrade the harness's `rdkit` and
+shift Graph-GA canonical SMILES. **Resolution probe (post-design):** rdkit
+`2026.03.2` co-resolves cleanly with `numpy<2` + `scikit-learn==1.2.2`, so rdkit
+stays unchanged and Graph-GA is byte-identical — the only env deltas are sklearn
+(1.7.2→1.2.2) and numpy (2.2.x→1.26.x, numerically identical IEEE floats).
+Mitigation retained: the §1 re-verification asserts rdkit is unchanged after
+`uv sync --project harness` and runs the full suite; if rdkit unexpectedly moves,
+pin `rdkit==2026.3.2` and re-sync before proceeding.
