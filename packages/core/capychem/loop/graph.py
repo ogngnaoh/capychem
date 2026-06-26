@@ -11,8 +11,9 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Any
 
+from capychem import proposer
 from capychem.db.models import Candidate, Generation, OracleCall
-from capychem.loop import trace
+from capychem.loop import strategy, trace
 from capychem.loop.logic import (
     build_summary,
     merge_and_truncate,
@@ -21,7 +22,7 @@ from capychem.loop.logic import (
 )
 from capychem.loop.seeds import load_starting_pop as _load_starting_pop
 from capychem.loop.state import LoopState, Scored
-from capychem.oracle import propose_offspring, score_batch_async
+from capychem.oracle import score_batch_async
 from capychem.validate import validate_batch_with_stats
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
@@ -33,7 +34,7 @@ async def propose(state: LoopState) -> dict[str, Any]:
     # nest this node's span under it. gen_span_id is threaded forward in the return.
     gen_span_id = trace.gen_span(
         state.get("run_trace_id"),
-        state["run_id"],
+        state.get("run_id", 0),
         state["gen_index"],
         calls_used=state["calls_used"],
     )
@@ -45,18 +46,32 @@ async def propose(state: LoopState) -> dict[str, Any]:
         raw: list[tuple[str, tuple[int, int] | None]]
         if state["gen_index"] == 0:
             raw = [(smi, None) for smi in _load_starting_pop(state["pop_size"])]
-            proposer = "starting"
+            proposer_label = "starting"
         else:
             pop = [(m.smiles, m.score) for m in state["population"]]
-            children = propose_offspring(
-                pop,
-                state["offspring"],
-                mutation_rate=state["mutation_rate"],
-                seed=state["seed"] + state["gen_index"],  # per-gen derived seed (G6)
-            )
-            raw = [(c.smiles, c.parents) for c in children]
-            proposer = "graph_ga"
-        return {"proposed": raw, "_proposer": proposer, "gen_span_id": gen_span_id}
+            seed = state["seed"] + state["gen_index"]  # per-gen derived seed (G6)
+            if state.get("mutation_strategy", "graph_ga") == "llm":
+                results = await strategy.propose_llm_async(
+                    state["task"], pop, n=state["offspring"], seed=seed
+                )
+                with trace.span(
+                    "llm:propose",
+                    trace_id=state.get("run_trace_id"),
+                    parent_observation_id=gen_span_id,
+                    model=proposer.llm_model(),
+                    n=state["offspring"],
+                    temperature=strategy.LLM_TEMPERATURE,
+                    seed=seed,
+                ):
+                    pass
+                raw = [(r.smiles, None) for r in results]
+                proposer_label = "llm"
+            else:
+                raw = strategy.ga_fill(
+                    pop, state["offspring"], mutation_rate=state["mutation_rate"], seed=seed
+                )
+                proposer_label = "graph_ga"
+        return {"proposed": raw, "_proposer": proposer_label, "gen_span_id": gen_span_id}
 
 
 async def validate(state: LoopState) -> dict[str, Any]:
