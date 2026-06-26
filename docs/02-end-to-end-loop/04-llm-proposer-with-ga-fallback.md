@@ -1,6 +1,6 @@
 # Slice 04 — llm-proposer-with-ga-fallback
 
-**Status:** in-progress · **Milestone:** 02 `end-to-end-loop` (SPEC Phase 2) · **Deps:** 03 · **Consumed by:** 05, 06
+**Status:** shipped 2026-06-26 · FROZEN · **Milestone:** 02 `end-to-end-loop` (SPEC Phase 2) · **Deps:** 03 · **Consumed by:** 05, 06
 
 **Design spec:** `docs/superpowers/specs/2026-06-26-llm-proposer-with-ga-fallback-design.md`
 **Implementation plan:** `docs/superpowers/plans/2026-06-26-llm-proposer-with-ga-fallback.md`
@@ -29,14 +29,14 @@ reachable from both the product loop and the headless eval runner (G6). Stub-onl
 
 ## Tasks
 
-- [ ] T1 — `ValidCandidate.proposer` field + `validate` node tagging
-- [ ] T2 — shared `loop/strategy.py` module
-- [ ] T3 — thread `mutation_strategy` (config / state / API schema / CLIs)
-- [ ] T4 — strategy-aware `propose` node + LLM span
-- [ ] T5 — `fallback` node + topology + score merge + persist provenance
-- [ ] T6 — observational >80% valid-SMILES gate (helper + summary + CLI verdict)
-- [ ] T7 — headless `run_reproduction(mutation_strategy="llm")` + eval CLI flag
-- [ ] T8 — e2e LLM product run on stub + full quality gate
+- [x] T1 — `ValidCandidate.proposer` field + `validate` node tagging
+- [x] T2 — shared `loop/strategy.py` module
+- [x] T3 — thread `mutation_strategy` (config / state / API schema / CLIs)
+- [x] T4 — strategy-aware `propose` node + LLM span
+- [x] T5 — `fallback` node + topology + score merge + persist provenance
+- [x] T6 — observational >80% valid-SMILES gate (helper + summary + CLI verdict)
+- [x] T7 — headless `run_reproduction(mutation_strategy="llm")` + eval CLI flag
+- [x] T8 — e2e LLM product run on stub + full quality gate (incl. FR-005 fallback-fires integration test)
 
 ## Notes
 
@@ -47,3 +47,11 @@ reachable from both the product loop and the headless eval runner (G6). Stub-onl
 - **Gotcha:** an existing `valid_smiles` exact-shape assertion may need the new `gate` key added (T6).
 - **Deferred:** cost ledger / unique-call budget (s05), analyzer (m03), jnk3 launch + UI selector (s01),
   per-slot LLM retry, the Modal `propose()` `n=1` latent bug (no Modal access).
+- **Final review (opus, 2026-06-26):** no Critical; all 4 load-bearing invariants hold (gate honesty,
+  FR-005 throughput, G6 determinism mirroring, frozen proposer/harness). Verdict: ready to merge.
+  Two findings fixed in `db3597b` (a shadowed `proposer` local in the `validate` node; a missing FR-005
+  fallback-fires end-to-end test). **One finding deferred → slice 06 (BLOCKER for the real verdict):**
+  `valid_smiles.rate` includes the gen-0 seed pop, so it isn't purely LLM validity — make it LLM-only
+  before slice 06 reads the ≥80% gate. Slice-05 nicety: enrich the `llm:propose` span (token/cost +
+  wrap the await) with the cost ledger.
+- **Final state:** pytest 98 passed, mypy strict clean, ruff clean. 12 commits `fd549c3..db3597b`.

@@ -59,7 +59,7 @@ docs (`NN-<slice>.md`) are written when that slice's work starts.
     the Modal-free `direct` backend — `n=1` fan-out + error-hardening fix)* — deps: none
 04. `llm-proposer-with-ga-fallback` — Proposer abstraction selected via `mutation_strategy` (reachable
     from product loop + headless eval), LLM proposer wired into the propose node with Graph-GA fallback,
-    pinned determinism, the >80% valid-SMILES gate check, LLM-call spans. *(planned)* — deps: 03
+    pinned determinism, the >80% valid-SMILES gate check, LLM-call spans. *(shipped 2026-06-26)* — deps: 03
 05. `unique-call-budget-and-cost-ledger` — memoize/dedup oracle calls by canonical SMILES so budget
     counts unique calls; populate `llm_cost_usd`; rewire the per-gen cost gate to read `total_usd`.
     *(planned)* — deps: 03, 04
@@ -89,6 +89,16 @@ docs (`NN-<slice>.md`) are written when that slice's work starts.
 - **Async/sync seam (impl note for slice 04).** The LLM client is async (`.aio`/`score_batch_async`)
   while the headless eval path (`run_reproduction`/`score_smiles`) is synchronous — slice 04 needs a
   sync bridge (e.g. `asyncio.run`) or a sync client path to host the async proposer headless.
+  *(Resolved in slice 04 via `loop/strategy.py::propose_llm_sync`.)*
+- **Slice-04 deferrals inherited downstream** (final-review, 2026-06-26):
+  - **Gate purity (→ slice 06, BLOCKER for the real verdict):** `summary_json.valid_smiles.rate`
+    currently accumulates the gen-0 *seed* population (always valid), so it is not purely the LLM
+    validity rate. Bounded/immaterial on stub runs but dilutes the kill-switch on a real run — make it
+    LLM-only (exclude the `"starting"` generation, or filter `proposer == "llm"`) **before** slice 06
+    reads the ≥80% verdict on jnk3.
+  - **`llm:propose` span enrichment (→ slice 05):** the span currently carries static call params only
+    (model/n/temperature/seed) and opens after the await; slice 05 should wrap the actual await and add
+    token/cost when the `RunCost.llm_cost_usd` ledger lands.
 
 ## Exit criteria
 
