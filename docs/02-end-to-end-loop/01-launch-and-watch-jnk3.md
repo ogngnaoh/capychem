@@ -1,6 +1,6 @@
 # Slice 01 — launch-and-watch-jnk3
 
-> Milestone 02 (`end-to-end-loop`). Status: **in-progress**. Deps: none.
+> Milestone 02 (`end-to-end-loop`). Status: **shipped 2026-06-26 — frozen**. Deps: none.
 > Design: `docs/superpowers/specs/2026-06-26-launch-and-watch-jnk3-design.md`.
 > Plan: `docs/superpowers/plans/2026-06-26-launch-and-watch-jnk3.md`.
 
@@ -30,11 +30,11 @@ and routes to its live view (Story 1 / FR-001 + Story 2 / FR-009; exit criterion
 
 ## Tasks
 
-- [ ] Task 1 — Harness jnk3 fix (pins + shims + gitignore + jnk3 test + full-suite re-verify)
-- [ ] Task 2 — API task surface (`Literal["qed","jnk3"]`, FR-015 refusal, config-flow tests)
-- [ ] Task 3 — Web form targets jnk3 (`plateau_window` + `mutation_strategy` select, `api.ts`, vitest alias)
-- [ ] Task 4 — Playwright smoke targets jnk3 (opt-in)
-- [ ] Task 5 — Full gate + live launch→watch acceptance (in-session)
+- [x] Task 1 — Harness jnk3 fix (pins + shims + gitignore + jnk3 test + full-suite re-verify)
+- [x] Task 2 — API task surface (`Literal["qed","jnk3"]`, FR-015 refusal, config-flow tests)
+- [x] Task 3 — Web form targets jnk3 (`plateau_window` + `mutation_strategy` select, `api.ts`, vitest alias)
+- [x] Task 4 — Playwright smoke targets jnk3 (opt-in)
+- [x] Task 5 — Full gate + live launch→watch acceptance (pytest 113, web 9/9, live e2e passed)
 
 ## Notes
 

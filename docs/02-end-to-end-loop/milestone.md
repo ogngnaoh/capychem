@@ -51,7 +51,7 @@ Build order: `01 ∥ 02 ∥ 03 → 04 → 05 → 06`. Each is an independently s
 docs (`NN-<slice>.md`) are written when that slice's work starts.
 
 01. `launch-and-watch-jnk3` — register jnk3 as a launchable + watch-live target on the existing
-    Graph-GA loop. *(planned)* — deps: none
+    Graph-GA loop. *(shipped 2026-06-26)* — deps: none
 02. `plateau-stop-and-signal` — enforce FR-003 plateau stop and surface the live plateau signal
     (Story 2). *(planned)* — deps: none
 03. `modal-llm-propose-endpoint` — net-new Modal `llm.propose` (DeepSeek-v4-pro) + async client
