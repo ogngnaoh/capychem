@@ -154,8 +154,8 @@ class RunRegistry:
             "auc_curve": [],
             "done": False,
         }
-        # Each generation is 5 node-steps; allow headroom over the cap (mirrors cli.py).
-        recursion_limit = cfg.max_generations * 6 + 10
+        # Each generation is 6 node-steps; allow headroom over the cap.
+        recursion_limit = cfg.max_generations * 7 + 10
         last_curve_len = 0
         final_state: dict[str, Any] = {}
         stopped = False

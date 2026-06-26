@@ -93,14 +93,37 @@ async def validate(state: LoopState) -> dict[str, Any]:
         }
 
 
+async def fallback(state: LoopState) -> dict[str, Any]:
+    with trace.span(
+        "node:fallback",
+        trace_id=state.get("run_trace_id"),
+        parent_observation_id=state.get("gen_span_id"),
+    ):
+        if state.get("_proposer") != "llm":
+            return {}
+        validated = state["validated"]
+        pop = [(m.smiles, m.score) for m in state["population"]]
+        fillers = strategy.fallback_fill(
+            validated,
+            pop,
+            target=state["offspring"],
+            mutation_rate=state["mutation_rate"],
+            seed=state["seed"] + state["gen_index"],
+        )
+        if not fillers:
+            return {}
+        return {"_fallback_validated": fillers, "_proposer": "mixed"}
+
+
 async def score(state: LoopState) -> dict[str, Any]:
     with trace.span(
         "node:score",
         trace_id=state.get("run_trace_id"),
         parent_observation_id=state.get("gen_span_id"),
     ):
+        candidates = [*state["validated"], *state.get("_fallback_validated", [])]
         batch = trim_to_budget(
-            state["validated"], budget=state["budget"], calls_used=state["calls_used"]
+            candidates, budget=state["budget"], calls_used=state["calls_used"]
         )
         if not batch:
             return {"_scored": [], "calls_used": state["calls_used"]}
@@ -146,7 +169,7 @@ async def _persist(
                     generation_id=gen.id,
                     smiles=vc.smiles,
                     parent_candidate_id=parent_cid,
-                    proposer=state["_proposer"],
+                    proposer=vc.proposer,
                     valid=True,
                     score=sc,
                 )
@@ -222,12 +245,14 @@ def build_graph(
     builder: StateGraph[Any, Any, Any, Any] = StateGraph(LoopState)
     builder.add_node("propose", propose)
     builder.add_node("validate", validate)
+    builder.add_node("fallback", fallback)
     builder.add_node("score", score)
     builder.add_node("persist", persist)
     builder.add_node("stop_check", stop_check)
     builder.set_entry_point("propose")
     builder.add_edge("propose", "validate")
-    builder.add_edge("validate", "score")
+    builder.add_edge("validate", "fallback")
+    builder.add_edge("fallback", "score")
     builder.add_edge("score", "persist")
     builder.add_edge("persist", "stop_check")
     builder.add_conditional_edges("stop_check", _route, {"continue": "propose", "stop": END})

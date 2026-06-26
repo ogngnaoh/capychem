@@ -43,7 +43,7 @@ class Generation(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     run_id: Mapped[int] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"))
     index: Mapped[int]
-    proposer_used: Mapped[str] = mapped_column(String(16))  # "starting" | "graph_ga"
+    proposer_used: Mapped[str] = mapped_column(String(16))  # "starting"|"graph_ga"|"llm"|"mixed"
     started_at: Mapped[datetime] = mapped_column(server_default=func.now())
     ended_at: Mapped[datetime | None] = mapped_column(default=None)
 
@@ -57,7 +57,7 @@ class Candidate(Base):
     parent_candidate_id: Mapped[int | None] = mapped_column(
         ForeignKey("candidates.id", ondelete="SET NULL"), default=None
     )
-    proposer: Mapped[str] = mapped_column(String(16))  # "starting" | "graph_ga"
+    proposer: Mapped[str] = mapped_column(String(16))  # "starting" | "graph_ga" | "llm"
     valid: Mapped[bool] = mapped_column(default=True)
     score: Mapped[float | None] = mapped_column(default=None)
 

@@ -81,8 +81,8 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
         "auc_curve": [],
         "done": False,
     }
-    # Each generation is 5 node-steps; allow headroom over the cap.
-    recursion_limit = args.max_generations * 6 + 10
+    # Each generation is 6 node-steps; allow headroom over the cap.
+    recursion_limit = args.max_generations * 7 + 10
     try:
         final: dict[str, Any] = await graph.ainvoke(
             initial, config={"recursion_limit": recursion_limit}
