@@ -34,7 +34,7 @@ async def propose(state: LoopState) -> dict[str, Any]:
     # nest this node's span under it. gen_span_id is threaded forward in the return.
     gen_span_id = trace.gen_span(
         state.get("run_trace_id"),
-        state.get("run_id", 0),
+        state["run_id"],
         state["gen_index"],
         calls_used=state["calls_used"],
     )

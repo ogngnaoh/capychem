@@ -10,6 +10,7 @@ from capychem.loop.state import Scored
 
 def _gen1_state(strategy_name: str) -> dict[str, Any]:
     return {
+        "run_id": 1,
         "gen_index": 1,
         "mutation_strategy": strategy_name,
         "task": "qed",
@@ -26,7 +27,8 @@ def _gen1_state(strategy_name: str) -> dict[str, Any]:
 
 async def test_propose_graph_ga_uses_ga_fill(monkeypatch) -> None:
     monkeypatch.setattr(
-        graph_mod.strategy, "ga_fill",
+        graph_mod.strategy,
+        "ga_fill",
         lambda pop, n, *, mutation_rate, seed: [("CCC", (0, 1))] * n,
     )
     out = await graph_mod.propose(_gen1_state("graph_ga"))  # type: ignore[arg-type]
@@ -39,8 +41,7 @@ async def test_propose_llm_returns_raw_strings_parents_none(monkeypatch) -> None
 
     async def fake_llm(task, population, *, n, seed):
         return [
-            ProposalResult(raw="CCO", smiles="CCO", tokens_in=1, tokens_out=2)
-            for _ in range(n)
+            ProposalResult(raw="CCO", smiles="CCO", tokens_in=1, tokens_out=2) for _ in range(n)
         ]
 
     monkeypatch.setattr(graph_mod.strategy, "propose_llm_async", fake_llm)
