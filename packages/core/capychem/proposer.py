@@ -93,14 +93,26 @@ _STUB_POOL = (
 
 
 def _stub_propose(prompt: str, n: int, *, temperature: float, seed: int) -> list[ProposalResult]:
-    """Deterministic proposer for CI + later-slice development. Same (prompt,
-    seed, index) -> same SMILES from a fixed pool; cost is zero."""
-    results: list[ProposalResult] = []
-    for i in range(n):
-        digest = hashlib.sha256(f"{seed}:{prompt}:{i}".encode()).digest()
-        smi = _STUB_POOL[int.from_bytes(digest[:4], "big") % len(_STUB_POOL)]
-        results.append(ProposalResult(raw=smi, smiles=smi, tokens_in=0, tokens_out=0, cost_usd=0.0))
-    return results
+    """Deterministic proposer for CI + later-slice development.
+
+    Cycles through the pool starting from a seed+prompt-derived index so the
+    batch is always unique (n <= len(_STUB_POOL) = 10). Different seeds or
+    prompts produce different starting positions -> different outputs. Cost is
+    zero. The "all-valid, no-duplicate" guarantee means the fallback node never
+    fires for stub-backed runs (the e2e test relies on this property).
+    """
+    digest = hashlib.sha256(f"{seed}:{prompt}".encode()).digest()
+    start = int.from_bytes(digest[:4], "big")
+    return [
+        ProposalResult(
+            raw=_STUB_POOL[(start + i) % len(_STUB_POOL)],
+            smiles=_STUB_POOL[(start + i) % len(_STUB_POOL)],
+            tokens_in=0,
+            tokens_out=0,
+            cost_usd=0.0,
+        )
+        for i in range(n)
+    ]
 
 
 # --- shared row → result mapping -------------------------------------------
