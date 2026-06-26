@@ -77,6 +77,15 @@ async def test_record_oracle_cost_upserts(sm):
     assert rows[0].total_usd == pytest.approx(0.9)  # llm=0 in slice 4
 
 
+async def test_record_oracle_cost_sums_llm_and_oracle(sm):
+    async with sm() as session:
+        run_id = await _seed_run_with_costs(session, [])
+        row = await record_oracle_cost(session, run_id, 0.4, llm_usd=0.6)
+    assert row.oracle_cost_usd == pytest.approx(0.4)
+    assert row.llm_cost_usd == pytest.approx(0.6)
+    assert row.total_usd == pytest.approx(1.0)
+
+
 def test_cost_cap_default_and_override(monkeypatch):
     monkeypatch.delenv("CAPYCHEM_COST_CAP_USD", raising=False)
     assert cost_cap_usd() == 50.0
