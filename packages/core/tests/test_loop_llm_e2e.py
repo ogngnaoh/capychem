@@ -24,6 +24,19 @@ async def sm():
 async def test_llm_run_completes_end_to_end(sm, monkeypatch) -> None:
     monkeypatch.setenv("CAPYCHEM_PROPOSER_BACKEND", "stub")  # network-free, all-valid
 
+    from capychem import proposer as proposer_mod
+
+    def _distinct_valid_stub(prompt, n, *, temperature, seed):  # type: ignore[no-untyped-def]
+        # Distinct, RDKit-valid alkanes (C, CC, CCC, ...) -> no dedup loss, no fallback.
+        return [
+            proposer_mod.ProposalResult(
+                raw="C" * (i + 1), smiles="C" * (i + 1), tokens_in=0, tokens_out=0, cost_usd=0.0
+            )
+            for i in range(n)
+        ]
+
+    monkeypatch.setattr(proposer_mod, "_stub_propose", _distinct_valid_stub)
+
     async def fake_score(smiles, task):
         return [
             OracleResult(smiles=s, score=0.5, valid=True, wall_ms=1, cost_usd=0.0) for s in smiles
