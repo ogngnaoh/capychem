@@ -43,6 +43,7 @@ async def propose(state: LoopState) -> dict[str, Any]:
         parent_observation_id=gen_span_id,
     ):
         raw: list[tuple[str, tuple[int, int] | None]]
+        gen_llm_cost = 0.0
         if state["gen_index"] == 0:
             raw = [(smi, None) for smi in _load_starting_pop(state["pop_size"])]
             proposer_label = "starting"
@@ -50,9 +51,6 @@ async def propose(state: LoopState) -> dict[str, Any]:
             pop = [(m.smiles, m.score) for m in state["population"]]
             seed = state["seed"] + state["gen_index"]  # per-gen derived seed (G6)
             if state.get("mutation_strategy", "graph_ga") == "llm":
-                results = await strategy.propose_llm_async(
-                    state["task"], pop, n=state["offspring"], seed=seed
-                )
                 with trace.span(
                     "llm:propose",
                     trace_id=state.get("run_trace_id"),
@@ -61,8 +59,17 @@ async def propose(state: LoopState) -> dict[str, Any]:
                     n=state["offspring"],
                     temperature=strategy.LLM_TEMPERATURE,
                     seed=seed,
-                ):
-                    pass
+                ) as llm_span_id:
+                    results = await strategy.propose_llm_async(
+                        state["task"], pop, n=state["offspring"], seed=seed
+                    )
+                    gen_llm_cost = sum(r.cost_usd for r in results)
+                    trace.update_span(
+                        llm_span_id,
+                        tokens_in=sum(r.tokens_in for r in results),
+                        tokens_out=sum(r.tokens_out for r in results),
+                        cost_usd=gen_llm_cost,
+                    )
                 raw = [(r.smiles, None) for r in results]
                 proposer_label = "llm"
             else:
@@ -70,7 +77,14 @@ async def propose(state: LoopState) -> dict[str, Any]:
                     pop, state["offspring"], mutation_rate=state["mutation_rate"], seed=seed
                 )
                 proposer_label = "graph_ga"
-        return {"proposed": raw, "_proposer": proposer_label, "gen_span_id": gen_span_id}
+        result: dict[str, Any] = {
+            "proposed": raw,
+            "_proposer": proposer_label,
+            "gen_span_id": gen_span_id,
+        }
+        if proposer_label == "llm":
+            result["llm_cost_usd"] = state.get("llm_cost_usd", 0.0) + gen_llm_cost
+        return result
 
 
 async def validate(state: LoopState) -> dict[str, Any]:
