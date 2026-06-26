@@ -28,14 +28,14 @@ Testing: `test_loop_memoize.py` (new) for the score node; additions to `test_cos
 `test_trace.py`, `test_loop_propose.py`, `apps/api/tests/test_cost_gate.py`. Gate-green
 (`uv run pytest` · `mypy -p capychem -p capychem.api` · `ruff check .`) before merge.
 
-## Tasks
+## Tasks (shipped 2026-06-26 — frozen)
 
-- [ ] Task 1 — `record_oracle_cost` records llm + oracle (`total_usd` sums both).
-- [ ] Task 2 — `trace._live_spans` registry + `update_span`.
-- [ ] Task 3 — `score` node memoization; `LoopState.mol_buffer`; drop orphaned `trim_to_budget` import.
-- [ ] Task 4 — `propose` node LLM-cost accumulation + `llm:propose` span enrichment; `LoopState.llm_cost_usd`.
-- [ ] Task 5 — API runner cost gate reads `total_usd`.
-- [ ] Task 6 — full gate-green verification (`pytest` · `mypy` · `ruff`).
+- [x] Task 1 — `record_oracle_cost` records llm + oracle (`total_usd` sums both). `dd39aa9`
+- [x] Task 2 — `trace._live_spans` registry + `update_span`. `5574839`
+- [x] Task 3 — `score` node memoization; `LoopState.mol_buffer`; drop orphaned `trim_to_budget` import. `4594824`
+- [x] Task 4 — `propose` node LLM-cost accumulation + `llm:propose` span enrichment; `LoopState.llm_cost_usd`. `804569b`
+- [x] Task 5 — API runner cost gate reads `total_usd`. `8add908`
+- [x] Task 6 — full gate-green verification: pytest 108 · mypy 30 files clean · ruff clean.
 
 ## Notes / decisions
 

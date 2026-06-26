@@ -62,7 +62,7 @@ docs (`NN-<slice>.md`) are written when that slice's work starts.
     pinned determinism, the >80% valid-SMILES gate check, LLM-call spans. *(shipped 2026-06-26)* — deps: 03
 05. `unique-call-budget-and-cost-ledger` — memoize/dedup oracle calls by canonical SMILES so budget
     counts unique calls; populate `llm_cost_usd`; rewire the per-gen cost gate to read `total_usd`.
-    *(planned)* — deps: 03, 04
+    *(shipped 2026-06-26)* — deps: 03, 04
 06. `beat-graph-ga-on-jnk3` — run the LLM-proposer loop on jnk3 to budget; run vanilla Graph-GA on
     jnk3 same-seed as the head-to-head control; measure both via the canonical eval module (headless);
     render the week-7 kill-switch verdict. *(planned)* — deps: 01, 04, 05
