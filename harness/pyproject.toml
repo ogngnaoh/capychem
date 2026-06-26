@@ -10,7 +10,8 @@ dependencies = [
     "requests",
     "networkx",
     "scipy",
-    "numpy",
+    "numpy<2",              # scikit-learn 1.2.2 + the legacy jnk3 RF pickle need numpy 1.x
+    "scikit-learn==1.2.2",  # newest sklearn keeping the 7-field tree-node dtype the jnk3/gsk3b/drd2 pickles need
 ]
 
 # This project is deliberately NOT a member of the root uv workspace. Its pinned

@@ -62,6 +62,16 @@ def main() -> None:
             sys.modules["rdkit.six"] = six_shim
             rdkit.six = six_shim  # type: ignore[attr-defined]
 
+        # PyTDC 0.3.6's ML-model oracles (jnk3/gsk3b/drd2) unpickle a RandomForest
+        # saved under scikit-learn ~0.21, whose module paths were renamed in 0.22.
+        # Alias the old paths to the modern ones (sklearn is pinned <1.3 so the tree
+        # node dtype still matches). qed is analytic and never triggers this unpickle.
+        import sklearn.ensemble._forest  # noqa: F401
+        import sklearn.tree._classes  # noqa: F401
+
+        sys.modules.setdefault("sklearn.ensemble.forest", sys.modules["sklearn.ensemble._forest"])
+        sys.modules.setdefault("sklearn.tree.tree", sys.modules["sklearn.tree._classes"])
+
         from tdc import Oracle
     except Exception as exc:  # noqa: BLE001 - surface any import failure to caller
         _err(f"Install pytdc and rdkit in the harness env (uv sync in harness/): {exc}", task)

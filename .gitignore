@@ -23,6 +23,9 @@ out/
 .modal/
 .modal_cache/
 
+# PyTDC oracle model cache (downloaded to CWD on first ML-oracle run)
+oracle/
+
 # Env / secrets
 .env
 .env.local
