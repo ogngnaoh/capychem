@@ -16,7 +16,7 @@ from capychem.loop.seeds import load_starting_pop as starting_population  # pure
 from capychem.loop.state import Scored
 from capychem.loop.strategy import fallback_fill, propose_llm_sync
 from capychem.oracle import propose_offspring, score_smiles
-from capychem.validate import validate_batch
+from capychem.validate import validate_batch, validate_batch_with_stats
 
 
 @dataclass(frozen=True)
@@ -24,6 +24,9 @@ class ReproResult:
     mol_buffer: dict[str, tuple[float, int]]
     generations: int
     unique_calls: int
+    llm_proposed: int = 0
+    llm_valid: int = 0
+    valid_rate: float | None = None
 
 
 def _as_scored(pairs: list[tuple[str, float]]) -> list[Scored]:
@@ -75,16 +78,23 @@ def run_reproduction(
     generations = 1
     patience_left = patience
     prev_top = _top_k_mean(mol_buffer, 100)
+    llm_proposed = 0
+    llm_valid = 0
 
     # --- generations 1..N ---
     while len(mol_buffer) < budget:
         pop_pairs = [(s.smiles, s.score) for s in population]
         if mutation_strategy == "llm":
             results = propose_llm_sync(task, pop_pairs, n=offspring, seed=seed + generations)
-            valid_llm = validate_batch([(r.smiles, None) for r in results])
+            valid_llm, stats = validate_batch_with_stats([(r.smiles, None) for r in results])
+            llm_proposed += stats.proposed
+            llm_valid += stats.valid
             fillers = fallback_fill(
-                valid_llm, pop_pairs, target=offspring,
-                mutation_rate=mutation_rate, seed=seed + generations,
+                valid_llm,
+                pop_pairs,
+                target=offspring,
+                mutation_rate=mutation_rate,
+                seed=seed + generations,
             )
             valid = [*valid_llm, *fillers]
         else:
@@ -109,4 +119,12 @@ def run_reproduction(
             patience_left = patience
         prev_top = cur_top
 
-    return ReproResult(mol_buffer=mol_buffer, generations=generations, unique_calls=len(mol_buffer))
+    valid_rate = (llm_valid / llm_proposed) if llm_proposed else None
+    return ReproResult(
+        mol_buffer=mol_buffer,
+        generations=generations,
+        unique_calls=len(mol_buffer),
+        llm_proposed=llm_proposed,
+        llm_valid=llm_valid,
+        valid_rate=valid_rate,
+    )

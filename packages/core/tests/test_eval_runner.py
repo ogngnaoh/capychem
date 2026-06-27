@@ -88,8 +88,12 @@ def test_llm_strategy_runs_to_budget_on_stub(monkeypatch: pytest.MonkeyPatch) ->
     pool = ["CCO", "c1ccccc1", "CCN", "CCC", "CCCC"]
 
     def fake_llm_sync(task, population, *, n, seed):
-        return [ProposalResult(raw=pool[i % len(pool)], smiles=pool[i % len(pool)],
-                               tokens_in=0, tokens_out=0) for i in range(n)]
+        return [
+            ProposalResult(
+                raw=pool[i % len(pool)], smiles=pool[i % len(pool)], tokens_in=0, tokens_out=0
+            )
+            for i in range(n)
+        ]
 
     def fake_score(smiles, task, **kw):
         return [OracleResult(smiles=s, score=0.5, valid=True, wall_ms=1) for s in smiles]
@@ -98,7 +102,55 @@ def test_llm_strategy_runs_to_budget_on_stub(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr(runner_mod, "score_smiles", fake_score)
     monkeypatch.setattr(runner_mod, "starting_population", lambda n: pool[:n])
 
-    res = run_reproduction("qed", budget=5, seed=42, pop_size=3, offspring=4,
-                           patience=2, mutation_strategy="llm")
+    res = run_reproduction(
+        "qed", budget=5, seed=42, pop_size=3, offspring=4, patience=2, mutation_strategy="llm"
+    )
     assert res.unique_calls == len(res.mol_buffer)
     assert res.mol_buffer  # produced + scored candidates via the LLM path
+
+
+def test_llm_validity_rate_is_llm_only(monkeypatch: pytest.MonkeyPatch) -> None:
+    # LLM emits 2 valid + 2 invalid each gen; seeds are all valid. The tracked
+    # rate must reflect LLM proposals only (seeds excluded) -> 0.5.
+    from capychem.oracle import OracleResult
+    from capychem.proposer import ProposalResult
+
+    def fake_llm_sync(task, population, *, n, seed):  # type: ignore[no-untyped-def]
+        smis = ["CCO", "c1ccccc1", "not-a-smiles", "@@@@"]
+        return [
+            ProposalResult(raw=smis[i % 4], smiles=smis[i % 4], tokens_in=0, tokens_out=0)
+            for i in range(n)
+        ]
+
+    def fake_score(smiles, task, **kw):  # type: ignore[no-untyped-def]
+        return [OracleResult(smiles=s, score=0.5, valid=True, wall_ms=1) for s in smiles]
+
+    monkeypatch.setattr(runner_mod, "propose_llm_sync", fake_llm_sync)
+    monkeypatch.setattr(runner_mod, "score_smiles", fake_score)
+    seeds = ["CCO", "c1ccccc1", "CCN", "CCC"]
+    monkeypatch.setattr(runner_mod, "starting_population", lambda n: seeds[:n])
+
+    res = run_reproduction(
+        "qed", budget=20, seed=42, pop_size=4, offspring=4, patience=2, mutation_strategy="llm"
+    )
+    assert res.llm_proposed > 0
+    assert res.llm_valid / res.llm_proposed == 0.5
+    assert res.valid_rate == 0.5
+
+
+def test_graph_ga_run_has_no_valid_rate(monkeypatch: pytest.MonkeyPatch) -> None:
+    from capychem.oracle import Offspring, OracleResult
+
+    def fake_score(smiles, task, **kw):  # type: ignore[no-untyped-def]
+        return [OracleResult(smiles=s, score=0.5, valid=True, wall_ms=1) for s in smiles]
+
+    def fake_propose(population, n_offspring, **kw):  # type: ignore[no-untyped-def]
+        return [Offspring(smiles="C" * (i + 3), parents=(0, 0)) for i in range(n_offspring)]
+
+    monkeypatch.setattr(runner_mod, "score_smiles", fake_score)
+    monkeypatch.setattr(runner_mod, "propose_offspring", fake_propose)
+    monkeypatch.setattr(runner_mod, "starting_population", lambda n: ["CCO", "c1ccccc1"][:n])
+
+    res = run_reproduction("qed", budget=20, seed=42, pop_size=2, offspring=3, patience=2)
+    assert res.valid_rate is None
+    assert res.llm_proposed == 0
