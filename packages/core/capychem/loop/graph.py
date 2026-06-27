@@ -96,14 +96,17 @@ async def validate(state: LoopState) -> dict[str, Any]:
         validated, stats = validate_batch_with_stats(state["proposed"])
         proposer_label = state.get("_proposer", "graph_ga")
         validated = [replace(vc, proposer=proposer_label) for vc in validated]
-        prev = state.get("_validation_stats", {"proposed": 0, "valid": 0})
-        return {
-            "validated": validated,
-            "_validation_stats": {
+        out: dict[str, Any] = {"validated": validated}
+        # Gate purity (slice 06): the >80% valid-SMILES gate measures the LLM
+        # proposer only. Gen-0 "starting" seeds and graph_ga batches are excluded;
+        # graph_ga fallback fills never reach this node (they enter via `fallback`).
+        if proposer_label == "llm":
+            prev = state.get("_validation_stats", {"proposed": 0, "valid": 0})
+            out["_validation_stats"] = {
                 "proposed": prev["proposed"] + stats.proposed,
                 "valid": prev["valid"] + stats.valid,
-            },
-        }
+            }
+        return out
 
 
 async def fallback(state: LoopState) -> dict[str, Any]:
