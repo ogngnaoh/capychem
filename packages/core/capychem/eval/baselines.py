@@ -8,7 +8,10 @@ from dataclasses import dataclass
 # Published Graph-GA AUC top-10, mean over 5 seeds (PMO paper Table 2).
 GRAPH_GA_AUC_TOP10: dict[str, float] = {
     "qed": 0.940,
-    # Add other tasks when reproduced (milestone 02+). QED is the smoke target.
+    # jnk3 is a SANITY REFERENCE only (single-vs-5-seed): the slice-06 head-to-head
+    # decision uses our own same-seed Graph-GA control, never this number. Source:
+    # agent_docs/pmo-auc-and-baselines.md.
+    "jnk3": 0.553,
 }
 
 # Reproduction tolerance (our engineering recommendation, not a PMO-published
