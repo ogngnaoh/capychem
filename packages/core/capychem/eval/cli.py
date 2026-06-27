@@ -29,9 +29,46 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--offspring", type=int, default=70)
     p.add_argument("--mutation-rate", type=float, default=0.067)
     p.add_argument("--mutation-strategy", choices=["graph_ga", "llm"], default="graph_ga")
+    p.add_argument(
+        "--head-to-head",
+        action="store_true",
+        help="Run llm vs graph_ga same-seed on --task and emit a beat verdict.",
+    )
     args = p.parse_args(argv)
 
     t0 = time.monotonic()
+    if args.head_to_head:
+        from capychem.eval.beat import run_head_to_head
+
+        v = run_head_to_head(
+            args.task,
+            args.budget,
+            args.seed,
+            pop_size=args.pop_size,
+            offspring=args.offspring,
+            mutation_rate=args.mutation_rate,
+        )
+        wall = time.monotonic() - t0
+        h2h_report: dict[str, object] = {
+            "task": v.task,
+            "seed": v.seed,
+            "budget": v.budget,
+            "head_to_head": True,
+            "llm_auc": v.llm_auc,
+            "graph_ga_auc": v.graph_ga_auc,
+            "diff": v.diff,
+            "beat": v.beat,
+            "llm_valid_rate": v.llm_valid_rate,
+            "llm_valid_gate": v.llm_valid_gate,
+            "published_baseline": v.published_baseline,
+            "llm_unique_calls": v.llm_unique_calls,
+            "graph_ga_unique_calls": v.graph_ga_unique_calls,
+            "wall_seconds": round(wall, 1),
+        }
+        json.dump(h2h_report, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+        return 0
+
     res = run_reproduction(
         args.task,
         args.budget,
