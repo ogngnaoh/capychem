@@ -154,3 +154,4 @@ def test_graph_ga_run_has_no_valid_rate(monkeypatch: pytest.MonkeyPatch) -> None
     res = run_reproduction("qed", budget=20, seed=42, pop_size=2, offspring=3, patience=2)
     assert res.valid_rate is None
     assert res.llm_proposed == 0
+    assert res.llm_valid == 0

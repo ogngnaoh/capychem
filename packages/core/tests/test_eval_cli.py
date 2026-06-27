@@ -49,3 +49,10 @@ def test_cli_head_to_head_report(monkeypatch, capsys) -> None:  # type: ignore[n
     assert report["llm_auc"] == 0.61 and report["graph_ga_auc"] == 0.55
     assert report["published_baseline"] == 0.553
     assert report["llm_valid_gate"] == {"threshold": 0.8, "passed": True}
+    assert "wall_seconds" in report
+    assert report["seed"] == 42
+    assert report["budget"] == 1500
+    assert report["diff"] == 0.06
+    assert report["llm_valid_rate"] == 0.9
+    assert report["llm_unique_calls"] == 1500
+    assert report["graph_ga_unique_calls"] == 1500

@@ -66,3 +66,16 @@ async def test_validate_node_defaults_proposer_to_graph_ga() -> None:
     }
     out = await validate(state)  # type: ignore[arg-type]
     assert out["validated"][0].proposer == "graph_ga"
+
+
+async def test_validate_node_starting_omits_validation_stats() -> None:
+    # Starting seeds (proposer=="starting") must NOT write _validation_stats
+    # (gate purity — only LLM proposals count toward the >80% gate).
+    state: dict[str, Any] = {
+        "proposed": [("CCO", None), ("OCC", None), ("not_a_smiles", None)],
+        "_proposer": "starting",
+        "run_trace_id": None,
+        "gen_span_id": None,
+    }
+    out = await validate(state)  # type: ignore[arg-type]
+    assert "_validation_stats" not in out

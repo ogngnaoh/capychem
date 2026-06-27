@@ -50,10 +50,33 @@ def test_head_to_head_shape_and_determinism(monkeypatch: pytest.MonkeyPatch) -> 
     assert v2 == v1
 
 
-def test_head_to_head_unknown_task_has_no_published_baseline(
+def test_head_to_head_known_task_has_published_baseline(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _stub(monkeypatch, llm_pool=["CCO", "c1ccccc1"])
     v = run_head_to_head("qed", budget=6, seed=1, pop_size=2, offspring=3, mutation_rate=0.01)
     assert v.published_baseline == 0.940  # qed IS registered
     assert isinstance(v.beat, bool)
+
+
+def test_head_to_head_unknown_task_has_no_published_baseline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _stub(monkeypatch, llm_pool=["CCO", "c1ccccc1"])
+    v = run_head_to_head(
+        "definitely_not_a_task", budget=6, seed=1, pop_size=2, offspring=3, mutation_rate=0.01
+    )
+    assert v.published_baseline is None  # genuinely unregistered task
+
+
+def test_llm_valid_rate_none_when_no_llm_generations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # budget == pop_size -> seeds fill the mol_buffer at gen 0; the while loop
+    # exits before any LLM generation -> llm_proposed == 0 -> valid_rate is None
+    # -> exercises the `rate is not None else None` branch in beat.py.
+    _stub(monkeypatch, llm_pool=["CCO", "c1ccccc1"])
+    # seeds[:3] = ["CCO", "c1ccccc1", "CCN"]; budget=3 exhausted after gen 0
+    v = run_head_to_head("jnk3", budget=3, seed=1, pop_size=3, offspring=2, mutation_rate=0.01)
+    assert v.llm_valid_rate is None
+    assert v.llm_valid_gate is None
