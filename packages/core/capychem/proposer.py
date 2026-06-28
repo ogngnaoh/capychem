@@ -231,6 +231,10 @@ async def _one_proposal_row(
         "temperature": temperature,
         "seed": seed,
         "max_tokens": _MAX_OUTPUT_TOKENS,
+        # deepseek-v4 models reason by default — they leave message.content empty
+        # until the chain-of-thought finishes (~800 tok) and bill it all as output.
+        # We want a short SMILES in content, so force non-reasoning (chat) mode.
+        "thinking": {"type": "disabled"},
     }
     body = await _deepseek_chat(payload, api_key=api_key)
     try:

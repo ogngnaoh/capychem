@@ -154,6 +154,34 @@ async def test_direct_backend_caps_output_tokens(monkeypatch):
     assert captured["max_tokens"] == 128
 
 
+async def test_direct_backend_disables_reasoning(monkeypatch):
+    # deepseek-v4-pro/flash reason by default: they emit reasoning_content and
+    # leave message.content EMPTY until the chain-of-thought finishes (~800 tok).
+    # The proposer reads content and wants a short, cheap SMILES, so it must put
+    # the model in non-reasoning (chat) mode via thinking={"type":"disabled"}.
+    monkeypatch.setenv("CAPYCHEM_PROPOSER_BACKEND", "direct")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
+    captured: dict = {}
+
+    class FakeResp:
+        status_code = 200
+        text = "ok"
+
+        def json(self):
+            return {
+                "choices": [{"message": {"content": "CCO"}}],
+                "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+            }
+
+    async def fake_post(payload, *, api_key):
+        captured.update(payload)
+        return FakeResp()
+
+    monkeypatch.setattr(proposer, "_post_deepseek", fake_post)
+    await propose_batch_async("p", 1)
+    assert captured["thinking"] == {"type": "disabled"}
+
+
 async def test_direct_backend_http_error_raises_proposer_error(monkeypatch):
     # A 4xx/5xx must surface as a clean ProposerError that includes the API's
     # response body (e.g. DeepSeek's "Invalid n value" message), not a raw httpx error.
