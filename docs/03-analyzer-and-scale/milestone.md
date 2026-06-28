@@ -58,7 +58,8 @@ docs are written when that slice's work starts.
 
 01. `analyzer-agent` — `AnalyzerHypothesis` entity + first migration; `analyze` node (gen ≥1) forming a
     hypothesis + conditioning the next proposer prompt; analyzer LLM adapter (reasoning decision);
-    malformed-output fallback; reaches product loop + headless eval. — planned — deps: none
+    malformed-output fallback; reaches product loop + headless eval. — in-progress (design+plan done,
+    implementation pending) — deps: none
 02. `analyzer-value-verdict` — extend the head-to-head to a with/without-analyzer axis; prove the
     analyzer adds AUC value on ≥1 task (jnk3) — the differentiator kill-switch (SPEC risk "analyzer may
     not help"). — planned — deps: 01
