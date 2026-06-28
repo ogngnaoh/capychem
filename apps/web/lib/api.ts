@@ -7,6 +7,7 @@ export type RunSnapshot = {
   task: string;
   status: string;
   budget: number;
+  plateau_window: number;
   generation_index: number;
   oracle_calls_used: number;
   best_score: number | null;

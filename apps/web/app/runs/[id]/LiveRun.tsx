@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { getRun, stopRun, wsUrl, type RunSnapshot } from "@/lib/api";
 import { applyEvent, type RunEvent } from "@/lib/runEvents";
+import { plateauNotice } from "@/lib/plateau";
 
 const TERMINAL = new Set([
   "exhausted",
@@ -23,6 +24,7 @@ const TERMINAL = new Set([
   "stopped",
   "errored",
   "cost_capped",
+  "plateaued",
 ]);
 
 export function LiveRun({ runId }: { runId: number }) {
@@ -118,6 +120,12 @@ export function LiveRun({ runId }: { runId: number }) {
           )}
         </div>
       </div>
+
+      {plateauNotice(snap.status, snap.plateau_window) && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {plateauNotice(snap.status, snap.plateau_window)}
+        </div>
+      )}
 
       <div className="grid grid-cols-4 gap-4">
         <Stat label="Generation" value={String(snap.generation_index)} />

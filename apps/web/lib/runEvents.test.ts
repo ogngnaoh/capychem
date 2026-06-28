@@ -3,7 +3,7 @@ import { applyEvent } from "./runEvents";
 import type { RunSnapshot } from "./api";
 
 const base: RunSnapshot = {
-  run_id: 1, task: "qed", status: "running", budget: 100,
+  run_id: 1, task: "qed", status: "running", budget: 100, plateau_window: 5,
   generation_index: 0, oracle_calls_used: 0, best_score: null,
   top_k: [], auc_curve: [],
 };
@@ -39,6 +39,10 @@ describe("applyEvent", () => {
   it("run.complete carries a cost_capped terminal status", () => {
     const next = applyEvent(base, { type: "run.complete", run_id: 1, status: "cost_capped", summary: null });
     expect(next.status).toBe("cost_capped");
+  });
+  it("run.complete carries a plateaued terminal status", () => {
+    const next = applyEvent(base, { type: "run.complete", run_id: 1, status: "plateaued", summary: null });
+    expect(next.status).toBe("plateaued");
   });
   it("generation.complete without cost preserves the prior snapshot cost", () => {
     const seeded = { ...base, cost_so_far_usd: 0.5 };
