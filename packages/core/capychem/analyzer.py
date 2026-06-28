@@ -17,7 +17,15 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from capychem.proposer import ProposerError
+from capychem.proposer import (
+    ProposerError,
+    TransientProposerError,
+    _deepseek_api_key,
+    _deepseek_chat,
+    llm_model,
+    llm_usd_per_1k_in,
+    llm_usd_per_1k_out,
+)
 
 # Reasoning ON needs room for the chain-of-thought tail PLUS the JSON hypothesis.
 _ANALYZER_MAX_OUTPUT_TOKENS = 2048
@@ -111,5 +119,55 @@ def analyze_sync(prompt: str, *, seed: int = 0) -> AnalyzerResult:
     return asyncio.run(analyze_async(prompt, seed=seed))
 
 
-async def _direct_analyze(prompt: str, *, seed: int) -> AnalyzerResult:  # replaced in Task 3
-    raise NotImplementedError
+# --- direct backend (DeepSeek, reasoning ON) --------------------------------
+
+
+async def _one_analysis_row(prompt: str, *, seed: int, api_key: str) -> dict[str, Any]:
+    """One DeepSeek analyzer request. Reasoning ON: omit thinking:disabled and
+    leave a generous max_tokens so the chain-of-thought tail + JSON fit. Returns
+    a {raw, tokens_in, tokens_out} row carrying this request's own usage."""
+    payload = {
+        "model": llm_model(),
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": _ANALYZER_TEMPERATURE,
+        "seed": seed,
+        "max_tokens": _ANALYZER_MAX_OUTPUT_TOKENS,
+        # NO "thinking": {"type": "disabled"} — the analyzer WANTS chain-of-thought;
+        # message.content holds the post-reasoning answer (the prose + JSON hypothesis).
+    }
+    body = await _deepseek_chat(payload, api_key=api_key)
+    try:
+        raw = body["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise ProposerError(
+            f"DeepSeek analyzer response missing choices/content: {repr(body)[:500]}"
+        ) from exc
+    usage = body.get("usage", {})
+    return {
+        "raw": raw or "",
+        "tokens_in": usage.get("prompt_tokens", 0),
+        "tokens_out": usage.get("completion_tokens", 0),
+    }
+
+
+async def _direct_analyze(prompt: str, *, seed: int) -> AnalyzerResult:
+    api_key = _deepseek_api_key()
+    try:
+        row = await _one_analysis_row(prompt, seed=seed, api_key=api_key)
+    except TransientProposerError:
+        # Degrade like the proposer: a transient blip -> no signal -> node fallback.
+        return AnalyzerResult(
+            text="", structured=None, tokens_in=0, tokens_out=0, cost_usd=0.0, note="no new signal"
+        )
+    cost = (row["tokens_in"] / 1000.0) * llm_usd_per_1k_in() + (
+        row["tokens_out"] / 1000.0
+    ) * llm_usd_per_1k_out()
+    structured = parse_hypothesis(row["raw"])
+    return AnalyzerResult(
+        text=row["raw"],
+        structured=structured,
+        tokens_in=row["tokens_in"],
+        tokens_out=row["tokens_out"],
+        cost_usd=cost,
+        note=None if structured is not None else "no new signal",
+    )
