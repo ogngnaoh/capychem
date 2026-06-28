@@ -65,7 +65,8 @@ docs (`NN-<slice>.md`) are written when that slice's work starts.
     *(shipped 2026-06-26)* — deps: 03, 04
 06. `beat-graph-ga-on-jnk3` — run the LLM-proposer loop on jnk3 to budget; run vanilla Graph-GA on
     jnk3 same-seed as the head-to-head control; measure both via the canonical eval module (headless);
-    render the week-7 kill-switch verdict. *(planned)* — deps: 01, 04, 05
+    render the week-7 kill-switch verdict. *(shipped 2026-06-28 — LLM beats Graph-GA on jnk3:
+    AUC 0.853 vs 0.684 @ seed 42, 99% valid; week-7 kill-switch PASSED)* — deps: 01, 04, 05
 
 ## Integration notes
 

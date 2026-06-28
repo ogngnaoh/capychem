@@ -1,63 +1,57 @@
-# Handoff — 02-end-to-end-loop (slice 06 CODE done + reviewed; verdict run PAUSED for strategic re-decision)
+# Handoff — 02-end-to-end-loop (slice 06 SHIPPED: LLM beats Graph-GA on jnk3)
 
 ## Completed this session
 
-- Built slice 06 `beat-graph-ga-on-jnk3` **code** via subagent-driven TDD (5 tasks, each impl+review;
-  final whole-branch review opus = **Ready to merge YES**, no Critical/Important). Branch
-  `slice-06-beat-graph-ga-on-jnk3` @ `e35dc1d`, **NOT merged**. Full gate green (pytest **124**, mypy 31, ruff).
-  - `1e305b6` gate-purity fix (valid_smiles = LLM-only — the carried BLOCKER, done) · `dce5e26` headless
-    `ReproResult.valid_rate` · `00b1cb0` jnk3 baseline 0.553 (sanity ref) · `286754b` `eval/beat.py`
-    head-to-head verdict · `c1f0146` `--head-to-head` CLI · `e35dc1d` coverage fixes. Spec `a9f35f9`, plan `63898e6`.
-- Ran the staged calibration (jnk3 head-to-head, budget 1500) → **BLOCKED: DeepSeek `402 Insufficient
-  Balance`** (account at $0). graph_ga control completed; the LLM run billed on its first real call. Wall
-  **~20.6 min** (graph_ga-dominated; 10k ⇒ multi-hour). Code behaved correctly — error surfaced cleanly.
+- **Slice 06 SHIPPED** — funded the run, fixed the proposer for the live DeepSeek API, ran the
+  jnk3 LLM-vs-GA head-to-head, got the **week-7 kill-switch verdict: LLM BEATS Graph-GA**, robust
+  across two seeds. Every score in-silico (PRD N6).
+  - **Verdict** (`capychem-eval --task=jnk3 --budget=10000 --head-to-head`): seed 42 → LLM **0.853**
+    vs GA 0.684 (+0.169); seed 7 → LLM **0.782** vs GA 0.573 (+0.209). Valid-SMILES 98–99% (gate
+    >80% ✓). LLM hits a higher AUC in fewer unique calls (sample-efficiency thesis). Both controls
+    beat the published ref (0.553). Total DeepSeek spend ≈ **$1.60**; wall ~11–18 min/run.
+  - **4 proposer fixes** (prereqs surfaced the first time the funded `direct` backend ever returned
+    a real completion): `094f345` v4-pro cost rates + 128-tok cap · `20ed4e8` **non-reasoning chat
+    mode** (`thinking:disabled` — load-bearing; both v4 models reason by default → empty content →
+    would silently collapse to GA-vs-GA) · `13bc0bf` transient-failure → GA-fallback resilience.
+  - Docs: slice doc `docs/02-end-to-end-loop/06-beat-graph-ga-on-jnk3.md` (frozen); milestone +
+    index flipped. Gate green: pytest **130**, mypy 31, ruff.
 
 ## Slice status across milestone
 
-- 01, 03, 04, 05 → shipped + frozen. 02 `plateau-stop-and-signal` → planned (dep-free).
-- 06 `beat-graph-ga-on-jnk3` → **CODE COMPLETE + reviewed + merge-ready (`e35dc1d`); verdict run + ship
-  PENDING the strategic re-decision below.**
+- 01, 03, 04, 05, **06** → shipped + frozen. **02 `plateau-stop-and-signal` → planned (dep-free,
+  last remaining slice in m02).**
+- Milestone-02 exit criteria: 1–5, 7, **8 met**; **6 (plateau FR-003) outstanding → slice 02.**
 
-## Cost advisory reconciliation (`personal-vault/claude-notes/2026-06-27-capychem-cost-architecture-advisory.md`)
+## Current state
 
-Memo was produced in a parallel worktree off an EARLIER state; these code claims are **stale/wrong for
-HEAD `e35dc1d` — do not act on them:** (1) "proposer wired into nothing / calibration measures $0" — FALSE,
-the LLM is wired and the calibration billed DeepSeek (that's the 402; no off-tree mystery, just a $0
-account); (2) "jnk3 absent from baselines.py" — FALSE now; (3) "near-term run = GA-vs-GA reproduction" —
-it's a REAL LLM-vs-GA run, **but** the LLM is analyzer-LESS (differentiator = m03), so the null-result
-concern stands. **Sound (now memory `[[project_eval_compute_budget]]`):** cost non-binding (<$50 TOTAL; full
-10k chat ≈ $1.34); real risks = finishability (~11 wks) + null-result; sequence the first FUNDED
-*differentiator* run AFTER the analyzer (with/without, one task); README boosters = near-free ROI;
-architecture right-sized (don't pull Modal forward).
+- Branch `slice-06-beat-graph-ga-on-jnk3` @ this commit. **NOT merged; main UNPUSHED.** Working tree
+  clean apart from `.claude/` (untracked tooling) + the `~8 grandfathered ruff-format` files (see below).
+- DeepSeek balance ~$2.37 (delayed billing; near-free tolerance). `.env.local`: `direct` backend,
+  model `deepseek-v4-pro`, key valid.
 
-## Next session start here — decide the fork (this is the planning the user wants)
+## Next session start here
 
-- **A — Finish slice 06 as scoped:** top-up DeepSeek (~$2–5), run the jnk3 LLM-vs-GA head-to-head (real),
-  produce the milestone-02 week-7 kill-switch verdict (a tie/loss is an ACCEPTED kill-switch outcome →
-  "narrow scope, don't abandon"), then ship slice 06. Closes m02 exit criterion 8.
-- **B — Adopt the memo's reframing:** don't fund yet; fix the two free `proposer.py` bugs, ship the spine +
-  README boosters, defer the funded verdict to after the analyzer (m03). Reorders the roadmap; slice-06
-  verdict deferred (code stays merge-ready on the branch).
+1. **Merge slice 06 to main** (the ship gate is at the user — solo merge vs PR). Then start
+   **slice 02 `plateau-stop-and-signal`** (FR-003: `stop_reason()` reads `plateau_window`, a
+   `plateaued` status, WS signal + `LiveRun.tsx`) — the last m02 slice. After it, m02 is done →
+   milestone 03 (analyzer, the differentiator).
+2. The analyzer-vs-no-analyzer with/without comparison (m03) should reuse this slice's head-to-head
+   harness on jnk3 — this run is the "without-analyzer" control.
 
 ## Active concerns
 
-- Two **FREE** proposer fixes (verified on HEAD, OUT of slice-06 scope): (1) `proposer.py:41-43` placeholder
-  rates `0.00014/0.00028` vs `_DEFAULT_MODEL="deepseek-v4-pro"` mismatch → internal cost tracker may
-  understate ~3.1× (real bill still ~$1.34/10k); (2) `_one_proposal_row` sends no `max_tokens` → uncapped
-  reasoning-tail cost. Add `"max_tokens": ~50` + align rates.
-- Headless eval path has **no $50 cost gate** (only the product/API loop does); the unique-call budget
-  bounds request count (~B requests) so cost is bounded but not auto-halted.
-- Wall-time: jnk3 per-batch harness model-reload ⇒ ~20 min/1500 calls; full 10k = multi-hour (perf
-  model-reuse is a known non-blocking minor).
-- SDD state in `.superpowers/sdd/progress.md` (slice 06): Tasks 1-5 complete; 6-8 (calibration/full-run/ship)
-  pending the fork. Branch unmerged; main UNPUSHED.
-- `ruff format .` (whole-repo, in the per-task gate) wants to reformat ~8 *grandfathered* files (env.py,
-  trace.py, a few tests) NOT touched by any slice-06 task — reverted this session to keep the branch diff
-  surgical. Expect them to re-appear dirty on the next `ruff format .`; commit a one-line `chore: ruff format`
-  if/when convenient (they're cosmetic only).
+- **G6 ±1% reproducibility:** harness/GA/metric are deterministic; the hosted LLM (temp 0.7) is not
+  bit-reproducible. The two-seed beat shows robustness, not ±1% — documented honestly in the slice doc.
+- **LLM chemical prior:** DeepSeek likely recalls known JNK3 scaffolds vs de-novo discovery — a
+  legit in-silico win (N6 disclaims real-world efficacy); the analyzer (m03) turns recall into a loop.
+- Headless eval path has **no $50 cost gate** (only product/API loop does); bounded by unique-call
+  budget, not auto-halted. DeepSeek billing is delayed → balance is not a live guardrail.
+- `ruff format .` still wants to reformat ~8 *grandfathered* files (env.py, trace.py, a few tests)
+  untouched by any slice — cosmetic; commit a one-line `chore: ruff format` whenever convenient.
 
 ## Slice log
 
-- 2026-06-27 — Slice 06 CODE complete + reviewed (`e35dc1d`, gate 124 green); calibration blocked on DeepSeek
-  $0 balance; PAUSED for strategic re-decision per the cost advisory.
+- 2026-06-28 — Slice 06 SHIPPED: LLM beats Graph-GA on jnk3 (AUC 0.853/0.782 vs 0.684/0.573 @ seeds
+  42/7), 98–99% valid; 4 proposer fixes for the live DeepSeek API; week-7 kill-switch PASSED.
+- 2026-06-27 — Slice 06 code complete + reviewed; verdict run paused for the cost re-decision.
 - 2026-06-26 — Slices 05 + 01 shipped + merged.
