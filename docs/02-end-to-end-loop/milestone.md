@@ -53,7 +53,9 @@ docs (`NN-<slice>.md`) are written when that slice's work starts.
 01. `launch-and-watch-jnk3` — register jnk3 as a launchable + watch-live target on the existing
     Graph-GA loop. *(shipped 2026-06-26)* — deps: none
 02. `plateau-stop-and-signal` — enforce FR-003 plateau stop and surface the live plateau signal
-    (Story 2). *(planned)* — deps: none
+    (Story 2). *(shipped 2026-06-28 — `stop_reason` "plateaued" between exhausted and max_generations;
+    elitist-monotonic plateau detection; `plateau_window` on snapshot; amber callout in watch-live;
+    rides existing `run.complete`, no new WS event / no migration; eval/ untouched)* — deps: none
 03. `modal-llm-propose-endpoint` — net-new Modal `llm.propose` (DeepSeek-v4-pro) + async client
     adapter returning SMILES + token/cost. *(shipped 2026-06-18; real-API smoke confirmed 2026-06-26 via
     the Modal-free `direct` backend — `n=1` fan-out + error-hardening fix)* — deps: none

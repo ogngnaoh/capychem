@@ -1,6 +1,6 @@
 # Slice 02 — plateau-stop-and-signal
 
-> Milestone 02 (`end-to-end-loop`). Status: **in-progress** (LAST slice in m02). Deps: none.
+> Milestone 02 (`end-to-end-loop`). Status: **shipped 2026-06-28 — frozen** (LAST slice in m02 → milestone complete). Deps: none.
 > Design: `docs/superpowers/specs/2026-06-28-plateau-stop-and-signal-design.md`.
 > Plan: `docs/superpowers/plans/2026-06-28-plateau-stop-and-signal.md`.
 
@@ -33,11 +33,11 @@ milestone exit criterion 6). Completing this closes milestone 02.
 
 ## Tasks
 
-- [ ] Task 1 — Plateau pure logic (`is_plateau` + `stop_reason` integration) + tests
-- [ ] Task 2 — Wire `stop_check` to feed the curve + `plateau_window` + node test
-- [ ] Task 3 — Expose `plateau_window` on `RunSnapshot` (live + DB paths) + test
-- [ ] Task 4 — Frontend plateau signal (`plateauNotice` + `LiveRun` callout) + tests
-- [ ] Task 5 — Full gate (pytest · mypy · ruff · vitest · web typecheck/lint) + live check
+- [x] Task 1 — Plateau pure logic (`is_plateau` + `stop_reason` integration) + tests (`c6d85cb`)
+- [x] Task 2 — Wire `stop_check` to feed the curve + `plateau_window` + node test (`c10eead`)
+- [x] Task 3 — Expose `plateau_window` on `RunSnapshot` (live + DB paths) + test (`5f1513a`)
+- [x] Task 4 — Frontend plateau signal (`plateauNotice` + `LiveRun` callout) + tests (`c66d208`)
+- [x] Task 5 — Full gate green (pytest 142 · mypy 31 · ruff · vitest 12 · web typecheck/lint); trace-fixture fix (`5a0941d`). Live UI check deferred to manual pass (stack not run this session).
 
 ## Notes
 
