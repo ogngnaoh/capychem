@@ -24,18 +24,18 @@
 
 ## Current state
 
-- Branch `slice-06-beat-graph-ga-on-jnk3` @ this commit. **NOT merged; main UNPUSHED.** Working tree
-  clean apart from `.claude/` (untracked tooling) + the `~8 grandfathered ruff-format` files (see below).
+- **Slice 06 merged to `main` (ff) @ `d5e6fb4`; feature branch deleted.** `main` is local-only —
+  ahead of `origin/main` (UNPUSHED, by choice). Working tree clean apart from `.claude/` (untracked
+  tooling) + the `~8 grandfathered ruff-format` files (see below).
 - DeepSeek balance ~$2.37 (delayed billing; near-free tolerance). `.env.local`: `direct` backend,
   model `deepseek-v4-pro`, key valid.
 
 ## Next session start here
 
-1. **Merge slice 06 to main** (the ship gate is at the user — solo merge vs PR). Then start
-   **slice 02 `plateau-stop-and-signal`** (FR-003: `stop_reason()` reads `plateau_window`, a
-   `plateaued` status, WS signal + `LiveRun.tsx`) — the last m02 slice. After it, m02 is done →
-   milestone 03 (analyzer, the differentiator).
-2. The analyzer-vs-no-analyzer with/without comparison (m03) should reuse this slice's head-to-head
+1. Start **slice 02 `plateau-stop-and-signal`** (FR-003: `stop_reason()` reads `plateau_window`, a
+   `plateaued` status, WS signal + `LiveRun.tsx`) — the LAST remaining m02 slice. Completing it closes
+   milestone 02 → advance to milestone 03 (analyzer, the differentiator).
+2. The analyzer-vs-no-analyzer with/without comparison (m03) should reuse slice 06's head-to-head
    harness on jnk3 — this run is the "without-analyzer" control.
 
 ## Active concerns
