@@ -25,6 +25,13 @@ class ProposerError(RuntimeError):
     """Raised when the proposer backend fails or returns a malformed response."""
 
 
+class TransientProposerError(ProposerError):
+    """A retryable/transient failure (timeout, network, 402-balance, 429-rate-limit,
+    5xx). The ``direct`` backend degrades these to an empty proposal so the loop's
+    Graph-GA fallback fills the slot (FR-005) instead of crashing a long run. Config
+    errors (other 4xx) stay as plain ProposerError and propagate loudly."""
+
+
 @dataclass(frozen=True)
 class ProposalResult:
     """One LLM proposal. ``smiles`` is the model's cleaned proposed string — a
@@ -195,15 +202,19 @@ def _deepseek_api_key() -> str:
 
 async def _post_deepseek(payload: dict[str, Any], *, api_key: str) -> Any:
     """Raw POST to DeepSeek's chat-completions API, returning the httpx Response.
-    Patchable seam: tests monkeypatch this to avoid network."""
+    Patchable seam: tests monkeypatch this to avoid network. Network/timeout
+    failures are transient (degradable), not config errors."""
     import httpx
 
-    async with httpx.AsyncClient(timeout=240.0) as client:
-        return await client.post(
-            _DEEPSEEK_URL,
-            headers={"Authorization": f"Bearer {api_key}"},
-            json=payload,
-        )
+    try:
+        async with httpx.AsyncClient(timeout=240.0) as client:
+            return await client.post(
+                _DEEPSEEK_URL,
+                headers={"Authorization": f"Bearer {api_key}"},
+                json=payload,
+            )
+    except httpx.RequestError as exc:
+        raise TransientProposerError(f"DeepSeek request failed: {exc}") from exc
 
 
 async def _deepseek_chat(payload: dict[str, Any], *, api_key: str) -> dict[str, Any]:
@@ -212,7 +223,12 @@ async def _deepseek_chat(payload: dict[str, Any], *, api_key: str) -> dict[str, 
     400 'Invalid n value' is legible, not a raw httpx traceback)."""
     resp = await _post_deepseek(payload, api_key=api_key)
     if resp.status_code >= 400:
-        raise ProposerError(f"DeepSeek API error {resp.status_code}: {resp.text[:500]}")
+        msg = f"DeepSeek API error {resp.status_code}: {resp.text[:500]}"
+        # 402 (balance), 429 (rate limit), 5xx are transient -> degradable; other
+        # 4xx (bad model, bad request, auth) are config errors -> propagate loudly.
+        if resp.status_code in (402, 429) or resp.status_code >= 500:
+            raise TransientProposerError(msg)
+        raise ProposerError(msg)
     try:
         body: dict[str, Any] = resp.json()
     except ValueError as exc:
@@ -261,10 +277,20 @@ async def _direct_propose(
     import asyncio
 
     api_key = _deepseek_api_key()
-    rows = await asyncio.gather(
+    results = await asyncio.gather(
         *(
             _one_proposal_row(prompt, temperature=temperature, seed=seed + i, api_key=api_key)
             for i in range(n)
-        )
+        ),
+        return_exceptions=True,
     )
-    return _rows_to_results(list(rows))
+    rows: list[Any] = []
+    for r in results:
+        if isinstance(r, TransientProposerError):
+            # degrade to an empty proposal -> invalid SMILES -> Graph-GA fallback
+            rows.append({"raw": "", "tokens_in": 0, "tokens_out": 0})
+        elif isinstance(r, BaseException):
+            raise r
+        else:
+            rows.append(r)
+    return _rows_to_results(rows)

@@ -182,6 +182,73 @@ async def test_direct_backend_disables_reasoning(monkeypatch):
     assert captured["thinking"] == {"type": "disabled"}
 
 
+async def test_direct_backend_degrades_transient_failures_to_fallback(monkeypatch):
+    # A TRANSIENT per-request failure (timeout, 5xx, 429 rate-limit, or a mid-run
+    # 402 once balance runs out) must NOT crash the whole batch: the failed slot
+    # degrades to an empty proposal so RDKit rejects it and the loop's Graph-GA
+    # fallback fills it (FR-005). Keeps a long unattended run alive on one blip.
+    monkeypatch.setenv("CAPYCHEM_PROPOSER_BACKEND", "direct")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
+
+    async def flaky_row(prompt, *, temperature, seed, api_key):
+        if seed % 2 == 0:
+            raise proposer.TransientProposerError("rate limited")
+        return {"raw": f"CCO{seed}", "tokens_in": 10, "tokens_out": 5}
+
+    monkeypatch.setattr(proposer, "_one_proposal_row", flaky_row)
+    out = await propose_batch_async("p", 4, seed=0)  # seeds 0,1,2,3 -> 0,2 fail
+    assert len(out) == 4
+    assert [bool(r.smiles) for r in out] == [False, True, False, True]
+    assert out[0].smiles == "" and out[0].cost_usd == 0.0
+    assert out[1].smiles == "CCO1"
+
+
+async def test_direct_backend_config_error_still_propagates(monkeypatch):
+    # A non-transient error (e.g. a 400 bad request / bad model) must NOT be
+    # silently degraded — that would mask a misconfig as a GA-vs-GA null. It
+    # propagates loudly.
+    monkeypatch.setenv("CAPYCHEM_PROPOSER_BACKEND", "direct")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
+
+    async def bad_row(prompt, *, temperature, seed, api_key):
+        raise ProposerError("DeepSeek API error 400: bad model")
+
+    monkeypatch.setattr(proposer, "_one_proposal_row", bad_row)
+    with pytest.raises(ProposerError, match="bad model"):
+        await propose_batch_async("p", 4, seed=0)
+
+
+async def test_deepseek_chat_classifies_transient_status(monkeypatch):
+    # 402/429/5xx are transient (degradable); other 4xx are not.
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
+
+    def resp(code):
+        class R:
+            status_code = code
+            text = f"status {code}"
+
+            def json(self):
+                return {}
+
+        return R()
+
+    for code in (402, 429, 500, 503):
+        async def fake_post(payload, *, api_key, _c=code):
+            return resp(_c)
+
+        monkeypatch.setattr(proposer, "_post_deepseek", fake_post)
+        with pytest.raises(proposer.TransientProposerError):
+            await proposer._deepseek_chat({}, api_key="sk-test")
+
+    async def fake_post_400(payload, *, api_key):
+        return resp(400)
+
+    monkeypatch.setattr(proposer, "_post_deepseek", fake_post_400)
+    with pytest.raises(ProposerError) as ei:
+        await proposer._deepseek_chat({}, api_key="sk-test")
+    assert not isinstance(ei.value, proposer.TransientProposerError)
+
+
 async def test_direct_backend_http_error_raises_proposer_error(monkeypatch):
     # A 4xx/5xx must surface as a clean ProposerError that includes the API's
     # response body (e.g. DeepSeek's "Invalid n value" message), not a raw httpx error.
