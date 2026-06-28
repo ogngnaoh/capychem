@@ -21,6 +21,29 @@ class Scored:
     candidate_id: int | None = None  # DB id once persisted; enables parent provenance
 
 
+@dataclass(frozen=True)
+class Hypothesis:
+    """An analyzer hypothesis threaded through the loop. ``structured`` is
+    ``{"focus": str, "avoid": list[str]}`` or None (no usable signal -> the
+    proposer falls back to its unconditioned prompt). ``note`` records a
+    fallback such as "no new signal"."""
+
+    structured: dict[str, Any] | None
+    text: str
+    note: str | None = None
+
+
+@dataclass(frozen=True)
+class AnalyzerSummary:
+    """The compact, deterministic view of one generation the analyzer reasons
+    over. Built identically in the product loop and the headless runner (G6)."""
+
+    top: list[tuple[str, float]]
+    bottom: list[tuple[str, float]]
+    recent_top10_means: list[float]
+    prior: Hypothesis | None
+
+
 class LoopState(TypedDict, total=False):
     # config / identity
     run_id: int
@@ -44,6 +67,9 @@ class LoopState(TypedDict, total=False):
     #   gen_span_id  — the CURRENT generation span id (updated each generation)
     run_trace_id: str | None
     gen_span_id: str | None
+    # analyzer hypothesis and generation id
+    analyzer_hypothesis: Hypothesis | None  # hypothesis threaded to next propose
+    gen_db_id: int  # just-persisted Generation row id for analyze link
     # transient per-iteration carriers (read across nodes — MUST be declared, or
     # mypy errors `TypedDict has no key`; the leading underscore is just a naming
     # convention for "internal", it does not exempt them from declaration)

@@ -198,3 +198,34 @@ def test_stop_reason_no_plateau_when_improving() -> None:
         )
         is None
     )
+
+
+def test_build_analyzer_summary_top_bottom_and_deltas() -> None:
+    from capychem.loop.logic import build_analyzer_summary
+    from capychem.loop.state import Hypothesis
+
+    pop = [s("c1ccccc1", 0.9, 1), s("CCO", 0.5, 2), s("CCN", 0.4, 3), s("CCC", 0.1, 4)]
+    prior = Hypothesis(structured={"focus": "x", "avoid": ["y"]}, text="t")
+    summary = build_analyzer_summary(pop, [0.3, 0.5, 0.7, 0.8], prior, k=2)
+    assert summary.top == [("c1ccccc1", 0.9), ("CCO", 0.5)]
+    assert summary.bottom == [("CCN", 0.4), ("CCC", 0.1)]
+    assert summary.recent_top10_means == [0.5, 0.7, 0.8]  # last 3 only
+    assert summary.prior is prior
+
+
+def test_build_analyzer_summary_is_deterministic() -> None:
+    from capychem.loop.logic import build_analyzer_summary
+
+    pop = [s("CCO", 0.5, 1), s("CCN", 0.5, 2)]
+    a = build_analyzer_summary(pop, [0.5], None)
+    b = build_analyzer_summary(pop, [0.5], None)
+    assert a == b
+
+
+def test_build_analyzer_summary_no_bottom_when_small_pop() -> None:
+    from capychem.loop.logic import build_analyzer_summary
+
+    pop = [s("CCO", 0.5, 1), s("CCN", 0.4, 2)]
+    summary = build_analyzer_summary(pop, [], None, k=10)
+    assert summary.top == [("CCO", 0.5), ("CCN", 0.4)]
+    assert summary.bottom == []  # pop smaller than k -> no separate bottom slice

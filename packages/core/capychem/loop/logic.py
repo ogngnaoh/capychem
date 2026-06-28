@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from capychem.loop.state import Scored
+from capychem.loop.state import AnalyzerSummary, Hypothesis, Scored
 
 VALID_SMILES_THRESHOLD = 0.80
 PLATEAU_MIN_IMPROVEMENT = 1e-9
@@ -112,3 +112,21 @@ def build_summary(
             "gate": valid_smiles_gate(rate),
         }
     return summary
+
+
+def build_analyzer_summary(
+    population: list[Scored],
+    score_history: list[float],
+    prior: Hypothesis | None,
+    *,
+    k: int = 10,
+) -> AnalyzerSummary:
+    """Compact, deterministic analyzer input: the top-k and bottom-k survivors by
+    score, the last 3 top-10-mean values (the recent trajectory), and the prior
+    hypothesis. Pure — no I/O — so it reproduces in both loop paths (G6)."""
+    ranked = sorted(population, key=_sort_key)
+    top = [(m.smiles, m.score) for m in ranked[:k]]
+    bottom = [(m.smiles, m.score) for m in ranked[-k:]] if len(ranked) > k else []
+    return AnalyzerSummary(
+        top=top, bottom=bottom, recent_top10_means=score_history[-3:], prior=prior
+    )
