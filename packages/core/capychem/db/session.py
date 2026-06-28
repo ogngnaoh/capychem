@@ -1,8 +1,9 @@
 """Async engine, sessionmaker, and first-connect schema bootstrap.
 
-metadata.create_all is fine while the greenfield schema churns (slice 2); Alembic
-arrives with the first additive change (slice 3/4). Reads CAPYCHEM_DATABASE_URL
-(asyncpg driver). Dev resets are drop/recreate.
+metadata.create_all bootstraps the schema; it creates missing tables but does NOT
+ALTER existing ones, so after an additive change (e.g. milestone-03's
+Generation.analyzer_hypothesis_id column) recreate the dev DB (drop/recreate).
+Reads CAPYCHEM_DATABASE_URL (asyncpg driver). Alembic is deferred.
 """
 
 from __future__ import annotations

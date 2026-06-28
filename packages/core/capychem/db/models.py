@@ -1,8 +1,9 @@
 """Async SQLAlchemy 2.0 models for CapyChem run state (SPEC §6.2).
 
-Five entities: Run, Generation, Candidate, OracleCall, RunCost. AnalyzerHypothesis
-arrives in a later slice. Schema is bootstrapped via metadata.create_all
-(db/session.py); Alembic lands with the first additive change.
+Six entities: Run, Generation, Candidate, OracleCall, RunCost, AnalyzerHypothesis
+(added milestone-03 slice 01). Schema is bootstrapped via metadata.create_all
+(db/session.py); after an additive change recreate the dev DB (drop/recreate) —
+Alembic is deferred until a persisted DB must be migrated without data loss.
 """
 
 from __future__ import annotations
@@ -10,7 +11,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, ForeignKey, Index, String, func
+from sqlalchemy import JSON, ForeignKey, Index, String, Text, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -46,6 +47,9 @@ class Generation(Base):
     proposer_used: Mapped[str] = mapped_column(String(16))  # "starting"|"graph_ga"|"llm"|"mixed"
     started_at: Mapped[datetime] = mapped_column(server_default=func.now())
     ended_at: Mapped[datetime | None] = mapped_column(default=None)
+    analyzer_hypothesis_id: Mapped[int | None] = mapped_column(
+        ForeignKey("analyzer_hypotheses.id", ondelete="SET NULL"), default=None
+    )
 
 
 class Candidate(Base):
@@ -83,3 +87,17 @@ class RunCost(Base):
     llm_cost_usd: Mapped[float] = mapped_column(default=0.0)
     oracle_cost_usd: Mapped[float] = mapped_column(default=0.0)
     total_usd: Mapped[float] = mapped_column(default=0.0)
+
+
+class AnalyzerHypothesis(Base):
+    __tablename__ = "analyzer_hypotheses"
+    __table_args__ = (Index("ix_analyzerhyp_run_after", "run_id", "after_generation_index"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"))
+    after_generation_index: Mapped[int]
+    text: Mapped[str] = mapped_column(Text)
+    structured_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
+    tokens_in: Mapped[int] = mapped_column(default=0)
+    tokens_out: Mapped[int] = mapped_column(default=0)
+    compute_cost_usd: Mapped[float] = mapped_column(default=0.0)
