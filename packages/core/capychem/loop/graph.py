@@ -233,6 +233,8 @@ async def stop_check(state: LoopState) -> dict[str, Any]:
             gen_index=state["gen_index"] + 1,
             max_generations=state["max_generations"],
             made_progress=state["_made_progress"],
+            top10_history=[v for _, v in state.get("auc_curve", [])],
+            plateau_window=state["plateau_window"],
         )
         result: dict[str, Any]
         if reason is not None:
