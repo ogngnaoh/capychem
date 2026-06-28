@@ -38,6 +38,7 @@ async def test_propose_opens_gen_span_and_stop_check_ends_it(
         "budget": 100,
         "calls_used": 0,
         "max_generations": 50,
+        "plateau_window": 5,
         "_made_progress": True,
     }
     out = await graph_mod.propose(state)  # gen 0: loads starting pop, opens gen span
