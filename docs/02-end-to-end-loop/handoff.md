@@ -23,8 +23,9 @@
 
 ## Current state
 
-- Ship commit + ff-merge of `slice-02-plateau-stop` into `main` pending the ship step (this session).
-  **`main` is local-only — `origin/main` UNPUSHED by choice** (continues prior convention).
+- `slice-02-plateau-stop` ff-merged into `main` @ `2b04ef2` (branch deleted). **`main` PUSHED to
+  `origin/main` this session** (`1948379..2b04ef2`) — the prior local-only convention ended; remote is
+  now the source of truth.
 - DeepSeek balance ≈ $2.37 (`.env.local` = `direct` / `deepseek-v4-pro`, key valid). Untouched this slice
   (plateau work is harness/loop-only, no LLM calls).
 
