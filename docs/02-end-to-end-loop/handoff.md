@@ -1,48 +1,63 @@
-# Handoff — 02-end-to-end-loop (slice 01 shipped; next = slice 02 or 06)
+# Handoff — 02-end-to-end-loop (slice 06 CODE done + reviewed; verdict run PAUSED for strategic re-decision)
 
 ## Completed this session
 
-- **Shipped slice 01 `launch-and-watch-jnk3`** via subagent-driven TDD (4 tasks, each implementer +
-  review; final opus whole-branch review = merge YES) → merged to `main` (ff `c9be38e → f5717ee`).
-  Impl `a85d7f5..f5717ee`; design `f52b36b`; plan/slice-doc `cc63701`; ship-docs on top.
-- Harness scores **jnk3** (pin `scikit-learn==1.2.2` + `numpy<2` + two `sys.modules` shims for the
-  legacy RF pickle; rdkit unchanged → Graph-GA byte-identical); API accepts `task ∈ {qed, jnk3}`
-  (FR-015); web form targets jnk3 with a native `mutation_strategy` select + `plateau_window`.
-- Verified: full gate green (**pytest 113**, mypy 30, ruff, web vitest 9/9, typecheck, lint) +
-  **live browser e2e** (launch → /runs/{id} → terminal, no error) = exit criterion 7.
+- Built slice 06 `beat-graph-ga-on-jnk3` **code** via subagent-driven TDD (5 tasks, each impl+review;
+  final whole-branch review opus = **Ready to merge YES**, no Critical/Important). Branch
+  `slice-06-beat-graph-ga-on-jnk3` @ `e35dc1d`, **NOT merged**. Full gate green (pytest **124**, mypy 31, ruff).
+  - `1e305b6` gate-purity fix (valid_smiles = LLM-only — the carried BLOCKER, done) · `dce5e26` headless
+    `ReproResult.valid_rate` · `00b1cb0` jnk3 baseline 0.553 (sanity ref) · `286754b` `eval/beat.py`
+    head-to-head verdict · `c1f0146` `--head-to-head` CLI · `e35dc1d` coverage fixes. Spec `a9f35f9`, plan `63898e6`.
+- Ran the staged calibration (jnk3 head-to-head, budget 1500) → **BLOCKED: DeepSeek `402 Insufficient
+  Balance`** (account at $0). graph_ga control completed; the LLM run billed on its first real call. Wall
+  **~20.6 min** (graph_ga-dominated; 10k ⇒ multi-hour). Code behaved correctly — error surfaced cleanly.
 
 ## Slice status across milestone
 
-- `01-launch-and-watch-jnk3` → **shipped 2026-06-26 — frozen**
-- `02-plateau-stop-and-signal` → planned (dep-free)
-- `03 / 04 / 05` → shipped — frozen
-- `06-beat-graph-ga-on-jnk3` → planned (deps 01+04+05 — all now shipped)
+- 01, 03, 04, 05 → shipped + frozen. 02 `plateau-stop-and-signal` → planned (dep-free).
+- 06 `beat-graph-ga-on-jnk3` → **CODE COMPLETE + reviewed + merge-ready (`e35dc1d`); verdict run + ship
+  PENDING the strategic re-decision below.**
 
-Build order: `01 ∥ 02 ∥ 03 → 04 → 05 → 06`. No slice in-progress — next is the operator's choice.
+## Cost advisory reconciliation (`personal-vault/claude-notes/2026-06-27-capychem-cost-architecture-advisory.md`)
 
-## Current state
+Memo was produced in a parallel worktree off an EARLIER state; these code claims are **stale/wrong for
+HEAD `e35dc1d` — do not act on them:** (1) "proposer wired into nothing / calibration measures $0" — FALSE,
+the LLM is wired and the calibration billed DeepSeek (that's the 402; no off-tree mystery, just a $0
+account); (2) "jnk3 absent from baselines.py" — FALSE now; (3) "near-term run = GA-vs-GA reproduction" —
+it's a REAL LLM-vs-GA run, **but** the LLM is analyzer-LESS (differentiator = m03), so the null-result
+concern stands. **Sound (now memory `[[project_eval_compute_budget]]`):** cost non-binding (<$50 TOTAL; full
+10k chat ≈ $1.34); real risks = finishability (~11 wks) + null-result; sequence the first FUNDED
+*differentiator* run AFTER the analyzer (with/without, one task); README boosters = near-free ROI;
+architecture right-sized (don't pull Modal forward).
 
-- `main` @ ship-docs commit (slice 01 merged). **main UNPUSHED** (local-only by choice). slice-01
-  branch deleted; `slice-05-...` branch deletable. Working tree clean.
-- Harness re-pinned (sklearn 1.2.2 / numpy 1.26.4 / rdkit 2026.03.2; rebuilt via
-  `uv sync --project harness`). `oracle/` gitignored (jnk3.pkl ~10 MB, cached locally).
-  Infra: Postgres :5432, Langfuse :3001.
+## Next session start here — decide the fork (this is the planning the user wants)
 
-## Next session start here
-
-Pick **slice 02 `plateau-stop-and-signal`** (dep-free; hangs the plateau signal on slice 01's
-`LiveRun` seam) OR **slice 06 `beat-graph-ga-on-jnk3`** (finale; deps all met). For slice 06, FIRST
-fix the valid_smiles gate-purity BLOCKER below.
+- **A — Finish slice 06 as scoped:** top-up DeepSeek (~$2–5), run the jnk3 LLM-vs-GA head-to-head (real),
+  produce the milestone-02 week-7 kill-switch verdict (a tie/loss is an ACCEPTED kill-switch outcome →
+  "narrow scope, don't abandon"), then ship slice 06. Closes m02 exit criterion 8.
+- **B — Adopt the memo's reframing:** don't fund yet; fix the two free `proposer.py` bugs, ship the spine +
+  README boosters, defer the funded verdict to after the analyzer (m03). Reorders the roadmap; slice-06
+  verdict deferred (code stays merge-ready on the branch).
 
 ## Active concerns
 
-- **valid_smiles gate-purity (slice-06 BLOCKER):** `summary_json.valid_smiles.rate` includes the
-  always-valid gen-0 seed pop → make it LLM-only before slice 06's verdict.
-- **jnk3 minors (non-blocking):** `test_oracle_jnk3.py` skips only on missing venv, not missing model
-  (ERRORs if harness-present + offline + uncached); per-batch subprocess reloads the ~10 MB model
-  (perf); `score.py` import-error msg omits sklearn; shim comment over-scopes to gsk3b/drd2.
+- Two **FREE** proposer fixes (verified on HEAD, OUT of slice-06 scope): (1) `proposer.py:41-43` placeholder
+  rates `0.00014/0.00028` vs `_DEFAULT_MODEL="deepseek-v4-pro"` mismatch → internal cost tracker may
+  understate ~3.1× (real bill still ~$1.34/10k); (2) `_one_proposal_row` sends no `max_tokens` → uncapped
+  reasoning-tail cost. Add `"max_tokens": ~50` + align rates.
+- Headless eval path has **no $50 cost gate** (only the product/API loop does); the unique-call budget
+  bounds request count (~B requests) so cost is bounded but not auto-halted.
+- Wall-time: jnk3 per-batch harness model-reload ⇒ ~20 min/1500 calls; full 10k = multi-hour (perf
+  model-reuse is a known non-blocking minor).
+- SDD state in `.superpowers/sdd/progress.md` (slice 06): Tasks 1-5 complete; 6-8 (calibration/full-run/ship)
+  pending the fork. Branch unmerged; main UNPUSHED.
+- `ruff format .` (whole-repo, in the per-task gate) wants to reformat ~8 *grandfathered* files (env.py,
+  trace.py, a few tests) NOT touched by any slice-06 task — reverted this session to keep the branch diff
+  surgical. Expect them to re-appear dirty on the next `ruff format .`; commit a one-line `chore: ruff format`
+  if/when convenient (they're cosmetic only).
 
 ## Slice log
 
-- 2026-06-26 — Slice 05 (`unique-call-budget-and-cost-ledger`) shipped + merged.
-- 2026-06-26 — Slice 01 (`launch-and-watch-jnk3`) shipped + merged (`a85d7f5..f5717ee`).
+- 2026-06-27 — Slice 06 CODE complete + reviewed (`e35dc1d`, gate 124 green); calibration blocked on DeepSeek
+  $0 balance; PAUSED for strategic re-decision per the cost advisory.
+- 2026-06-26 — Slices 05 + 01 shipped + merged.
