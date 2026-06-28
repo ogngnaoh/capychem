@@ -35,7 +35,7 @@
 **Interfaces:**
 - Produces:
   - `Hypothesis(structured: dict[str, Any] | None, text: str, note: str | None = None)` — frozen.
-  - `AnalyzerSummary(top: list[tuple[str, float]], bottom: list[tuple[str, float]], recent_deltas: list[float], prior: Hypothesis | None)` — frozen.
+  - `AnalyzerSummary(top: list[tuple[str, float]], bottom: list[tuple[str, float]], recent_top10_means: list[float], prior: Hypothesis | None)` — frozen.
   - `build_analyzer_summary(population: list[Scored], score_history: list[float], prior: Hypothesis | None, *, k: int = 10) -> AnalyzerSummary`
   - `LoopState` gains `analyzer_hypothesis: Hypothesis | None` and `gen_db_id: int`.
 
@@ -53,7 +53,7 @@ def test_build_analyzer_summary_top_bottom_and_deltas() -> None:
     summary = build_analyzer_summary(pop, [0.3, 0.5, 0.7, 0.8], prior, k=2)
     assert summary.top == [("c1ccccc1", 0.9), ("CCO", 0.5)]
     assert summary.bottom == [("CCN", 0.4), ("CCC", 0.1)]
-    assert summary.recent_deltas == [0.5, 0.7, 0.8]  # last 3 only
+    assert summary.recent_top10_means == [0.5, 0.7, 0.8]  # last 3 only
     assert summary.prior is prior
 
 
@@ -104,7 +104,7 @@ class AnalyzerSummary:
 
     top: list[tuple[str, float]]
     bottom: list[tuple[str, float]]
-    recent_deltas: list[float]
+    recent_top10_means: list[float]
     prior: Hypothesis | None
 ```
 
@@ -139,7 +139,7 @@ def build_analyzer_summary(
     ranked = sorted(population, key=_sort_key)
     top = [(m.smiles, m.score) for m in ranked[:k]]
     bottom = [(m.smiles, m.score) for m in ranked[-k:]] if len(ranked) > k else []
-    return AnalyzerSummary(top=top, bottom=bottom, recent_deltas=score_history[-3:], prior=prior)
+    return AnalyzerSummary(top=top, bottom=bottom, recent_top10_means=score_history[-3:], prior=prior)
 ```
 
 - [ ] **Step 5: Run tests to verify they pass**
@@ -225,11 +225,12 @@ async def test_stub_is_deterministic_and_structured(monkeypatch) -> None:
     assert a.note is None
 
 
-async def test_stub_seed_changes_output(monkeypatch) -> None:
+async def test_stub_seed_varies_hypothesis(monkeypatch) -> None:
+    # The stub maps one (seed, prompt) to one of a small pool, so any TWO specific
+    # seeds may collide. Assert the stub is seed-SENSITIVE across a range instead.
     monkeypatch.setenv("CAPYCHEM_ANALYZER_BACKEND", "stub")
-    a = await analyze_async("p", seed=1)
-    b = await analyze_async("p", seed=2)
-    assert a.structured != b.structured
+    foci = {(await analyze_async("p", seed=s)).structured["focus"] for s in range(10)}
+    assert len(foci) > 1
 
 
 async def test_unknown_backend_raises(monkeypatch) -> None:
@@ -385,7 +386,7 @@ async def _direct_analyze(prompt: str, *, seed: int) -> AnalyzerResult:  # repla
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `uv run pytest packages/core/tests/test_analyzer.py -x`
-Expected: PASS (12 cases — the parametrized parse matrix + stub + backend dispatch).
+Expected: PASS (the parse matrix + stub determinism/seed-sensitivity + backend dispatch).
 
 - [ ] **Step 5: Typecheck + lint + commit**
 
@@ -606,7 +607,7 @@ def test_build_analyzer_prompt_mentions_summary() -> None:
     from capychem.loop.state import AnalyzerSummary
 
     summary = AnalyzerSummary(
-        top=[("c1ccccc1", 0.9)], bottom=[("CCC", 0.1)], recent_deltas=[0.5, 0.7], prior=None
+        top=[("c1ccccc1", 0.9)], bottom=[("CCC", 0.1)], recent_top10_means=[0.5, 0.7], prior=None
     )
     p = strategy.build_analyzer_prompt(summary)
     assert "c1ccccc1" in p and "CCC" in p
@@ -624,7 +625,7 @@ async def test_run_analyzer_async_wires_summary_to_adapter(monkeypatch) -> None:
         return AnalyzerResult(text="t", structured={"focus": "x", "avoid": []}, tokens_in=1, tokens_out=2)
 
     monkeypatch.setattr(strategy, "analyze_async", fake_analyze)
-    summary = AnalyzerSummary(top=[("CCO", 0.5)], bottom=[], recent_deltas=[], prior=None)
+    summary = AnalyzerSummary(top=[("CCO", 0.5)], bottom=[], recent_top10_means=[], prior=None)
     out = await strategy.run_analyzer_async(summary, seed=9)
     assert out.structured == {"focus": "x", "avoid": []}
     assert captured["seed"] == 9
@@ -636,7 +637,7 @@ def test_run_analyzer_sync_bridges_async(monkeypatch) -> None:
     from capychem.loop.state import AnalyzerSummary
 
     out = strategy.run_analyzer_sync(
-        AnalyzerSummary(top=[("CCO", 0.5)], bottom=[], recent_deltas=[], prior=None), seed=3
+        AnalyzerSummary(top=[("CCO", 0.5)], bottom=[], recent_top10_means=[], prior=None), seed=3
     )
     assert out.structured is not None
 ```
@@ -723,7 +724,7 @@ def build_analyzer_prompt(summary: AnalyzerSummary) -> str:
     prose followed by a JSON {"focus","avoid"} object so parse_hypothesis can lift it."""
     top = "\n".join(f"{smi}\t{score:.4f}" for smi, score in summary.top)
     bottom = "\n".join(f"{smi}\t{score:.4f}" for smi, score in summary.bottom)
-    deltas = ", ".join(f"{d:.4f}" for d in summary.recent_deltas)
+    deltas = ", ".join(f"{d:.4f}" for d in summary.recent_top10_means)
     prior = ""
     if summary.prior is not None and summary.prior.structured is not None:
         ps = summary.prior.structured
@@ -801,6 +802,8 @@ git commit -m "feat(analyzer): analyzer prompt seam + prompt conditioning"
 - Produces:
   - `AnalyzerHypothesis` model: `id, run_id, after_generation_index, text, structured_json, tokens_in, tokens_out, compute_cost_usd`.
   - `Generation.analyzer_hypothesis_id: int | None`.
+
+**Note (test/CI Postgres, not just dev):** `create_all` adds the new TABLE but never ALTERs the existing `generations` table to add the new COLUMN. The core loop tests use ephemeral in-memory sqlite (fine — built fresh). But the api-tier tests (`apps/api/tests/test_cost_gate.py`, `test_api.py`, `test_runner.py`) run against real Postgres via `make_engine()` + `init_schema`. On any **already-populated** Postgres (a shared local/CI DB that already has a `generations` table), the new column is absent and every `persist` (which always inserts a `Generation`) plus the `analyze` UPDATE will fail. **Before running the api-tier tests after this task, drop/recreate the Postgres DB** (or ensure CI uses an ephemeral container). This is the create_all/Alembic trade-off the milestone accepted.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1328,11 +1331,10 @@ Expected: FAIL with `TypeError: run_reproduction() got an unexpected keyword arg
 
 - [ ] **Step 3: Thread the analyzer into `run_reproduction`**
 
-In `packages/core/capychem/eval/runner.py`, update imports:
+In `packages/core/capychem/eval/runner.py`, update imports (the `logic`, `state`, and `strategy` lines change — adding `build_analyzer_summary`, `Hypothesis`, `run_analyzer_sync`; the existing `seeds` import is unchanged):
 
 ```python
 from capychem.loop.logic import build_analyzer_summary, merge_and_truncate
-from capychem.loop.seeds import load_starting_pop as starting_population  # pure file read
 from capychem.loop.state import Hypothesis, Scored
 from capychem.loop.strategy import fallback_fill, propose_llm_sync, run_analyzer_sync
 ```
@@ -1364,7 +1366,19 @@ Initialize the hypothesis + score-history trackers near `generations = 1` / `pre
     llm_proposed = 0
     llm_valid = 0
     hypothesis: Hypothesis | None = None
-    score_history: list[float] = [_top_k_mean(mol_buffer, 10)]
+    # Match the product loop's auc_curve EXACTLY: top-10 mean of the SURVIVOR pool
+    # (population), not the whole mol_buffer — so the analyzer's recent_top10_means are
+    # byte-identical across paths even for small pop_size (G6). _top_k_mean(mol_buffer,…)
+    # stays for the patience check (a separate quantity).
+    score_history: list[float] = [_pop_top_k_mean(population, 10)]
+```
+
+Add the survivor-pool helper at module level (near `_top_k_mean`):
+
+```python
+def _pop_top_k_mean(population: list[Scored], k: int) -> float:
+    scores = sorted((m.score for m in population), reverse=True)[:k]
+    return sum(scores) / len(scores) if scores else 0.0
 ```
 
 In the `mutation_strategy == "llm"` branch, pass the hypothesis:
@@ -1378,10 +1392,13 @@ In the `mutation_strategy == "llm"` branch, pass the hypothesis:
 After `generations += 1` and before the patience block, run the analyzer (mirrors the node's effective-hypothesis logic):
 
 ```python
-        score_history.append(_top_k_mean(mol_buffer, 10))
+        score_history.append(_pop_top_k_mean(population, 10))
         if analyzer and mutation_strategy == "llm":
             summary = build_analyzer_summary(population, score_history, hypothesis)
-            result = run_analyzer_sync(summary, seed=seed + generations)
+            # `generations` was already incremented above, so generation N's analyzer
+            # seed must be seed+N — matching the product node's seed+gen_index for the
+            # generation just scored (G6 parity). Hence `generations - 1`.
+            result = run_analyzer_sync(summary, seed=seed + generations - 1)
             if result.structured is not None:
                 hypothesis = Hypothesis(structured=result.structured, text=result.text)
             elif hypothesis is not None:
@@ -1435,7 +1452,7 @@ git commit -m "feat(analyzer): headless eval parity for the analyzer (G6)"
 
 **Placeholder scan:** No TBD/TODO; every code step shows full code. The Task 2 `_direct_analyze` `NotImplementedError` is an explicit, labeled temporary replaced in Task 3 (not a placeholder gap).
 
-**Type consistency:** `Hypothesis(structured, text, note)`, `AnalyzerResult(text, structured, tokens_in, tokens_out, cost_usd, note)`, `AnalyzerSummary(top, bottom, recent_deltas, prior)`, `build_analyzer_summary(population, score_history, prior, *, k)`, `analyze_async/sync(prompt, *, seed)`, `run_analyzer_async/sync(summary, *, seed)`, `build_prompt(..., hypothesis=None)`, `propose_llm_async/sync(..., hypothesis=None)` — names and signatures match across Tasks 1→7.
+**Type consistency:** `Hypothesis(structured, text, note)`, `AnalyzerResult(text, structured, tokens_in, tokens_out, cost_usd, note)`, `AnalyzerSummary(top, bottom, recent_top10_means, prior)`, `build_analyzer_summary(population, score_history, prior, *, k)`, `analyze_async/sync(prompt, *, seed)`, `run_analyzer_async/sync(summary, *, seed)`, `build_prompt(..., hypothesis=None)`, `propose_llm_async/sync(..., hypothesis=None)` — names and signatures match across Tasks 1→7.
 
 ## Out of scope (deferred, explicit)
 

@@ -121,9 +121,10 @@ JSON parse; the analyzer does its own content/usage extraction + cost (a separat
 
 ### Summary builder — `packages/core/capychem/loop/logic.py`
 - `build_analyzer_summary(population, score_history, prior) -> AnalyzerSummary` (pure, deterministic):
-  top-k + bottom-k survivors (smiles, score), recent top-10-mean deltas (the last 3 `score_history`
-  points), prior hypothesis (structured + prose). Returns the `AnalyzerSummary` defined in `state.py`.
-  Built identically in both paths → byte-identical analyzer input (G6).
+  top-k + bottom-k survivors (smiles, score), the recent top-10-mean trajectory (the last 3
+  `score_history` points), prior hypothesis (structured + prose). Returns the `AnalyzerSummary` defined in
+  `state.py`. `score_history` is the top-10 mean of the **survivor pool** in both paths (matching the
+  product loop's `auc_curve`), so the analyzer input is byte-identical even for small `pop_size` (G6).
 
 ### Shared seam — `packages/core/capychem/loop/strategy.py`
 - `build_analyzer_prompt(summary) -> str` — templates the summary; asks for prose + a JSON `{focus, avoid}` block.
