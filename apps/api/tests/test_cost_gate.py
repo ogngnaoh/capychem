@@ -59,7 +59,7 @@ async def test_cost_cap_trips_on_llm_spend_alone(sm, monkeypatch) -> None:  # ty
     from capychem.oracle import OracleResult
     from capychem.proposer import ProposalResult
 
-    async def fake_llm(task, population, *, n, seed):
+    async def fake_llm(task, population, *, n, seed, hypothesis=None):
         return [
             ProposalResult(
                 raw="C" * (i + 1), smiles="C" * (i + 1),

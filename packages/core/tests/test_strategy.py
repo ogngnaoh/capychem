@@ -74,3 +74,113 @@ def test_fallback_fill_returns_empty_when_no_gap() -> None:
     validated = [ValidCandidate(smiles="CCO", parents=None, proposer="llm")]
     result = strategy.fallback_fill(validated, [("CCO", 0.5)], target=1, mutation_rate=0.01, seed=5)
     assert result == []
+
+
+# --- milestone-03 tests: hypothesis-aware prompt conditioning + analyzer seam ---
+
+
+def test_build_prompt_unchanged_without_hypothesis() -> None:
+    from capychem.loop.state import Hypothesis
+
+    pop = [("CCO", 0.9), ("c1ccccc1", 0.4)]
+    base = strategy.build_prompt("jnk3", pop, 5)
+    assert strategy.build_prompt("jnk3", pop, 5, hypothesis=None) == base
+    # A hypothesis with no structured signal (neutral fallback) must ALSO not change it.
+    neutral = Hypothesis(structured=None, text="No new signal.", note="no new signal")
+    assert strategy.build_prompt("jnk3", pop, 5, hypothesis=neutral) == base
+    assert "Guidance" not in base
+
+
+def test_build_prompt_appends_guidance_when_hypothesis_present() -> None:
+    from capychem.loop.state import Hypothesis
+
+    pop = [("CCO", 0.9)]
+    h = Hypothesis(
+        structured={"focus": "increase logP", "avoid": ["phenol", "nitro"]}, text="Push logP."
+    )
+    p = strategy.build_prompt("jnk3", pop, 5, hypothesis=h)
+    assert "Guidance from analysis" in p
+    assert "increase logP" in p
+    assert "phenol, nitro" in p
+    assert "Push logP." in p
+
+
+def test_build_analyzer_prompt_mentions_summary() -> None:
+    from capychem.loop.state import AnalyzerSummary
+
+    summary = AnalyzerSummary(
+        top=[("c1ccccc1", 0.9)], bottom=[("CCC", 0.1)], recent_top10_means=[0.5, 0.7], prior=None
+    )
+    p = strategy.build_analyzer_prompt(summary)
+    assert "c1ccccc1" in p and "CCC" in p
+    assert "focus" in p and "avoid" in p  # asks for the JSON schema
+
+
+async def test_run_analyzer_async_wires_summary_to_adapter(monkeypatch) -> None:
+    from capychem.analyzer import AnalyzerResult
+    from capychem.loop.state import AnalyzerSummary
+
+    captured: dict = {}
+
+    async def fake_analyze(prompt, *, seed=0):
+        captured.update(prompt=prompt, seed=seed)
+        return AnalyzerResult(
+            text="t", structured={"focus": "x", "avoid": []}, tokens_in=1, tokens_out=2
+        )
+
+    monkeypatch.setattr(strategy, "analyze_async", fake_analyze)
+    summary = AnalyzerSummary(top=[("CCO", 0.5)], bottom=[], recent_top10_means=[], prior=None)
+    out = await strategy.run_analyzer_async(summary, seed=9)
+    assert out.structured == {"focus": "x", "avoid": []}
+    assert captured["seed"] == 9
+    assert "CCO" in captured["prompt"]
+
+
+def test_run_analyzer_sync_bridges_async(monkeypatch) -> None:
+    monkeypatch.setenv("CAPYCHEM_ANALYZER_BACKEND", "stub")
+    from capychem.loop.state import AnalyzerSummary
+
+    out = strategy.run_analyzer_sync(
+        AnalyzerSummary(top=[("CCO", 0.5)], bottom=[], recent_top10_means=[], prior=None), seed=3
+    )
+    assert out.structured is not None
+
+
+# --- resolve_effective_hypothesis (approved deviation) ---
+
+
+def test_resolve_effective_hypothesis_uses_parsed_result() -> None:
+    from capychem.analyzer import AnalyzerResult
+
+    result = AnalyzerResult(
+        text="Use logP.",
+        structured={"focus": "increase logP", "avoid": ["amides"]},
+        tokens_in=1,
+        tokens_out=2,
+    )
+    h = strategy.resolve_effective_hypothesis(result, prior=None)
+    assert h.structured == {"focus": "increase logP", "avoid": ["amides"]}
+    assert h.text == "Use logP."
+    assert h.note is None
+
+
+def test_resolve_effective_hypothesis_falls_back_to_prior_when_no_structured() -> None:
+    from capychem.analyzer import AnalyzerResult
+    from capychem.loop.state import Hypothesis
+
+    result = AnalyzerResult(text="", structured=None, tokens_in=0, tokens_out=0)
+    prior = Hypothesis(structured={"focus": "rigidity", "avoid": ["chains"]}, text="Prior text.")
+    h = strategy.resolve_effective_hypothesis(result, prior=prior)
+    assert h.structured == {"focus": "rigidity", "avoid": ["chains"]}
+    assert h.text == "Prior text."
+    assert h.note == "no new signal"
+
+
+def test_resolve_effective_hypothesis_neutral_when_no_structured_and_no_prior() -> None:
+    from capychem.analyzer import AnalyzerResult
+
+    result = AnalyzerResult(text="", structured=None, tokens_in=0, tokens_out=0)
+    h = strategy.resolve_effective_hypothesis(result, prior=None)
+    assert h.structured is None
+    assert h.text == "No new signal; continue broad optimization."
+    assert h.note == "no new signal"

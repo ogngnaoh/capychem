@@ -102,7 +102,7 @@ async def test_llm_invalid_output_triggers_ga_fallback(sm, monkeypatch) -> None:
     from capychem.proposer import ProposalResult
 
     # gen-1 LLM batch: 2 valid + 2 RDKit-invalid -> validate keeps 2 -> gap = 2.
-    async def fake_llm(task, population, *, n, seed):  # type: ignore[no-untyped-def]
+    async def fake_llm(task, population, *, n, seed, hypothesis=None):  # type: ignore[no-untyped-def]
         smis = ["CCO", "CCN", "not_a_smiles", "J!Q"]
         return [
             ProposalResult(raw=smis[i], smiles=smis[i], tokens_in=0, tokens_out=0, cost_usd=0.0)

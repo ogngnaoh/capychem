@@ -17,7 +17,7 @@ def _stub(monkeypatch: pytest.MonkeyPatch, llm_pool: list[str]) -> None:
     def fake_ga(population, n, **kw):  # type: ignore[no-untyped-def]
         return [Offspring(smiles="C" * (i + 3), parents=(0, 0)) for i in range(n)]
 
-    def fake_llm(task, population, *, n, seed):  # type: ignore[no-untyped-def]
+    def fake_llm(task, population, *, n, seed, hypothesis=None):  # type: ignore[no-untyped-def]
         return [
             ProposalResult(
                 raw=llm_pool[i % len(llm_pool)],

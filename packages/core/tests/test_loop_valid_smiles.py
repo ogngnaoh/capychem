@@ -85,7 +85,7 @@ async def test_llm_run_reports_llm_only_valid_rate(sm, monkeypatch):
     from capychem.loop import strategy
     from capychem.proposer import ProposalResult
 
-    async def fake_llm(task, population, *, n, seed):
+    async def fake_llm(task, population, *, n, seed, hypothesis=None):
         smis = ["CCO", "c1ccccc1", "not-a-smiles", "@@@@"]
         return [
             ProposalResult(raw=smis[i % 4], smiles=smis[i % 4], tokens_in=0, tokens_out=0)

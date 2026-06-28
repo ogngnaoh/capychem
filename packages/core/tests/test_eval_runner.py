@@ -87,7 +87,7 @@ def test_llm_strategy_runs_to_budget_on_stub(monkeypatch: pytest.MonkeyPatch) ->
 
     pool = ["CCO", "c1ccccc1", "CCN", "CCC", "CCCC"]
 
-    def fake_llm_sync(task, population, *, n, seed):
+    def fake_llm_sync(task, population, *, n, seed, hypothesis=None):
         return [
             ProposalResult(
                 raw=pool[i % len(pool)], smiles=pool[i % len(pool)], tokens_in=0, tokens_out=0
@@ -115,7 +115,7 @@ def test_llm_validity_rate_is_llm_only(monkeypatch: pytest.MonkeyPatch) -> None:
     from capychem.oracle import OracleResult
     from capychem.proposer import ProposalResult
 
-    def fake_llm_sync(task, population, *, n, seed):  # type: ignore[no-untyped-def]
+    def fake_llm_sync(task, population, *, n, seed, hypothesis=None):  # type: ignore[no-untyped-def]
         smis = ["CCO", "c1ccccc1", "not-a-smiles", "@@@@"]
         return [
             ProposalResult(raw=smis[i % 4], smiles=smis[i % 4], tokens_in=0, tokens_out=0)

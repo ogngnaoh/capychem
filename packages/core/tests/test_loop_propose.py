@@ -40,7 +40,7 @@ async def test_propose_graph_ga_uses_ga_fill(monkeypatch) -> None:
 async def test_propose_llm_returns_raw_strings_parents_none(monkeypatch) -> None:
     from capychem.proposer import ProposalResult
 
-    async def fake_llm(task, population, *, n, seed):
+    async def fake_llm(task, population, *, n, seed, hypothesis=None):
         return [
             ProposalResult(raw="CCO", smiles="CCO", tokens_in=1, tokens_out=2) for _ in range(n)
         ]
@@ -54,7 +54,7 @@ async def test_propose_llm_returns_raw_strings_parents_none(monkeypatch) -> None
 async def test_propose_llm_accumulates_cost(monkeypatch) -> None:
     from capychem.proposer import ProposalResult
 
-    async def fake_llm(task, population, *, n, seed):
+    async def fake_llm(task, population, *, n, seed, hypothesis=None):
         return [
             ProposalResult(raw="CCO", smiles="CCO", tokens_in=5, tokens_out=3, cost_usd=0.1)
             for _ in range(n)
