@@ -10,6 +10,7 @@ from typing import Any
 from capychem.loop.state import Scored
 
 VALID_SMILES_THRESHOLD = 0.80
+PLATEAU_MIN_IMPROVEMENT = 1e-9
 
 
 def valid_smiles_gate(rate: float, threshold: float = VALID_SMILES_THRESHOLD) -> dict[str, Any]:
@@ -39,6 +40,16 @@ def merge_and_truncate(
     return merged[:pop_size]
 
 
+def is_plateau(top10_history: list[float], plateau_window: int) -> bool:
+    """True when the top-10 mean has not improved over the last ``plateau_window``
+    generations (FR-003). The survivor pool is elitist so the history is
+    monotonically non-decreasing — "no improvement" means flat (Δ ≤ ε). Needs
+    ``plateau_window + 1`` points: the latest vs. the value a full window back."""
+    if plateau_window <= 0 or len(top10_history) <= plateau_window:
+        return False
+    return top10_history[-1] - top10_history[-1 - plateau_window] <= PLATEAU_MIN_IMPROVEMENT
+
+
 def stop_reason(
     *,
     calls_used: int,
@@ -46,14 +57,20 @@ def stop_reason(
     gen_index: int,
     max_generations: int,
     made_progress: bool,
+    top10_history: list[float] | None = None,
+    plateau_window: int = 0,
 ) -> str | None:
     """Return a termination reason, or None to continue.
 
-    Priority: budget exhaustion (FR-002) > max-generations cap > zero forward
-    progress (guards against an all-invalid / all-duplicate batch looping forever).
+    Priority: budget exhaustion (FR-002, hard) > plateau (FR-003) > max-generations
+    cap > zero forward progress (guards an all-invalid / all-duplicate batch from
+    looping forever). Plateau outranks the gen cap because it is the informative
+    convergence signal (Story 2); the hard budget guarantee still wins.
     """
     if calls_used >= budget:
         return "exhausted"
+    if is_plateau(top10_history or [], plateau_window):
+        return "plateaued"
     if gen_index >= max_generations:
         return "max_generations"
     if not made_progress:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from capychem.loop.logic import (
     build_summary,
+    is_plateau,
     merge_and_truncate,
     stop_reason,
     trim_to_budget,
@@ -131,3 +132,69 @@ def test_build_summary_embeds_gate() -> None:
     )
     assert summary["valid_smiles"]["rate"] == 0.9
     assert summary["valid_smiles"]["gate"] == {"threshold": 0.80, "passed": True}
+
+
+def test_is_plateau_flat_window_true() -> None:
+    # window=3 needs 4 points; last == value 3 generations back → plateau
+    assert is_plateau([0.1, 0.5, 0.5, 0.5, 0.5], plateau_window=3) is True
+
+
+def test_is_plateau_improving_false() -> None:
+    assert is_plateau([0.1, 0.2, 0.3, 0.4, 0.5], plateau_window=3) is False
+
+
+def test_is_plateau_insufficient_history_false() -> None:
+    # only window points (need window+1) → cannot judge yet
+    assert is_plateau([0.5, 0.5, 0.5], plateau_window=3) is False
+
+
+def test_is_plateau_boundary_exactly_window_plus_one() -> None:
+    assert is_plateau([0.5, 0.5, 0.5, 0.5], plateau_window=3) is True
+
+
+def test_is_plateau_improvement_just_above_epsilon_false() -> None:
+    assert is_plateau([0.5, 0.5, 0.5, 0.5 + 1e-6], plateau_window=3) is False
+
+
+def test_is_plateau_zero_window_false() -> None:
+    assert is_plateau([0.5, 0.5, 0.5], plateau_window=0) is False
+
+
+def test_stop_reason_plateaued() -> None:
+    assert (
+        stop_reason(
+            calls_used=10, budget=100, gen_index=3, max_generations=100,
+            made_progress=True, top10_history=[0.5, 0.5, 0.5, 0.5], plateau_window=3,
+        )
+        == "plateaued"
+    )
+
+
+def test_stop_reason_budget_outranks_plateau() -> None:
+    assert (
+        stop_reason(
+            calls_used=100, budget=100, gen_index=3, max_generations=100,
+            made_progress=True, top10_history=[0.5, 0.5, 0.5, 0.5], plateau_window=3,
+        )
+        == "exhausted"
+    )
+
+
+def test_stop_reason_plateau_outranks_max_generations() -> None:
+    assert (
+        stop_reason(
+            calls_used=10, budget=100, gen_index=100, max_generations=100,
+            made_progress=True, top10_history=[0.5, 0.5, 0.5, 0.5], plateau_window=3,
+        )
+        == "plateaued"
+    )
+
+
+def test_stop_reason_no_plateau_when_improving() -> None:
+    assert (
+        stop_reason(
+            calls_used=10, budget=100, gen_index=3, max_generations=100,
+            made_progress=True, top10_history=[0.1, 0.2, 0.3, 0.4], plateau_window=3,
+        )
+        is None
+    )
