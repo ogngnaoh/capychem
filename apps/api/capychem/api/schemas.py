@@ -34,6 +34,7 @@ class RunSnapshot(BaseModel):
     task: str
     status: str
     budget: int
+    plateau_window: int
     generation_index: int
     oracle_calls_used: int
     best_score: float | None

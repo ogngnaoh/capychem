@@ -57,6 +57,7 @@ async def test_runner_runs_to_completion_and_emits_events() -> None:
     assert final["status"] in {"exhausted", "max_generations", "no_progress"}
     snap = reg.snapshot(run_id)
     assert snap is not None and snap["oracle_calls_used"] <= 40
+    assert snap["plateau_window"] == 5  # NEW: snapshot exposes the window for the live signal
     await engine.dispose()
 
 

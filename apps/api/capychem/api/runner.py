@@ -35,6 +35,7 @@ def _snapshot_from_state(run_id: int, cfg: RunConfig, state: dict[str, Any]) -> 
         "task": cfg.task,
         "status": "running",
         "budget": cfg.budget,
+        "plateau_window": cfg.plateau_window,
         # completed-generation COUNT (== summary["generations"]); len(curve) grows
         # by one per persisted generation, whereas state["gen_index"] lags by one at
         # the moment the curve grows. Using len(curve) keeps the live UI and the

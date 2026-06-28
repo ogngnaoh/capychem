@@ -66,6 +66,7 @@ async def get_run_endpoint(run_id: int, request: Request) -> RunSnapshot:
             task=row.task,
             status=row.status,
             budget=row.budget,
+            plateau_window=row.plateau_window,
             generation_index=summary.get("generations", 0),
             oracle_calls_used=summary.get("oracle_calls", 0),
             best_score=(top[0]["score"] if top else None),
