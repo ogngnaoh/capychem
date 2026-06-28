@@ -38,9 +38,15 @@ class ProposalResult:
 
 
 # Placeholder per-1k-token rates; configure via env. NOT a price guarantee (N6).
-_DEFAULT_USD_PER_1K_IN = 0.00014
-_DEFAULT_USD_PER_1K_OUT = 0.00028
+# These correspond to _DEFAULT_MODEL (deepseek-v4-pro: $0.435/$0.87 per M tokens).
+# Keep aligned with the model — V4-Flash rates (0.00014/0.00028) understate v4-pro
+# spend ~3.1x and silently corrupt RunCost.
+_DEFAULT_USD_PER_1K_IN = 0.000435
+_DEFAULT_USD_PER_1K_OUT = 0.00087
 _DEFAULT_MODEL = "deepseek-v4-pro"
+# Hard cap on output tokens per request. A SMILES is short, so this leaves ample
+# headroom while bounding a reasoning-mode tail (which would otherwise balloon cost).
+_MAX_OUTPUT_TOKENS = 128
 _MODAL_APP = "capychem-worker"
 _MODAL_FN = "propose"
 _DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
@@ -224,6 +230,7 @@ async def _one_proposal_row(
         "messages": [{"role": "user", "content": prompt}],
         "temperature": temperature,
         "seed": seed,
+        "max_tokens": _MAX_OUTPUT_TOKENS,
     }
     body = await _deepseek_chat(payload, api_key=api_key)
     try:

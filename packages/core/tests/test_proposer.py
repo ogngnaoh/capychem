@@ -114,6 +114,46 @@ async def test_direct_backend_fans_out_one_request_per_proposal(monkeypatch):
     assert out[0].cost_usd == pytest.approx(0.0002)
 
 
+def test_default_rates_match_configured_model(monkeypatch):
+    # The placeholder rates must correspond to the default model. _DEFAULT_MODEL is
+    # deepseek-v4-pro ($0.435/$0.87 per M tokens), so the unset-env defaults are
+    # 0.000435 / 0.00087 per 1k — NOT the V4-Flash 0.00014 / 0.00028 (which would
+    # understate real spend ~3.1x). NOT a price guarantee (PRD N6).
+    monkeypatch.delenv("CAPYCHEM_LLM_USD_PER_1K_IN", raising=False)
+    monkeypatch.delenv("CAPYCHEM_LLM_USD_PER_1K_OUT", raising=False)
+    monkeypatch.delenv("CAPYCHEM_LLM_MODEL", raising=False)
+    assert proposer.llm_model() == "deepseek-v4-pro"
+    assert proposer.llm_usd_per_1k_in() == pytest.approx(0.000435)
+    assert proposer.llm_usd_per_1k_out() == pytest.approx(0.00087)
+
+
+async def test_direct_backend_caps_output_tokens(monkeypatch):
+    # _one_proposal_row must send max_tokens to hard-cap the output. Without it a
+    # reasoning-mode tail (thousands of tokens) could balloon cost; the cap leaves
+    # headroom for long SMILES while bounding the tail.
+    monkeypatch.setenv("CAPYCHEM_PROPOSER_BACKEND", "direct")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
+    captured: dict = {}
+
+    class FakeResp:
+        status_code = 200
+        text = "ok"
+
+        def json(self):
+            return {
+                "choices": [{"message": {"content": "CCO"}}],
+                "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+            }
+
+    async def fake_post(payload, *, api_key):
+        captured.update(payload)
+        return FakeResp()
+
+    monkeypatch.setattr(proposer, "_post_deepseek", fake_post)
+    await propose_batch_async("p", 1)
+    assert captured["max_tokens"] == 128
+
+
 async def test_direct_backend_http_error_raises_proposer_error(monkeypatch):
     # A 4xx/5xx must surface as a clean ProposerError that includes the API's
     # response body (e.g. DeepSeek's "Invalid n value" message), not a raw httpx error.
