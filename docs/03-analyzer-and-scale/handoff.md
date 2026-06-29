@@ -29,22 +29,21 @@
 
 ## Current state
 
-- Branch **`slice/03-06-analyzer-conditioning`**: code commits `3fee112 → 6a4bda3` + docs `9ffaacd`,
-  `e458c08`, and the ship-flip commit (this commit). **NOT yet merged to `main`; NOT pushed.** `main` is at
-  `origin/main` (25e5730). Final review = READY TO MERGE.
+- Slice 06 **ff-merged to `main`** (tip `c09841f`); slice branch deleted. **NOT pushed** — `origin/main` is
+  **7 commits behind** (still at 25e5730). Push is the open decision for next session.
 - Analyzer = **reasoning-OFF**, now with **3A conditioning** (soften + no `avoid` + half-batch) for the rest
   of the milestone. DeepSeek balance ≈ $3.1 (after the $4.27 top-up − ~$1.1 this slice).
 - 2 non-blocking Minors logged (in `.superpowers/sdd/progress.md`): cli `fake_run` kwargs assertion; cli
   module-level `trace_to_dict` import. Optional cleanup.
+- Stale leftover branch `slice-05-unique-call-budget-cost-ledger` exists locally (prior session) — unrelated.
 
 ## Next session start here
 
-1. **Finish slice 06:** ff-merge `slice/03-06-analyzer-conditioning` → `main` (final review READY); decide
-   push (`origin/main` is behind). Then pick the next slice.
-2. **Recommended next:** **slice 04** (23-task surface) then **slice 05** (Week-8 sweep) — the sweep is now
-   the authoritative bar and slice 06 cleared its dep. **Slice 03** (live surface) is independent. Consider a
-   **second seed (7) on jnk3** (~$1) to harden the single-seed slice-06 win before the sweep, given backend
-   non-determinism (see caveat).
+1. **Decide push:** `main` (c09841f) is 7 ahead of `origin/main`. Push if you want slice 06 on GitHub.
+2. **Recommended next slice:** **04** (23-task surface) → **05** (Week-8 sweep) — the sweep is the
+   authoritative bar and slice 06 cleared its dep. **Slice 03** (live surface) is independent. Strongly
+   consider a **second seed (7) on jnk3** (~$1) to harden the single-seed slice-06 win before the sweep,
+   given the backend non-determinism caveat below.
 
 ## Active concerns
 
