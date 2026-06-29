@@ -32,6 +32,9 @@ class ReproResult:
     llm_proposed: int = 0
     llm_valid: int = 0
     valid_rate: float | None = None
+    analyzer_calls: int = 0
+    analyzer_parsed: int = 0
+    analyzer_parse_rate: float | None = None
 
 
 def _as_scored(pairs: list[tuple[str, float]]) -> list[Scored]:
@@ -91,6 +94,8 @@ def run_reproduction(
     prev_top = _top_k_mean(mol_buffer, 100)
     llm_proposed = 0
     llm_valid = 0
+    analyzer_calls = 0
+    analyzer_parsed = 0
     hypothesis: Hypothesis | None = None
     # Match the product loop's auc_curve EXACTLY: top-10 mean of the SURVIVOR pool
     # (population), not the whole mol_buffer — so the analyzer's recent_top10_means are
@@ -135,6 +140,9 @@ def run_reproduction(
             # seed must be seed+N — matching the product node's seed+gen_index for the
             # generation just scored (G6 parity). Hence `generations - 1`.
             result = run_analyzer_sync(summary, seed=seed + generations - 1)
+            analyzer_calls += 1
+            if result.structured is not None:
+                analyzer_parsed += 1
             hypothesis = resolve_effective_hypothesis(result, hypothesis)
 
         # PMO patience: top-100 mean improvement < 1e-3 -> decrement; break at 0
@@ -148,6 +156,7 @@ def run_reproduction(
         prev_top = cur_top
 
     valid_rate = (llm_valid / llm_proposed) if llm_proposed else None
+    analyzer_parse_rate = (analyzer_parsed / analyzer_calls) if analyzer_calls else None
     return ReproResult(
         mol_buffer=mol_buffer,
         generations=generations,
@@ -155,4 +164,7 @@ def run_reproduction(
         llm_proposed=llm_proposed,
         llm_valid=llm_valid,
         valid_rate=valid_rate,
+        analyzer_calls=analyzer_calls,
+        analyzer_parsed=analyzer_parsed,
+        analyzer_parse_rate=analyzer_parse_rate,
     )

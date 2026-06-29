@@ -212,3 +212,102 @@ def test_analyzer_off_leaves_llm_path_unchanged(monkeypatch: pytest.MonkeyPatch)
     run_reproduction("qed", budget=20, seed=42, pop_size=3, offspring=4,
                      patience=2, mutation_strategy="llm")  # analyzer defaults False
     assert all(h is None for h in seen)
+
+
+def test_analyzer_parse_rate_all_parsed_on_stub(monkeypatch: pytest.MonkeyPatch) -> None:
+    # stub analyzer always returns a structured hypothesis -> parse_rate == 1.0.
+    from capychem.oracle import OracleResult
+    from capychem.proposer import ProposalResult
+
+    pool = ["CCO", "c1ccccc1", "CCN", "CCC", "CCCC"]
+
+    def fake_llm_sync(task, population, *, n, seed, hypothesis=None):  # type: ignore[no-untyped-def]
+        return [
+            ProposalResult(raw=pool[i % len(pool)], smiles=pool[i % len(pool)],
+                           tokens_in=0, tokens_out=0)
+            for i in range(n)
+        ]
+
+    def fake_score(smiles, task, **kw):  # type: ignore[no-untyped-def]
+        return [OracleResult(smiles=s, score=0.5, valid=True, wall_ms=1) for s in smiles]
+
+    monkeypatch.setenv("CAPYCHEM_ANALYZER_BACKEND", "stub")
+    monkeypatch.setattr(runner_mod, "propose_llm_sync", fake_llm_sync)
+    monkeypatch.setattr(runner_mod, "score_smiles", fake_score)
+    monkeypatch.setattr(runner_mod, "starting_population", lambda n: pool[:n])
+
+    res = run_reproduction("qed", budget=40, seed=42, pop_size=3, offspring=4,
+                           patience=9, mutation_strategy="llm", analyzer=True)
+    assert res.analyzer_calls > 0
+    assert res.analyzer_parsed == res.analyzer_calls
+    assert res.analyzer_parse_rate == 1.0
+
+
+def test_analyzer_parse_rate_counts_failures(monkeypatch: pytest.MonkeyPatch) -> None:
+    # A real CoT-truncation failure returns structured=None. The counter must track
+    # the RAW result (before resolve_effective_hypothesis re-injects last-good), so a
+    # fallback cannot masquerade as a parse success. This is the load-bearing guard.
+    from capychem.analyzer import AnalyzerResult
+    from capychem.oracle import OracleResult
+    from capychem.proposer import ProposalResult
+
+    pool = ["CCO", "c1ccccc1", "CCN", "CCC", "CCCC"]
+    n_calls = {"n": 0}
+
+    def fake_llm_sync(task, population, *, n, seed, hypothesis=None):  # type: ignore[no-untyped-def]
+        return [
+            ProposalResult(raw=pool[i % len(pool)], smiles=pool[i % len(pool)],
+                           tokens_in=0, tokens_out=0)
+            for i in range(n)
+        ]
+
+    def fake_score(smiles, task, **kw):  # type: ignore[no-untyped-def]
+        return [OracleResult(smiles=s, score=0.5, valid=True, wall_ms=1) for s in smiles]
+
+    def fake_analyzer(summary, *, seed):  # type: ignore[no-untyped-def]
+        n_calls["n"] += 1
+        # every other call "truncates" (structured=None), like a CoT-crowded JSON tail
+        structured = {"focus": "f", "avoid": ["a"]} if n_calls["n"] % 2 == 1 else None
+        return AnalyzerResult(
+            text="x", structured=structured, tokens_in=0, tokens_out=0,
+            note=None if structured is not None else "no new signal",
+        )
+
+    monkeypatch.setattr(runner_mod, "propose_llm_sync", fake_llm_sync)
+    monkeypatch.setattr(runner_mod, "score_smiles", fake_score)
+    monkeypatch.setattr(runner_mod, "run_analyzer_sync", fake_analyzer)
+    monkeypatch.setattr(runner_mod, "starting_population", lambda n: pool[:n])
+
+    res = run_reproduction("qed", budget=40, seed=42, pop_size=3, offspring=4,
+                           patience=9, mutation_strategy="llm", analyzer=True)
+    assert res.analyzer_calls >= 2
+    assert res.analyzer_parsed < res.analyzer_calls
+    assert res.analyzer_parse_rate is not None
+    assert 0.0 < res.analyzer_parse_rate < 1.0
+
+
+def test_analyzer_off_has_none_parse_rate(monkeypatch: pytest.MonkeyPatch) -> None:
+    from capychem.oracle import OracleResult
+    from capychem.proposer import ProposalResult
+
+    pool = ["CCO", "c1ccccc1", "CCN", "CCC"]
+
+    def fake_llm_sync(task, population, *, n, seed, hypothesis=None):  # type: ignore[no-untyped-def]
+        return [
+            ProposalResult(raw=pool[i % len(pool)], smiles=pool[i % len(pool)],
+                           tokens_in=0, tokens_out=0)
+            for i in range(n)
+        ]
+
+    def fake_score(smiles, task, **kw):  # type: ignore[no-untyped-def]
+        return [OracleResult(smiles=s, score=0.5, valid=True, wall_ms=1) for s in smiles]
+
+    monkeypatch.setattr(runner_mod, "propose_llm_sync", fake_llm_sync)
+    monkeypatch.setattr(runner_mod, "score_smiles", fake_score)
+    monkeypatch.setattr(runner_mod, "starting_population", lambda n: pool[:n])
+
+    res = run_reproduction("qed", budget=20, seed=42, pop_size=3, offspring=4,
+                           patience=2, mutation_strategy="llm")  # analyzer defaults False
+    assert res.analyzer_calls == 0
+    assert res.analyzer_parsed == 0
+    assert res.analyzer_parse_rate is None
