@@ -728,7 +728,23 @@ the hypothesis JSON at 2048; raising the cap restores parse success (slice-02 gu
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
-- [ ] **Step 4: Run the single-seed jnk3 verdict (~$1.2–2.0)**
+- [ ] **Step 4: Tiny-budget end-to-end dry run on real backends (~$0.1–0.2)**
+
+Before the full run, confirm the parse-rate is healthy across SEVERAL real jnk3 summaries (not just the
+single Step-2 call) and that the whole CLI pipeline runs end-to-end on `direct`:
+
+```bash
+CAPYCHEM_PROPOSER_BACKEND=direct CAPYCHEM_ANALYZER_BACKEND=direct DEEPSEEK_API_KEY=<key> \
+  uv run capychem-eval --task=jnk3 --budget=300 --seed=42 --analyzer-verdict
+```
+
+Healthy: `parse_rate_healthy == true` with `analyzer_calls` ≥ ~3 (so the rate is over several summaries),
+and `with_valid_rate`/`without_valid_rate` ≥ ~0.8. If `parse_rate_healthy == false` → return to Step 3
+(raise `_ANALYZER_MAX_OUTPUT_TOKENS`), re-smoke, repeat this dry run. Only proceed once the dry run is
+healthy — this small spend is the cheapest insurance against committing ~$1.5 to a run that would yield a
+false null.
+
+- [ ] **Step 5: Run the single-seed jnk3 verdict (~$1.2–2.0)**
 
 ```bash
 CAPYCHEM_PROPOSER_BACKEND=direct CAPYCHEM_ANALYZER_BACKEND=direct DEEPSEEK_API_KEY=<key> \
@@ -737,10 +753,10 @@ CAPYCHEM_PROPOSER_BACKEND=direct CAPYCHEM_ANALYZER_BACKEND=direct DEEPSEEK_API_K
 
 Capture the JSON. The `verdict` string + `parse_rate_healthy` give the read directly. Sanity-check `with_valid_rate`/`without_valid_rate` are ≥~0.8 (a low rate means the LLM arm degraded — likely a balance/transient issue, not a real signal).
 
-- [ ] **Step 5: Interpret + record the kill-switch decision**
+- [ ] **Step 6: Interpret + record the kill-switch decision**
 
 Decision rule (from the design):
-- `parse_rate_healthy == false` → verdict INVALID → return to Step 3 (raise max_tokens), rerun Step 4. Never record a null under truncation.
+- `parse_rate_healthy == false` → verdict INVALID → return to Step 3 (raise max_tokens), rerun Steps 4–5. Never record a null under truncation.
 - healthy & `helps == true` (`diff > 0`) → **analyzer ADDS value** → differentiator confirmed.
 - healthy & `helps == false` (`diff <= 0`) → **clean null** → pivot to analyzer-only narrative (document it); do NOT abandon. Slice still ships.
 
@@ -749,7 +765,7 @@ Write `docs/03-analyzer-and-scale/02-analyzer-value-verdict.md` (mirror `docs/02
 | seed | with-analyzer AUC | without-analyzer AUC | diff | helps | parse-rate | with/without valid-rate | with/without unique calls | wall | cost |
 |---|---|---|---|---|---|---|---|---|---|
 
-- [ ] **Step 6: Ship-the-slice doc updates (one commit, on the slice branch)**
+- [ ] **Step 7: Ship-the-slice doc updates (one commit, on the slice branch)**
 
 Per `~/.claude/CLAUDE.md` slice-completion ritual:
 - `docs/03-analyzer-and-scale/milestone.md` Slices list: flip `02 analyzer-value-verdict … planned → shipped (2026-06-28)` with the verdict one-liner.
@@ -763,7 +779,7 @@ git commit -m "docs(slice-03-02): ship analyzer-value-verdict — <ADDS value|nu
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
-- [ ] **Step 7: Final gate + integrate**
+- [ ] **Step 8: Final gate + integrate**
 
 Run the full suite + gates one more time:
 
@@ -786,11 +802,11 @@ git checkout main && git merge --ff-only slice/03-02-analyzer-value-verdict && g
 - `--analyzer-verdict` CLI + three-way verdict string (Component c) → Task 3. ✓
 - Raw-`structured` counting, not effective hypothesis (Decision 4) → Task 1 Step 4 + `test_analyzer_parse_rate_counts_failures`. ✓
 - 0.8 parse-rate floor (Decision 3) → Task 2 `_PARSE_RATE_FLOOR` + `test_parse_rate_healthy_boundary`. ✓
-- Parse smoke + conditional max_tokens bump (Decision 5, Step A) → Task 4 Steps 2–3. ✓
-- Real single-seed jnk3 verdict + three-way interpretation (Steps B/C, Decision 1) → Task 4 Steps 4–5. ✓
-- One-seed honesty / provider sampling (Decision 6) → Task 4 Step 5 Notes. ✓
+- Parse smoke + tiny-budget dry run + conditional max_tokens bump (Decision 5, Step A) → Task 4 Steps 2–4. ✓
+- Real single-seed jnk3 verdict + three-way interpretation (Steps B/C, Decision 1) → Task 4 Steps 5–6. ✓
+- One-seed honesty / provider sampling (Decision 6) → Task 4 Step 6 Notes. ✓
 - `beat.py`/`proposer.py` untouched; `ReproResult` new fields default to off-values (regression) → Task 1 defaults + `test_analyzer_off_has_none_parse_rate`. ✓
-- Slice-completion ritual (milestone/handoff flips, freeze, ff-merge, ask-before-push) → Task 4 Steps 6–7. ✓
+- Slice-completion ritual (milestone/handoff flips, freeze, ff-merge, ask-before-push) → Task 4 Steps 7–8. ✓
 
 **Placeholder scan:** No TBD/TODO. `<key>` / `<ADDS value|null pivot>` are operator-supplied at run time (a secret and a result), not plan gaps. The illustrative `_stub` helper in Task 2 Step 1 is explicitly flagged for deletion with the reason it's shown.
 

@@ -39,7 +39,7 @@ task: `uv run pytest` · `uv run mypy -p capychem -p capychem.api` · `uv run ru
 - [ ] T1 — `eval/runner.py`: `ReproResult` parse-rate fields + raw-`structured` counting; 3 tests (all-parsed / counts-failures / off→None).
 - [ ] T2 — `eval/verdict.py`: `AnalyzerVerdict` + `run_analyzer_verdict` + `_PARSE_RATE_FLOOR=0.8`; shape / determinism / arms-differ / 0.8-boundary tests.
 - [ ] T3 — `eval/cli.py`: `--analyzer-verdict` mode + three-way verdict string; report-wiring + INVALID-path tests.
-- [ ] T4 — Real `direct` run (single seed 42): balance check → parse smoke (bump max_tokens if truncating) → jnk3 verdict → interpret → record verdict table + kill-switch decision; slice-completion doc flips + freeze + ff-merge (ASK before push).
+- [ ] T4 — Real `direct` run (single seed 42): balance check → one-call parse smoke (bump max_tokens if truncating) → tiny-budget (`--budget=300`) end-to-end dry run to confirm parse-rate health across several real summaries → full jnk3 verdict → interpret → record verdict table + kill-switch decision; slice-completion doc flips + freeze + ff-merge (ASK before push).
 
 ## Notes
 
