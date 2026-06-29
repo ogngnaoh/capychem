@@ -92,8 +92,17 @@ def _run_one(
             task=task, ok=True, headline_auc=v2.with_auc, beat=v2.helps, payload=asdict(v2)
         )
 
+    if mode == "week8":
+        v3 = run_head_to_head(
+            task, budget, seed,
+            pop_size=pop_size, offspring=offspring, mutation_rate=mutation_rate,
+            analyzer=True,
+        )
+        return SweepRow(task=task, ok=True, headline_auc=v3.llm_auc, beat=v3.beat, payload=asdict(v3))
+
     raise ValueError(
-        f"Use a known sweep mode (reproduce|head_to_head|analyzer_verdict); got {mode!r}."
+        "Use a known sweep mode (reproduce|head_to_head|analyzer_verdict|week8); "
+        f"got {mode!r}."
     )
 
 
@@ -107,9 +116,10 @@ def run_sweep(
     offspring: int = 70,
     mutation_rate: float = 0.067,
 ) -> SweepReport:
-    if mode not in ("reproduce", "head_to_head", "analyzer_verdict"):
+    if mode not in ("reproduce", "head_to_head", "analyzer_verdict", "week8"):
         raise ValueError(
-            f"Use a known sweep mode (reproduce|head_to_head|analyzer_verdict); got {mode!r}."
+            "Use a known sweep mode (reproduce|head_to_head|analyzer_verdict|week8); "
+            f"got {mode!r}."
         )
     rows: list[SweepRow] = []
     for task in tasks:

@@ -63,6 +63,33 @@ def test_analyzer_verdict_mode_counts_helps(monkeypatch: pytest.MonkeyPatch) -> 
     assert report.rows[0].payload["parse_rate_healthy"] is True
 
 
+def test_week8_mode_runs_with_analyzer_and_counts_beats(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: dict = {}
+
+    def fake_h2h(task, budget, seed, *, analyzer=False, **kw):  # type: ignore[no-untyped-def]
+        seen[task] = analyzer
+        beat = task == "jnk3"
+        return BeatVerdict(
+            task=task, seed=seed, budget=budget,
+            llm_auc=0.60 if beat else 0.40, graph_ga_auc=0.50,
+            diff=0.10 if beat else -0.10, beat=beat,
+            llm_valid_rate=0.95, llm_valid_gate={"threshold": 0.8, "passed": True},
+            published_baseline=None, llm_unique_calls=budget, graph_ga_unique_calls=budget,
+            analyzer=True, analyzer_parse_rate=1.0, analyzer_calls=10, analyzer_parsed=10,
+            parse_rate_healthy=True,
+        )
+
+    monkeypatch.setattr(sweep_mod, "run_head_to_head", fake_h2h)
+    report = run_sweep(("qed", "jnk3"), budget=200, seed=42, mode="week8")
+    assert report.mode == "week8"
+    assert report.beats == 1
+    assert seen == {"qed": True, "jnk3": True}  # week8 always runs the analyzer arm
+    assert report.rows[0].payload["parse_rate_healthy"] is True
+    assert report.auc_sum == pytest.approx(0.40 + 0.60)
+
+
 def test_per_task_error_isolation(monkeypatch: pytest.MonkeyPatch) -> None:
     def flaky_repro(task, budget, seed, **kw):  # type: ignore[no-untyped-def]
         if task == "jnk3":
