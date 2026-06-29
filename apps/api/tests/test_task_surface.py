@@ -22,7 +22,16 @@ def test_schema_accepts_jnk3_and_qed() -> None:
 
 def test_schema_rejects_unknown_task() -> None:
     with pytest.raises(ValidationError):
-        CreateRunRequest(task="drd2", budget=10)
+        CreateRunRequest(task="not_a_real_task", budget=10)
+
+
+def test_schema_accepts_full_pmo_surface() -> None:
+    from capychem.eval.tasks import PMO_TASKS
+
+    for task in PMO_TASKS:
+        assert CreateRunRequest(task=task, budget=10).task == task
+    # drd2 was the old "unknown" fixture; it is a real PMO task and now valid.
+    assert CreateRunRequest(task="drd2", budget=10).task == "drd2"
 
 
 async def test_post_runs_maps_task_strategy_plateau_to_config(
@@ -56,5 +65,5 @@ async def test_post_runs_rejects_unknown_task() -> None:
         async with httpx.AsyncClient(
             transport=ASGIWebSocketTransport(app), base_url="http://test"
         ) as c:
-            r = await c.post("/runs", json={"task": "drd2", "budget": 10})
+            r = await c.post("/runs", json={"task": "not_a_real_task", "budget": 10})
             assert r.status_code == 422

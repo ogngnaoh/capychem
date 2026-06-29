@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from capychem.eval.tasks import PMO_TASKS
+from pydantic import BaseModel, Field, field_validator
 
 
 class CreateRunRequest(BaseModel):
-    task: Literal["qed", "jnk3"] = "qed"
+    task: str = "qed"
     budget: int = Field(gt=0)  # FR-015
     seed: int = 42
     pop_size: int = Field(default=100, gt=1)  # crossover needs two parents
@@ -17,6 +18,15 @@ class CreateRunRequest(BaseModel):
     plateau_window: int = Field(default=5, gt=0)
     max_generations: int = Field(default=100, gt=0)
     mutation_strategy: Literal["graph_ga", "llm"] = "graph_ga"
+
+    @field_validator("task")
+    @classmethod
+    def _task_must_be_pmo(cls, v: str) -> str:
+        if v not in PMO_TASKS:
+            raise ValueError(
+                f"Choose a PMO task from the 23-task surface; got {v!r}."
+            )
+        return v
 
 
 class TopMolecule(BaseModel):
