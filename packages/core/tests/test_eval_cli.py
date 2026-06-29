@@ -228,3 +228,47 @@ def test_cli_all_selects_head_to_head_mode(monkeypatch, capsys) -> None:  # type
     assert rc == 0
     assert json.loads(capsys.readouterr().out)["mode"] == "head_to_head"
     assert captured["mode"] == "head_to_head"
+
+
+def test_cli_all_selects_week8_and_passes_tasks(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    from capychem.eval import sweep as sweep_mod
+    from capychem.eval.sweep import SweepReport, SweepRow
+
+    captured: dict = {}
+
+    def fake_sweep(tasks=None, *, budget, seed, mode, **kw):  # type: ignore[no-untyped-def]
+        captured["mode"] = mode
+        captured["tasks"] = tasks
+        return SweepReport(
+            mode=mode, budget=budget, seed=seed, tasks_run=1, tasks_failed=0,
+            auc_sum=0.6, published_sum=0.553, beats=1,
+            rows=[SweepRow(task="jnk3", ok=True, headline_auc=0.6, beat=True,
+                           payload={"beat": True,
+                                    "llm_valid_gate": {"threshold": 0.8, "passed": True},
+                                    "parse_rate_healthy": True})],
+        )
+
+    monkeypatch.setattr(sweep_mod, "run_sweep", fake_sweep)
+    rc = main(["--all", "--week8", "--tasks", "jnk3,median1", "--budget", "10000", "--seed", "42"])
+    assert rc == 0
+    report = json.loads(capsys.readouterr().out)
+    assert captured["mode"] == "week8"
+    assert captured["tasks"] == ("jnk3", "median1")
+    assert report["mode"] == "week8"
+    # week8 verdict keys are merged into the sweep output
+    assert report["trustworthy_beats"] == 1
+    assert "week8_verdict" in report and "on_track" in report
+
+
+def test_cli_tasks_rejects_unknown_task(capsys) -> None:  # type: ignore[no-untyped-def]
+    import pytest as _pytest
+    with _pytest.raises(SystemExit):
+        main(["--all", "--week8", "--tasks", "jnk3,not_a_real_task", "--budget", "10000"])
+    assert "not_a_real_task" in capsys.readouterr().err
+
+
+def test_cli_week8_requires_all(capsys) -> None:  # type: ignore[no-untyped-def]
+    import pytest as _pytest
+    with _pytest.raises(SystemExit):
+        main(["--week8", "--task", "jnk3", "--budget", "10000"])
+    assert "--all" in capsys.readouterr().err

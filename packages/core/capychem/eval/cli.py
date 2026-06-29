@@ -52,20 +52,41 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Run the LLM-with-analyzer arm once and dump per-generation hypotheses + prompts (diagnosis).",  # noqa: E501
     )
+    p.add_argument(
+        "--week8",
+        action="store_true",
+        help="With --all: run with-analyzer-LLM vs vanilla Graph-GA and render the Week-8 verdict.",  # noqa: E501
+    )
+    p.add_argument(
+        "--tasks",
+        default=None,
+        help="With --all: comma-separated PMO task subset to sweep (default: all 23).",
+    )
     args = p.parse_args(argv)
     if not args.all_tasks and args.task is None:
         p.error("--task is required unless --all is given")
+    if (args.week8 or args.tasks) and not args.all_tasks:
+        p.error("--week8 and --tasks require --all")
 
     t0 = time.monotonic()
     if args.all_tasks:
-        from capychem.eval.sweep import run_sweep
+        from capychem.eval.sweep import run_sweep, week8_verdict
+        from capychem.eval.tasks import PMO_TASKS
 
         mode = (
-            "analyzer_verdict" if args.analyzer_verdict
+            "week8" if args.week8
+            else "analyzer_verdict" if args.analyzer_verdict
             else "head_to_head" if args.head_to_head
             else "reproduce"
         )
+        sweep_tasks = PMO_TASKS
+        if args.tasks:
+            sweep_tasks = tuple(t.strip() for t in args.tasks.split(",") if t.strip())
+            unknown = [t for t in sweep_tasks if t not in PMO_TASKS]
+            if unknown:
+                p.error(f"--tasks has unknown PMO tasks: {unknown}")
         sweep_report = run_sweep(
+            sweep_tasks,
             budget=args.budget, seed=args.seed, mode=mode,
             pop_size=args.pop_size, offspring=args.offspring, mutation_rate=args.mutation_rate,
         )
@@ -75,6 +96,8 @@ def main(argv: list[str] | None = None) -> int:
             **dataclasses.asdict(sweep_report),
             "wall_seconds": round(wall, 1),
         }
+        if mode == "week8":
+            sweep_out |= week8_verdict(sweep_report)
         json.dump(sweep_out, sys.stdout, indent=2)
         sys.stdout.write("\n")
         return 0
