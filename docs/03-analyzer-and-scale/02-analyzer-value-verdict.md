@@ -51,9 +51,13 @@ task: `uv run pytest` · `uv run mypy -p capychem -p capychem.api` · `uv run ru
   `parse_hypothesis`→None → silent "no new signal" every gen → false null that no test catches (stub never
   hits it). The parse-rate instrumentation + 0.8 floor is the whole reason this slice precedes a verdict.
 - **Untouched:** `proposer.py` / `test_proposer.py`, `eval/beat.py`, product loop / WS / UI / DB schema.
-- **`direct` balance risk:** a $0 balance mid-run degrades the LLM arm to Graph-GA (402→transient
-  fallback) — confirm balance covers the run first; a depressed with/without `valid_rate` flags a degraded
-  run.
+- **`direct` balance risk (two distinct failure modes — `parse_rate_healthy` only catches ONE).**
+  `parse_rate_healthy` guards the CoT-truncation false-null (analyzer JSON crowded out). It does NOT catch
+  the *other* degradation: a $0 balance mid-run → proposer 402s → silent Graph-GA fallback corrupts the LLM
+  arm itself, while parse-rate stays healthy and the verdict string would still print "ADDS value"/"NULL".
+  So at T5 do NOT read the `verdict` string in isolation: (a) confirm the balance covers the run before
+  starting, and (b) cross-check `with_valid_rate`/`without_valid_rate` are ≥~0.8 — a depressed valid-rate
+  means the run degraded and the verdict is invalid regardless of `parse_rate_healthy`.
 - **Verdict (filled at T5):** _pending the real run._
 
   | seed | with AUC | without AUC | diff | helps | parse-rate | with/without valid-rate | with/without unique calls | wall | cost |
