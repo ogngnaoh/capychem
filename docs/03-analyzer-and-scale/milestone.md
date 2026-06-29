@@ -65,7 +65,11 @@ docs are written when that slice's work starts.
     analyzer calls, so it MUST instrument the analyzer `parse_hypothesis` success rate — reasoning-ON CoT
     can crowd out the `{focus, avoid}` JSON past `max_tokens≈2048`, which degrades to "no new signal" every
     generation and would fake a "no value" verdict that no test catches (see Integration notes,
-    reasoning-budget risk). A null result is only valid once parse-success is confirmed healthy. — planned
+    reasoning-budget risk). A null result is only valid once parse-success is confirmed healthy. —
+    **shipped (2026-06-28)** — verdict: trustworthy **clean NULL** (parse-rate 1.0; analyzer does NOT add
+    value on jnk3 @ seed 42, with 0.678 < without 0.743). The reasoning-budget risk materialized and was
+    fixed by reversing the analyzer to reasoning-OFF (exit-criterion #4 reversed). Kill-switch → pivot
+    signal; strategic response in handoff.
     — deps: 01
 03. `analyzer-live-surface` — WS `analyzer.hypothesis` event + watch-live latest hypothesis + run-detail
     full hypothesis sequence (FR-009/FR-011, Story 2/3). — planned — deps: 01
@@ -95,12 +99,13 @@ docs are written when that slice's work starts.
   `thinking:{type:disabled}` + `_MAX_OUTPUT_TOKENS=128`; the analyzer is a separate call — do NOT copy
   the proposer payload. Cost → `RunCost.llm_cost_usd` (already summed into `total_usd`) +
   `AnalyzerHypothesis.compute_cost_usd`.
-- **Reasoning-budget risk (slice 02/05, surfaced in slice 01 final review).** The analyzer runs reasoning
-  ON with `max_tokens≈2048`. If DeepSeek-v4's chain-of-thought crowds out the `{focus, avoid}` JSON tail,
-  `parse_hypothesis` returns None and the loop silently falls back to "no new signal" every generation —
-  neutering the differentiator **without failing any test** (it degrades safely; stub backend never hits
-  this). When the first real `direct` verdict runs, instrument the parse-failure rate before trusting a
-  null result; raise `max_tokens` if CoT is truncating the JSON.
+- **Reasoning-budget risk — RESOLVED in slice 02 (the risk materialized).** The analyzer ran reasoning
+  ON with `max_tokens≈2048`; the first real `direct` verdict scored parse-rate **0/3** — v4's CoT runs
+  2.5–3.9k tokens (variable), overran the cap, and left `content` empty → `parse_hypothesis` None every
+  gen. The slice-02 parse-rate instrumentation caught it (no test could). **Fix:** analyzer reversed to
+  reasoning-OFF (`thinking:{type:disabled}`, `max_tokens 2048→1024`), mirroring the proposer — parse-rate
+  then 1.0. This **reverses slice-01 exit-criterion #4** (reasoning ON) on evidence; the slice-01 design
+  spec's reasoning-ON rationale is superseded. Analyzer reasoning is now OFF for the rest of the milestone.
 - **Cost gate already exists.** Milestone-02 slice 05 wired the hard `cost.cost_cap_usd()` gate in
   `apps/api/.../runner.py` (`total_usd` = llm+oracle). Milestone 03 only adds analyzer spend into that
   total and validates the gate holds across the sweep.
@@ -126,7 +131,9 @@ docs are written when that slice's work starts.
    the loop never stalls (edge case 3).
 4. The analyzer reasoning-mode decision is made consciously and documented (not copied from the proposer).
 5. With-analyzer beats without-analyzer (the milestone-02 LLM control) on ≥1 task (jnk3) by AUC-of-top-10,
-   head-to-head, via the canonical eval module — the analyzer adds value.
+   head-to-head, via the canonical eval module — the analyzer adds value. → **NOT MET on jnk3 @ seed 42**
+   (slice 02: with 0.678 < without 0.743, trustworthy null). One-task/one-seed; the authoritative bar is the
+   slice-05 23-task sweep. Kill-switch → analyzer-only-narrative pivot is the open milestone decision (handoff).
 6. All 23 PMO tasks are launchable from the web (multi-task selector) and scored end-to-end; published
    Graph-GA baselines registered.
 7. The hypothesis is surfaced live (watch-live latest) and in run-detail (full sequence).

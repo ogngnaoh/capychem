@@ -36,10 +36,15 @@ task: `uv run pytest` · `uv run mypy -p capychem -p capychem.api` · `uv run ru
 
 ## Tasks
 
-- [ ] T1 — `eval/runner.py`: `ReproResult` parse-rate fields + raw-`structured` counting; 3 tests (all-parsed / counts-failures / off→None).
-- [ ] T2 — `eval/verdict.py`: `AnalyzerVerdict` + `run_analyzer_verdict` + `_PARSE_RATE_FLOOR=0.8`; shape / determinism / arms-differ / 0.8-boundary tests.
-- [ ] T3 — `eval/cli.py`: `--analyzer-verdict` mode + three-way verdict string; report-wiring + INVALID-path tests.
-- [ ] T4 — Real `direct` run (single seed 42): balance check → one-call parse smoke (bump max_tokens if truncating) → tiny-budget (`--budget=300`) end-to-end dry run to confirm parse-rate health across several real summaries → full jnk3 verdict → interpret → record verdict table + kill-switch decision; slice-completion doc flips + freeze + ff-merge (ASK before push).
+- [x] T1 — `eval/runner.py`: `ReproResult` parse-rate fields + raw-`structured` counting; 3 tests. — `ee86685` (review clean)
+- [x] T2 — `eval/verdict.py`: `AnalyzerVerdict` + `run_analyzer_verdict` + `_PARSE_RATE_FLOOR=0.8`; 3 tests. — `be8e646` (review clean)
+- [x] T3 — `eval/cli.py`: `--analyzer-verdict` mode + three-way verdict string; report + INVALID + NULL-branch tests. — `82d90f9` + `c45a011` (review clean)
+- [x] T3b — **(unplanned, user-approved) analyzer reasoning OFF.** The first real `direct` calls exposed the reasoning-budget risk: v4's chain-of-thought runs 2.5–3.9k tokens (variable), overran `max_tokens` and left `content` empty → parse-rate 0/3 on the budget-300 dry run (the instrumentation caught it). Fix: `thinking:{type:disabled}` + `max_tokens 2048→1024`, mirroring the proposer. Reverses slice-01 **exit-criterion #4** (reasoning ON) on empirical evidence. — `74eab91` (+ `33da829` stale-comment cleanup; review clean)
+- [x] T4 — Real `direct` jnk3 verdict (seed 42): smoke → budget-300 dry run (caught the reasoning bug → T3b) → re-dry-run (parse 1.0) → full `--budget=10000` verdict → recorded below. Real spend ≈ $1.0 (full run) + ≈ $0.3 (smoke + 2 dry runs + diagnostics).
+
+> **Shipped 2026-06-28** (commits `ee86685..33da829` on `slice/03-02-analyzer-value-verdict`; T1–T3 via
+> subagent-driven-development + a final whole-branch review READY-TO-MERGE; T3b reasoning-OFF fix; T4 verdict
+> a trustworthy clean NULL). Full suite green, mypy + ruff clean. FROZEN — strategic response in `handoff.md`.
 
 ## Notes
 
@@ -58,8 +63,26 @@ task: `uv run pytest` · `uv run mypy -p capychem -p capychem.api` · `uv run ru
   So at T5 do NOT read the `verdict` string in isolation: (a) confirm the balance covers the run before
   starting, and (b) cross-check `with_valid_rate`/`without_valid_rate` are ≥~0.8 — a depressed valid-rate
   means the run degraded and the verdict is invalid regardless of `parse_rate_healthy`.
-- **Verdict (filled at T5):** _pending the real run._
+## Verdict (the deliverable)
 
-  | seed | with AUC | without AUC | diff | helps | parse-rate | with/without valid-rate | with/without unique calls | wall | cost |
-  |---|---|---|---|---|---|---|---|---|---|
-  | 42 | — | — | — | — | — | — | — | — | — |
+`CAPYCHEM_PROPOSER_BACKEND=direct CAPYCHEM_ANALYZER_BACKEND=direct capychem-eval --task=jnk3 --budget=10000 --seed=42 --analyzer-verdict`
+— every score is an in-silico oracle score (PRD N6); reasoning OFF for the analyzer (T3b), reasoning OFF for the proposer.
+
+| seed | with-analyzer AUC | without-analyzer AUC | diff | helps | parse-rate | with/without valid-rate | with/without unique calls | wall |
+|---|---|---|---|---|---|---|---|---|
+| 42 | 0.6776 | **0.7434** | **−0.0657** | ❌ no | **1.0 (70/70)** | 0.989 / 0.890 | 2729 / 2457 | 19.6 min |
+
+**Decision — clean NULL (the differentiator kill-switch fired honestly).** The analyzer does **not** add AUC
+value on jnk3 @ seed 42 — it slightly **hurts** (−0.0657). The verdict is **trustworthy**, not an artifact:
+parse-rate is 1.0 (all 70 hypotheses parsed, after the T3b reasoning-OFF fix) and both valid-rates are ≥0.8
+(the LLM arm did not silently degrade to Graph-GA). Consistent with the budget-300 dry run (−0.022). Both arms
+still clear the published jnk3 Graph-GA baseline (0.553) — the milestone-02 finding (LLM proposer beats GA)
+holds; what fails is the *analyzer conditioning* on top of it. Per SPEC §9 / PROJECT §9 this is the
+**pivot-to-analyzer-only-narrative** signal — **do not abandon**.
+
+- **Milestone exit-criterion #5 (analyzer adds value on ≥1 task) is NOT met** on jnk3. This is an early,
+  one-task, one-seed signal — the authoritative Week-8 bar is the 23-task with-analyzer-vs-Graph-GA sweep
+  (slice 05). The milestone's strategic response (continue to the 23-task sweep / iterate the
+  `{focus,avoid}` prompt, which may over-constrain the proposer / formally adopt the analyzer-only
+  narrative) is a milestone-level decision recorded in `handoff.md`, not made in this slice.
+- The slice's **own** goal — render a *trustworthy* verdict, guarded against the CoT false-null — is met.

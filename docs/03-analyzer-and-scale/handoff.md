@@ -2,59 +2,61 @@
 
 ## Completed this session
 
-- **Slice 01 `analyzer-agent` IMPLEMENTED end-to-end** via `superpowers:subagent-driven-development` (fresh
-  implementer + fresh reviewer per task; controller verified every gate). 7 TDD tasks, commits
-  `015e7d1..2a84d46` on `slice/03-01-analyzer-agent`:
-  - `015e7d1` types + `build_analyzer_summary` · `b543812` analyzer stub + `parse_hypothesis` ·
-    `7a0723b` direct DeepSeek backend (reasoning ON) · `8dcb32d` strategy seam + conditioning + 8 fakes ·
-    `75cfa76` `AnalyzerHypothesis` schema + `Generation` link · `4aa4b2e` `analyze` node in the product loop ·
-    `2a84d46` headless eval parity (G6).
-- **One approved deviation:** the effective-hypothesis resolution was extracted into
-  `strategy.resolve_effective_hypothesis(result, prior)`, called by BOTH the `analyze` node and the headless
-  runner (removes a duplicated block; strengthens G6 parity). `proposer.py`/`test_proposer.py` untouched.
-- **Verification:** full suite **179 passed** (packages/core + apps/api, real Postgres + real oracle);
-  `mypy -p capychem -p capychem.api` clean (32 files); `ruff check .` clean. Dev/CI Postgres dropped +
-  recreated after the schema task (`create_all` rebuilt all 6 tables incl. `generations.analyzer_hypothesis_id`).
-- **Final whole-branch review (opus):** READY TO MERGE — no Critical/Important; G6 dual-path parity verified
-  against source; cost flow + graph_ga isolation + FK acyclicity confirmed.
+- **Slice 02 `analyzer-value-verdict` SHIPPED** — the differentiator kill-switch. Full planning stack
+  (design spec + plan + slice doc), then subagent-driven-development. Commits `ee86685..33da829` on
+  `slice/03-02-analyzer-value-verdict` (ff-merged to `main`):
+  - `ee86685` parse-rate instrumentation on `run_reproduction` · `be8e646` `eval/verdict.py` · `82d90f9`
+    `--analyzer-verdict` CLI · `c45a011` NULL-branch test · `74eab91` **analyzer reasoning OFF** (T3b) ·
+    `33da829` stale-comment cleanup. All T1–T3 task-reviewed clean; final whole-branch review (opus) READY-TO-MERGE.
+- **Load-bearing fix (T3b, user-approved design reversal):** the first real `direct` calls scored
+  parse-rate **0/3** — v4's reasoning CoT (2.5–3.9k tok) overran `max_tokens` → empty `content`. The
+  slice-02 instrumentation caught it (no test could). Reversed the analyzer to reasoning-OFF
+  (`thinking:{type:disabled}`, 2048→1024) → parse-rate 1.0. **Reverses slice-01 exit-criterion #4.**
+- **Verdict (the deliverable) — trustworthy clean NULL.** jnk3 @ seed 42, `--budget=10000`:
+  with-analyzer AUC **0.678** vs without **0.743** (diff **−0.066**), parse-rate **1.0 (70/70)**,
+  valid-rates 0.99/0.89 (no GA degradation). The analyzer does NOT add value on jnk3 (slightly hurts).
+- **Verification:** full suite **188 passed**, mypy clean (33 files), ruff clean. Real spend ≈ $1.3 total.
 
 ## Slice status across milestone
 
 - 01 `analyzer-agent` → **shipped** (2026-06-28)
-- 02 `analyzer-value-verdict` → planned (dep 01 ✓ — now unblocked)
-- 03 `analyzer-live-surface` → planned (dep 01 ✓ — now unblocked)
-- 04 `twenty-three-task-surface` → planned (deps none)
+- 02 `analyzer-value-verdict` → **shipped** (2026-06-28) — verdict: clean NULL (analyzer ≠ value on jnk3)
+- 03 `analyzer-live-surface` → planned (dep 01 ✓ — unblocked)
+- 04 `twenty-three-task-surface` → planned (deps none — unblocked)
 - 05 `week-8-sweep-and-gate` → planned (deps 01 ✓, 04)
 
 ## Current state
 
-- Slice 01 **ff-merged to `main` locally** (this is `main`'s tip); slice branch `slice/03-01-analyzer-agent`
-  deleted. **`origin/main` NOT pushed** — origin is source of truth, push deferred by choice (consistent with
-  prior milestones). SDD ledger: `.superpowers/sdd/progress.md` (all 7 tasks "review clean").
-- DeepSeek balance ≈ $2.37 — dev/tests on the `stub` analyzer backend; real `direct` only for verdicts.
+- Slice 02 **ff-merged to `main` locally** (main's tip); slice branch deleted. **`origin/main` NOT pushed**
+  — push deferred by choice (consistent with prior milestones). SDD ledger: `.superpowers/sdd/progress.md`.
+- Analyzer is now **reasoning-OFF** for the rest of the milestone (the slice-01 design's reasoning-ON
+  rationale is superseded). DeepSeek balance ≈ $1 left (was ~$2.37).
 
 ## Next session start here
 
-1. **Start slice 02 `analyzer-value-verdict`** (the differentiator kill-switch: with/without-analyzer AUC on
-   jnk3). It runs the first real `direct` analyzer calls — **instrument the `parse_hypothesis` failure rate**
-   before trusting any null result (see Active concerns). Slices 03 and 04 are also unblocked.
+1. **DECIDE the milestone's response to the null** (the headline). Options: (a) iterate the analyzer —
+   the `{focus,avoid}` conditioning likely over-constrains the proposer (it beats GA *without* the
+   analyzer); try a softer/explore-preserving prompt before scaling. (b) Continue to the 23-task Week-8
+   sweep (slice 05) as the authoritative bar — jnk3 is one task/one seed. (c) Formally adopt the
+   analyzer-only narrative. Slices **03** (live surface) and **04** (23-task surface) are unblocked and
+   independent of this decision.
 
 ## Active concerns
 
-- **Reasoning-budget parse risk (slice 02/05).** Analyzer is reasoning-ON, `max_tokens≈2048`. If DeepSeek-v4
-  CoT crowds out the `{focus, avoid}` JSON, `parse_hypothesis` → None → silent "no new signal" fallback every
-  gen, neutering the differentiator **without failing any test** (degrades safely; stub never hits it). Log
-  parse-failure rate on the first `direct` verdict; raise `max_tokens` if CoT truncates the JSON.
-- **Direct backend unverified live** — reasoning-ON payload + content/usage extraction are tested only against
-  monkeypatched transport; the slice-02 verdict is the first real-API confirmation.
-- **Known minor (documented, deferred):** analyzer cost lands in `RunCost` one generation late; the final
-  gen's analyzer cost (sub-cent) isn't re-persisted. Gate still fires within one generation.
-- **Carried from milestone 02:** manual live-UI plateau-callout check; optional `plateauNotice` double-call
-  hoist in `LiveRun.tsx` (Minor).
+- **Analyzer is value-negative on jnk3.** Trustworthy (parse 1.0, valid-rates healthy), consistent with
+  the budget-300 dry run (−0.022). Likely cause: `{focus,avoid}` over-constrains the proposer's recall of
+  strong JNK3 scaffolds. Worth investigating BEFORE the slice-05 sweep, or the sweep likely also nulls.
+- **One seed only** (seed 42, by approved scope). m02 used two seeds for robustness; a second seed (7)
+  would harden the null but costs ~$1 more.
+- **Stale reasoning-ON references:** slice-01 design spec + slice-01 frozen doc still say "reasoning ON"
+  (now reversed). milestone.md is updated; do not edit the frozen slice-01 doc — the reversal is recorded
+  in slice-02 doc + milestone integration notes.
+- **Carried (deferred):** analyzer cost lands in `RunCost` one gen late (sub-cent); m02 live-UI plateau
+  callout check; `plateauNotice` double-call hoist in `LiveRun.tsx` (Minor).
 
 ## Slice log
 
-- 2026-06-28 — Slice 01 designed + planned + reviewed (docs only).
-- 2026-06-28 — **Slice 01 `analyzer-agent` SHIPPED** — 7 TDD tasks (`015e7d1..2a84d46`), full suite 179 green,
-  final review ready-to-merge. The closed-loop analyzer (the milestone differentiator) now runs in both the
-  product loop and headless eval.
+- 2026-06-28 — Slice 01 `analyzer-agent` SHIPPED (7 TDD tasks `015e7d1..2a84d46`).
+- 2026-06-28 — **Slice 02 `analyzer-value-verdict` SHIPPED** (`ee86685..33da829`). Verdict: trustworthy
+  clean NULL — analyzer does not add value on jnk3 @ seed 42 (0.678 vs 0.743). Reasoning-ON→OFF reversal
+  (exit-criterion #4) after the instrumentation caught a 0/3 parse-rate. Kill-switch → pivot decision open.
