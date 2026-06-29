@@ -32,9 +32,29 @@ only the headless path; `strategy.py` edits reach both paths for free). Four pha
 - [x] T1 — `eval/trace.py` `GenerationTrace` + `trace_to_dict`; `trace_sink` seam in `run_reproduction`; trace tests (TDD). — `3fee112..af70f02`
 - [x] T2 — `--capture-analyzer-traces` CLI mode; CLI test (TDD). — `6c16226`
 - [x] **GATE** — budget-300 jnk3 `direct` capture (parse 1.0). **Classification = APPLICATION → Approach 3A** (see Notes).
-- [ ] T3 — implement Approach **3A**: soften focus to optional inspiration + DROP `avoid` + condition ~half the batch; TDD on stub.
-- [ ] **VERIFY** — `--analyzer-verdict` jnk3 @ seed 42 budget 10000; record diff + trust guards + kill-switch read here.
-- [ ] Gates green: `uv run pytest` · `uv run mypy -p capychem -p capychem.api` · `uv run ruff check .`.
+- [x] T3 — Approach **3A**: soften focus to optional inspiration + DROP `avoid` + condition ~half the batch (`CONDITIONED_FRACTION=0.5`). — `6a4bda3` (review READY, 0 findings)
+- [x] **VERIFY** — `--analyzer-verdict` jnk3 @ seed 42 budget 10000 → **WIN** (see Verdict below).
+- [x] Gates green: `uv run pytest` (193) · `uv run mypy -p capychem -p capychem.api` (34) · `uv run ruff check .`. Final whole-branch review (opus): READY TO MERGE.
+
+## Verdict (the deliverable)
+
+`CAPYCHEM_PROPOSER_BACKEND=direct CAPYCHEM_ANALYZER_BACKEND=direct capychem-eval --task=jnk3 --budget=10000 --seed=42 --analyzer-verdict`
+— every score is an in-silico oracle score (PRD N6); analyzer + proposer both reasoning-OFF.
+
+| seed | with-analyzer AUC | without-analyzer AUC | diff | helps | parse-rate | with/without valid-rate | wall |
+|---|---|---|---|---|---|---|---|
+| 42 | **0.7641** | 0.6744 | **+0.0897** | ✅ yes | **1.0 (39/39)** | 0.988 / 0.993 | 13.7 min |
+
+**The redesigned conditioning ADDS value** — it flips slice-02's −0.066 (analyzer hurt) to **+0.090** (analyzer
+helps). Trustworthy: parse-rate 1.0 and both valid-rates ≥ 0.8 (no silent Graph-GA degradation). **Milestone
+exit-criterion #5 (analyzer adds value on ≥1 task) is now MET on jnk3 @ seed 42** with Approach 3A.
+
+**Honest caveat — single seed, non-deterministic backend.** The `direct` backend's `seed` is best-effort, not
+deterministic: the *without*-arm drifted from 0.743 (slice-02, 2026-06-28) to 0.674 (today) at the **same**
+config — ~0.07 of run-to-run LLM noise, comparable to the +0.090 diff. The within-run comparison controls for
+day-level drift (both arms ran minutes apart) and the sign flipped *while the with-arm itself rose
+0.678→0.764*, a coherent positive story — but this is a strong **signal**, not a noise-proof result. A second
+seed (7) would harden it (~$1, deferred — see slice 05 / the 23-task sweep for the authoritative bar).
 
 ## Notes
 

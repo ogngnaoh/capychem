@@ -78,9 +78,12 @@ when that slice's work starts.
 04. `twenty-three-task-surface` — full PMO task registry + published Graph-GA baselines + launch
     schema/UI selector for all 23 + all-23 sweep runner (`capychem-eval --all`). — planned — deps: none
 06. `analyzer-conditioning` — redesign how the analyzer hypothesis conditions the proposer (the slice-02
-    null is value-negative). Evidence-first: capture real hypotheses (`trace_sink` + `--capture-analyzer-traces`)
-    → diagnose → ONE matched fix (soften/diversify the application · gate to plateaus · descriptive output)
-    → re-verify via `--analyzer-verdict`. Single task (jnk3), single seed (42). — planned — deps: 01, 02
+    null was value-negative). Evidence-first: capture real hypotheses (`trace_sink` + `--capture-analyzer-traces`)
+    → diagnose (Application: accurate hypotheses, over-constraining `avoid` + whole-batch directive) → fix
+    (Approach 3A: soften focus to optional inspiration, DROP `avoid`, condition ~half the batch) → re-verify.
+    — **shipped (2026-06-29)** — verdict: **WIN** on jnk3 @ seed 42 (with 0.764 > without 0.674, **+0.090**,
+    flips slice-02's −0.066; parse 1.0, valid-rates 0.99/0.99). Single-seed/non-deterministic-backend caveat
+    noted. — deps: 01, 02
 05. `week-8-sweep-and-gate` — run the 23-task with-analyzer-LLM vs Graph-GA sweep; validate the cost gate
     at scale; render the ≥3/23 Week-8 verdict + kill-switch decision. — planned — deps: 01, 04, **06**
     (the analyzer must be improved first, else the sweep likely also nulls)
@@ -138,9 +141,12 @@ when that slice's work starts.
    the loop never stalls (edge case 3).
 4. The analyzer reasoning-mode decision is made consciously and documented (not copied from the proposer).
 5. With-analyzer beats without-analyzer (the milestone-02 LLM control) on ≥1 task (jnk3) by AUC-of-top-10,
-   head-to-head, via the canonical eval module — the analyzer adds value. → **NOT MET on jnk3 @ seed 42**
-   (slice 02: with 0.678 < without 0.743, trustworthy null). One-task/one-seed; the authoritative bar is the
-   slice-05 23-task sweep. Kill-switch → analyzer-only-narrative pivot is the open milestone decision (handoff).
+   head-to-head, via the canonical eval module — the analyzer adds value. → **MET on jnk3 @ seed 42**
+   (slice 06, Approach 3A: with 0.764 > without 0.674, **+0.090**, parse 1.0, valid-rates 0.99/0.99). Slice 02
+   first found a trustworthy null (−0.066) with the original `{focus,avoid}` directive conditioning; the
+   evidence-first slice-06 redesign (soften focus, DROP `avoid`, half-batch) flipped it positive. One-task/
+   one-seed + non-deterministic backend (caveat in the slice-06 doc); the authoritative bar remains the
+   slice-05 23-task sweep. **Kill-switch did NOT need to fire — analyzer-as-value-add stands** (no pivot).
 6. All 23 PMO tasks are launchable from the web (multi-task selector) and scored end-to-end; published
    Graph-GA baselines registered.
 7. The hypothesis is surfaced live (watch-live latest) and in run-detail (full sequence).
