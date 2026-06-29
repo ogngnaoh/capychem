@@ -98,7 +98,9 @@ def _run_one(
             pop_size=pop_size, offspring=offspring, mutation_rate=mutation_rate,
             analyzer=True,
         )
-        return SweepRow(task=task, ok=True, headline_auc=v3.llm_auc, beat=v3.beat, payload=asdict(v3))
+        return SweepRow(
+            task=task, ok=True, headline_auc=v3.llm_auc, beat=v3.beat, payload=asdict(v3)
+        )
 
     raise ValueError(
         "Use a known sweep mode (reproduce|head_to_head|analyzer_verdict|week8); "
