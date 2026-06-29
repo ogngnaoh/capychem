@@ -91,18 +91,19 @@ def test_build_prompt_unchanged_without_hypothesis() -> None:
     assert "Guidance" not in base
 
 
-def test_build_prompt_appends_guidance_when_hypothesis_present() -> None:
+def test_build_prompt_softens_guidance_to_optional_inspiration() -> None:
     from capychem.loop.state import Hypothesis
 
     pop = [("CCO", 0.9)]
-    h = Hypothesis(
-        structured={"focus": "increase logP", "avoid": ["phenol", "nitro"]}, text="Push logP."
-    )
+    h = Hypothesis(structured={"focus": "increase logP", "avoid": ["phenol"]}, text="Push logP.")
     p = strategy.build_prompt("jnk3", pop, 5, hypothesis=h)
-    assert "Guidance from analysis" in p
     assert "increase logP" in p
-    assert "phenol, nitro" in p
     assert "Push logP." in p
+    # framed as optional, not a command:
+    assert "may help" in p or "optional" in p
+    assert "your own" in p.lower()  # "prioritize your own judgment"
+    # the hard negative directive is demoted/removed:
+    assert "avoid phenol" not in p.lower()
 
 
 def test_build_analyzer_prompt_mentions_summary() -> None:
@@ -184,3 +185,24 @@ def test_resolve_effective_hypothesis_neutral_when_no_structured_and_no_prior() 
     assert h.structured is None
     assert h.text == "No new signal; continue broad optimization."
     assert h.note == "no new signal"
+
+
+async def test_propose_llm_async_conditions_only_a_fraction(monkeypatch) -> None:
+    from capychem.loop.state import Hypothesis
+
+    prompts: list[str] = []
+
+    async def fake_batch(prompt, n, *, temperature=0.7, seed=0):
+        prompts.append(prompt)
+        return [proposer_mod.ProposalResult(raw="CCO", smiles="CCO", tokens_in=0, tokens_out=0)
+                for _ in range(n)]
+
+    monkeypatch.setattr(strategy, "propose_batch_async", fake_batch)
+    h = Hypothesis(structured={"focus": "logP", "avoid": []}, text="t")
+    out = await strategy.propose_llm_async("qed", [("CCO", 0.5)], n=4, seed=1,
+                                           hypothesis=h, conditioned_fraction=0.5)
+    assert len(out) == 4
+    # two sub-batches: one conditioned (mentions the focus), one plain (no guidance)
+    assert len(prompts) == 2
+    assert any("logP" in pr for pr in prompts)
+    assert any("logP" not in pr for pr in prompts)

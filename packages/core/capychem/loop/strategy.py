@@ -19,6 +19,9 @@ from capychem.proposer import ProposalResult, propose_batch_async
 from capychem.validate import ValidCandidate, validate_batch
 
 LLM_TEMPERATURE = 0.7
+# Fraction of each generation's offspring conditioned on the analyzer hypothesis;
+# the remainder use the plain prompt to preserve batch diversity (milestone 03 redesign).
+CONDITIONED_FRACTION = 0.5
 
 
 def build_prompt(
@@ -36,8 +39,9 @@ def build_prompt(
     if hypothesis is not None and hypothesis.structured is not None:
         s = hypothesis.structured
         guidance = (
-            f"\nGuidance from analysis of the last generation: focus on {s['focus']}; "
-            f"avoid {', '.join(s['avoid'])}. {hypothesis.text}\n"
+            "\nAn analysis of the previous generation suggests this MAY help — treat it as "
+            "optional inspiration, not a constraint, and prioritize your own chemical judgment: "
+            f"consider {s['focus']}. {hypothesis.text}\n"
         )
     return (
         f"You are optimizing molecules for the '{task}' objective (higher score is better).\n"
@@ -55,12 +59,32 @@ async def propose_llm_async(
     n: int,
     seed: int,
     hypothesis: Hypothesis | None = None,
+    conditioned_fraction: float = CONDITIONED_FRACTION,
 ) -> list[ProposalResult]:
-    """Propose ``n`` LLM candidates with a pinned temperature + per-gen seed (G6),
-    optionally conditioned on the analyzer hypothesis (milestone 03)."""
-    return await propose_batch_async(
-        build_prompt(task, population, n, hypothesis), n, temperature=LLM_TEMPERATURE, seed=seed
-    )
+    """Propose ``n`` LLM candidates (pinned temperature + per-gen seed, G6). When a
+    structured hypothesis is present and ``conditioned_fraction`` < 1.0, only that
+    fraction of the batch is conditioned; the rest use the plain prompt to preserve
+    diversity. No structured hypothesis (or fraction >= 1.0) -> single plain batch,
+    byte-identical to milestone 02."""
+    if hypothesis is None or hypothesis.structured is None or conditioned_fraction >= 1.0:
+        return await propose_batch_async(
+            build_prompt(task, population, n, hypothesis), n,
+            temperature=LLM_TEMPERATURE, seed=seed,
+        )
+    n_cond = round(n * conditioned_fraction)
+    n_plain = n - n_cond
+    out: list[ProposalResult] = []
+    if n_cond:
+        out += await propose_batch_async(
+            build_prompt(task, population, n_cond, hypothesis), n_cond,
+            temperature=LLM_TEMPERATURE, seed=seed,
+        )
+    if n_plain:
+        out += await propose_batch_async(
+            build_prompt(task, population, n_plain, None), n_plain,
+            temperature=LLM_TEMPERATURE, seed=seed + n_cond,
+        )
+    return out
 
 
 def propose_llm_sync(
@@ -70,9 +94,13 @@ def propose_llm_sync(
     n: int,
     seed: int,
     hypothesis: Hypothesis | None = None,
+    conditioned_fraction: float = CONDITIONED_FRACTION,
 ) -> list[ProposalResult]:
     """Synchronous bridge for the headless eval path (no running event loop)."""
-    return asyncio.run(propose_llm_async(task, population, n=n, seed=seed, hypothesis=hypothesis))
+    return asyncio.run(propose_llm_async(
+        task, population, n=n, seed=seed, hypothesis=hypothesis,
+        conditioned_fraction=conditioned_fraction,
+    ))
 
 
 def build_analyzer_prompt(summary: AnalyzerSummary) -> str:
