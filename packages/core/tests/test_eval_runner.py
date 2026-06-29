@@ -155,3 +155,60 @@ def test_graph_ga_run_has_no_valid_rate(monkeypatch: pytest.MonkeyPatch) -> None
     assert res.valid_rate is None
     assert res.llm_proposed == 0
     assert res.llm_valid == 0
+
+
+def test_analyzer_threads_hypothesis_in_headless_llm(monkeypatch: pytest.MonkeyPatch) -> None:
+    # analyzer=True wires the analyzer into the headless llm path; the propose call
+    # receives a hypothesis on gens after the first.
+    from capychem.eval import runner as runner_mod
+    from capychem.oracle import OracleResult
+    from capychem.proposer import ProposalResult
+
+    seen_hypothesis: list[object] = []
+    pool = ["CCO", "c1ccccc1", "CCN", "CCC", "CCCC"]
+
+    def fake_llm_sync(task, population, *, n, seed, hypothesis=None):  # type: ignore[no-untyped-def]
+        seen_hypothesis.append(hypothesis)
+        return [ProposalResult(raw=pool[i % len(pool)], smiles=pool[i % len(pool)],
+                tokens_in=0, tokens_out=0) for i in range(n)]
+
+    def fake_score(smiles, task, **kw):  # type: ignore[no-untyped-def]
+        return [OracleResult(smiles=s, score=0.5, valid=True, wall_ms=1) for s in smiles]
+
+    monkeypatch.setenv("CAPYCHEM_ANALYZER_BACKEND", "stub")
+    monkeypatch.setattr(runner_mod, "propose_llm_sync", fake_llm_sync)
+    monkeypatch.setattr(runner_mod, "score_smiles", fake_score)
+    monkeypatch.setattr(runner_mod, "starting_population", lambda n: pool[:n])
+
+    res = run_reproduction("qed", budget=40, seed=42, pop_size=3, offspring=4,
+                           patience=9, mutation_strategy="llm", analyzer=True)
+    assert res.mol_buffer
+    # gen 1 proposes with no hypothesis; a later gen proposes WITH one (analyzer ran).
+    assert seen_hypothesis[0] is None
+    assert any(h is not None for h in seen_hypothesis[1:])
+
+
+def test_analyzer_off_leaves_llm_path_unchanged(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Default analyzer=False -> no analyzer call, hypothesis stays None throughout.
+    from capychem.eval import runner as runner_mod
+    from capychem.oracle import OracleResult
+    from capychem.proposer import ProposalResult
+
+    seen: list[object] = []
+    pool = ["CCO", "c1ccccc1", "CCN", "CCC"]
+
+    def fake_llm_sync(task, population, *, n, seed, hypothesis=None):  # type: ignore[no-untyped-def]
+        seen.append(hypothesis)
+        return [ProposalResult(raw=pool[i % len(pool)], smiles=pool[i % len(pool)],
+                tokens_in=0, tokens_out=0) for i in range(n)]
+
+    def fake_score(smiles, task, **kw):  # type: ignore[no-untyped-def]
+        return [OracleResult(smiles=s, score=0.5, valid=True, wall_ms=1) for s in smiles]
+
+    monkeypatch.setattr(runner_mod, "propose_llm_sync", fake_llm_sync)
+    monkeypatch.setattr(runner_mod, "score_smiles", fake_score)
+    monkeypatch.setattr(runner_mod, "starting_population", lambda n: pool[:n])
+
+    run_reproduction("qed", budget=20, seed=42, pop_size=3, offspring=4,
+                     patience=2, mutation_strategy="llm")  # analyzer defaults False
+    assert all(h is None for h in seen)

@@ -11,10 +11,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from capychem.loop.logic import merge_and_truncate
+from capychem.loop.logic import build_analyzer_summary, merge_and_truncate
 from capychem.loop.seeds import load_starting_pop as starting_population  # pure file read
-from capychem.loop.state import Scored
-from capychem.loop.strategy import fallback_fill, propose_llm_sync
+from capychem.loop.state import Hypothesis, Scored
+from capychem.loop.strategy import (
+    fallback_fill,
+    propose_llm_sync,
+    resolve_effective_hypothesis,
+    run_analyzer_sync,
+)
 from capychem.oracle import propose_offspring, score_smiles
 from capychem.validate import validate_batch, validate_batch_with_stats
 
@@ -38,6 +43,11 @@ def _top_k_mean(buf: dict[str, tuple[float, int]], k: int) -> float:
     return sum(scores) / len(scores) if scores else 0.0
 
 
+def _pop_top_k_mean(population: list[Scored], k: int) -> float:
+    scores = sorted((m.score for m in population), reverse=True)[:k]
+    return sum(scores) / len(scores) if scores else 0.0
+
+
 def run_reproduction(
     task: str,
     budget: int,
@@ -49,6 +59,7 @@ def run_reproduction(
     patience: int = 5,
     freq_log: int = 100,
     mutation_strategy: str = "graph_ga",
+    analyzer: bool = False,
 ) -> ReproResult:
     mol_buffer: dict[str, tuple[float, int]] = {}
 
@@ -80,12 +91,20 @@ def run_reproduction(
     prev_top = _top_k_mean(mol_buffer, 100)
     llm_proposed = 0
     llm_valid = 0
+    hypothesis: Hypothesis | None = None
+    # Match the product loop's auc_curve EXACTLY: top-10 mean of the SURVIVOR pool
+    # (population), not the whole mol_buffer — so the analyzer's recent_top10_means are
+    # byte-identical across paths even for small pop_size (G6). _top_k_mean(mol_buffer,…)
+    # stays for the patience check (a separate quantity).
+    score_history: list[float] = [_pop_top_k_mean(population, 10)]
 
     # --- generations 1..N ---
     while len(mol_buffer) < budget:
         pop_pairs = [(s.smiles, s.score) for s in population]
         if mutation_strategy == "llm":
-            results = propose_llm_sync(task, pop_pairs, n=offspring, seed=seed + generations)
+            results = propose_llm_sync(
+                task, pop_pairs, n=offspring, seed=seed + generations, hypothesis=hypothesis
+            )
             valid_llm, stats = validate_batch_with_stats([(r.smiles, None) for r in results])
             llm_proposed += stats.proposed
             llm_valid += stats.valid
@@ -108,6 +127,15 @@ def run_reproduction(
         new_scored = score_unique([c.smiles for c in valid])
         population = merge_and_truncate(population, _as_scored(new_scored), pop_size=pop_size)
         generations += 1
+
+        score_history.append(_pop_top_k_mean(population, 10))
+        if analyzer and mutation_strategy == "llm":
+            summary = build_analyzer_summary(population, score_history, hypothesis)
+            # `generations` was already incremented above, so generation N's analyzer
+            # seed must be seed+N — matching the product node's seed+gen_index for the
+            # generation just scored (G6 parity). Hence `generations - 1`.
+            result = run_analyzer_sync(summary, seed=seed + generations - 1)
+            hypothesis = resolve_effective_hypothesis(result, hypothesis)
 
         # PMO patience: top-100 mean improvement < 1e-3 -> decrement; break at 0
         cur_top = _top_k_mean(mol_buffer, 100)
