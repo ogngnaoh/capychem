@@ -18,10 +18,21 @@ const DEFAULTS = {
   max_generations: 100,
 };
 
+// Mirrors capychem.eval.tasks.PMO_TASKS (the canonical source); the PMO 23 are static.
+const PMO_TASKS = [
+  "qed", "zaleplon_mpo", "perindopril_mpo", "celecoxib_rediscovery",
+  "troglitazone_rediscovery", "drd2", "jnk3", "gsk3b", "albuterol_similarity",
+  "amlodipine_mpo", "deco_hop", "fexofenadine_mpo", "isomers_c7h8n2o2",
+  "isomers_c9h10n2o2pf2cl", "median1", "median2", "mestranol_similarity",
+  "osimertinib_mpo", "ranolazine_mpo", "scaffold_hop", "sitagliptin_mpo",
+  "thiothixene_rediscovery", "valsartan_smarts",
+] as const;
+
 export default function Home() {
   const router = useRouter();
   const [form, setForm] = useState(DEFAULTS);
   const [strategy, setStrategy] = useState<"graph_ga" | "llm">("graph_ga");
+  const [task, setTask] = useState<string>("jnk3");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -38,7 +49,7 @@ export default function Home() {
     setBusy(true);
     try {
       const { run_id } = await createRun({
-        task: "jnk3",
+        task,
         mutation_strategy: strategy,
         ...form,
       });
@@ -53,10 +64,25 @@ export default function Home() {
     <main className="mx-auto flex max-w-xl flex-col gap-6 p-8">
       <Card>
         <CardHeader>
-          <CardTitle>Launch a jnk3 optimization</CardTitle>
+          <CardTitle>Launch an optimization</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="task">Task</Label>
+              <select
+                id="task"
+                value={task}
+                onChange={(e) => setTask(e.target.value)}
+                className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {PMO_TASKS.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
             {(
               [
                 ["budget", "Oracle-call budget"],

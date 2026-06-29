@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
 // so the loop is slower than qed; keep the budget small and the timeout generous.
 test("launch a jnk3 run and reach a terminal state", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByText(/Launch a jnk3 optimization/i)).toBeVisible();
+  await expect(page.getByText(/Launch an optimization/i)).toBeVisible();
   await page.getByLabel("Oracle-call budget").fill("40");
   await page.getByLabel("Population size").fill("20");
   await page.getByLabel("Offspring / gen").fill("10");

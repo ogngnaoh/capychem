@@ -9,38 +9,43 @@ vi.mock("@/lib/api", () => ({ createRun: (...a: unknown[]) => createRun(...a) })
 
 import Home from "./page";
 
-describe("launch form (jnk3)", () => {
+describe("launch form", () => {
   beforeEach(() => {
     createRun.mockClear();
     push.mockClear();
   });
 
-  it("renders a jnk3-targeted form with strategy + plateau fields", () => {
+  it("renders the form with a task selector defaulting to jnk3", () => {
     render(<Home />);
-    screen.getByText(/Launch a jnk3 optimization/i);
+    screen.getByText(/Launch an optimization/i);
+    const select = screen.getByLabelText(/^Task$/i) as HTMLSelectElement;
+    expect(select.value).toBe("jnk3");
     screen.getByLabelText(/Mutation strategy/i);
     screen.getByLabelText(/Plateau window/i);
   });
 
-  it("submits task=jnk3 with the chosen strategy + plateau_window", async () => {
+  it("submits the default task=jnk3 with the chosen strategy", async () => {
     render(<Home />);
-    fireEvent.change(screen.getByLabelText(/Oracle-call budget/i), {
-      target: { value: "120" },
-    });
     fireEvent.change(screen.getByLabelText(/Mutation strategy/i), {
       target: { value: "llm" },
     });
     fireEvent.click(screen.getByRole("button", { name: /Start run/i }));
-
     await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1));
     expect(createRun).toHaveBeenCalledWith(
-      expect.objectContaining({
-        task: "jnk3",
-        mutation_strategy: "llm",
-        plateau_window: 5,
-        budget: 120,
-      }),
+      expect.objectContaining({ task: "jnk3", mutation_strategy: "llm" }),
     );
     await waitFor(() => expect(push).toHaveBeenCalledWith("/runs/7"));
+  });
+
+  it("submits the selected task when changed", async () => {
+    render(<Home />);
+    fireEvent.change(screen.getByLabelText(/^Task$/i), {
+      target: { value: "drd2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Start run/i }));
+    await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1));
+    expect(createRun).toHaveBeenCalledWith(
+      expect.objectContaining({ task: "drd2" }),
+    );
   });
 });
