@@ -161,3 +161,70 @@ def test_capture_analyzer_traces_mode_emits_traces(monkeypatch, capsys) -> None:
     assert out["analyzer_calls"] == 1
     assert out["traces"][0]["analyzer_structured"] == {"focus": "f", "avoid": []}
     assert out["traces"][0]["prompt_used"] == "cond"
+
+
+def test_cli_all_default_mode_reproduce(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    from capychem.eval import sweep as sweep_mod
+    from capychem.eval.sweep import SweepReport, SweepRow
+
+    captured: dict = {}
+
+    def fake_sweep(tasks=None, *, budget, seed, mode, **kw):  # type: ignore[no-untyped-def]
+        captured["mode"] = mode
+        return SweepReport(
+            mode=mode, budget=budget, seed=seed, tasks_run=1, tasks_failed=0,
+            auc_sum=0.94, published_sum=13.751, beats=None,
+            rows=[SweepRow(task="qed", ok=True, headline_auc=0.94, beat=None,
+                           payload={"auc_top10": 0.94})],
+        )
+
+    monkeypatch.setattr(sweep_mod, "run_sweep", fake_sweep)
+    rc = main(["--all", "--budget", "200", "--seed", "42"])
+    assert rc == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["sweep"] is True
+    assert captured["mode"] == "reproduce"
+    assert report["mode"] == "reproduce"
+    assert report["published_sum"] == 13.751
+    assert report["beats"] is None
+    assert report["rows"][0]["task"] == "qed"
+    assert "wall_seconds" in report
+
+
+def test_cli_all_selects_analyzer_verdict_mode(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    from capychem.eval import sweep as sweep_mod
+    from capychem.eval.sweep import SweepReport
+
+    captured: dict = {}
+
+    def fake_sweep(tasks=None, *, budget, seed, mode, **kw):  # type: ignore[no-untyped-def]
+        captured["mode"] = mode
+        return SweepReport(mode=mode, budget=budget, seed=seed, tasks_run=0,
+                           tasks_failed=0, auc_sum=0.0, published_sum=13.751,
+                           beats=0, rows=[])
+
+    monkeypatch.setattr(sweep_mod, "run_sweep", fake_sweep)
+    rc = main(["--all", "--analyzer-verdict", "--budget", "10000", "--seed", "42"])
+    assert rc == 0
+    report = json.loads(capsys.readouterr().out)
+    assert captured["mode"] == "analyzer_verdict"
+    assert report["mode"] == "analyzer_verdict"
+
+
+def test_cli_all_selects_head_to_head_mode(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    from capychem.eval import sweep as sweep_mod
+    from capychem.eval.sweep import SweepReport
+
+    captured: dict = {}
+
+    def fake_sweep(tasks=None, *, budget, seed, mode, **kw):  # type: ignore[no-untyped-def]
+        captured["mode"] = mode
+        return SweepReport(mode=mode, budget=budget, seed=seed, tasks_run=0,
+                           tasks_failed=0, auc_sum=0.0, published_sum=13.751,
+                           beats=0, rows=[])
+
+    monkeypatch.setattr(sweep_mod, "run_sweep", fake_sweep)
+    rc = main(["--all", "--head-to-head", "--budget", "1500", "--seed", "42"])
+    assert rc == 0
+    assert json.loads(capsys.readouterr().out)["mode"] == "head_to_head"
+    assert captured["mode"] == "head_to_head"

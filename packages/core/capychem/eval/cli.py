@@ -7,6 +7,7 @@ canonical PMO AUC-of-top-10 from eval/metric.py, not the live-UI running curve.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import sys
 import time
@@ -22,7 +23,13 @@ def main(argv: list[str] | None = None) -> int:
         prog="capychem-eval",
         description="Reproduce a PMO Graph-GA baseline (AUC top-10).",
     )
-    p.add_argument("--task", required=True)
+    p.add_argument("--task", default=None)
+    p.add_argument(
+        "--all",
+        action="store_true",
+        dest="all_tasks",
+        help="Sweep all 23 PMO tasks; mode from --head-to-head/--analyzer-verdict (default reproduce).",  # noqa: E501
+    )
     # --budget is BOTH the unique-call run-stop and the metric's max_oracle_calls.
     p.add_argument("--budget", type=int, default=10000)
     p.add_argument("--seed", type=int, default=42)
@@ -46,8 +53,32 @@ def main(argv: list[str] | None = None) -> int:
         help="Run the LLM-with-analyzer arm once and dump per-generation hypotheses + prompts (diagnosis).",  # noqa: E501
     )
     args = p.parse_args(argv)
+    if not args.all_tasks and args.task is None:
+        p.error("--task is required unless --all is given")
 
     t0 = time.monotonic()
+    if args.all_tasks:
+        from capychem.eval.sweep import run_sweep
+
+        mode = (
+            "analyzer_verdict" if args.analyzer_verdict
+            else "head_to_head" if args.head_to_head
+            else "reproduce"
+        )
+        sweep_report = run_sweep(
+            budget=args.budget, seed=args.seed, mode=mode,
+            pop_size=args.pop_size, offspring=args.offspring, mutation_rate=args.mutation_rate,
+        )
+        wall = time.monotonic() - t0
+        sweep_out: dict[str, object] = {
+            "sweep": True,
+            **dataclasses.asdict(sweep_report),
+            "wall_seconds": round(wall, 1),
+        }
+        json.dump(sweep_out, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+        return 0
+
     if args.capture_analyzer_traces:
         from capychem.eval.trace import GenerationTrace
 
