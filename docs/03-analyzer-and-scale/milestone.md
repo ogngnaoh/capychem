@@ -141,12 +141,14 @@ when that slice's work starts.
    the loop never stalls (edge case 3).
 4. The analyzer reasoning-mode decision is made consciously and documented (not copied from the proposer).
 5. With-analyzer beats without-analyzer (the milestone-02 LLM control) on ≥1 task (jnk3) by AUC-of-top-10,
-   head-to-head, via the canonical eval module — the analyzer adds value. → **MET on jnk3 @ seed 42**
-   (slice 06, Approach 3A: with 0.764 > without 0.674, **+0.090**, parse 1.0, valid-rates 0.99/0.99). Slice 02
-   first found a trustworthy null (−0.066) with the original `{focus,avoid}` directive conditioning; the
-   evidence-first slice-06 redesign (soften focus, DROP `avoid`, half-batch) flipped it positive. One-task/
-   one-seed + non-deterministic backend (caveat in the slice-06 doc); the authoritative bar remains the
-   slice-05 23-task sweep. **Kill-switch did NOT need to fire — analyzer-as-value-add stands** (no pivot).
+   head-to-head, via the canonical eval module — the analyzer adds value. → **MET on jnk3, replicated across
+   2 seeds** (slice 06 Approach 3A: seed 42 with 0.764 > without 0.674 **+0.090**; hardened seed 7 on
+   2026-06-29 with 0.773 > without 0.666 **+0.108**; both parse 1.0, valid-rates ≥0.97). Slice 02 first found
+   a trustworthy null (−0.066) with the original `{focus,avoid}` directive conditioning; the evidence-first
+   slice-06 redesign (soften focus, DROP `avoid`, half-batch) flipped it positive. Cross-seed replication
+   (+0.090, +0.108; both exceed the ~0.07 backend day-drift) retires the single-seed-noise caveat; still
+   single-task, so the authoritative multi-task bar remains the slice-05 23-task sweep. **Kill-switch did NOT
+   need to fire — analyzer-as-value-add stands** (no pivot).
 6. All 23 PMO tasks are launchable from the web (multi-task selector) and scored end-to-end; published
    Graph-GA baselines registered.
 7. The hypothesis is surfaced live (watch-live latest) and in run-detail (full sequence).
