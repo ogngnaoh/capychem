@@ -311,3 +311,62 @@ def test_analyzer_off_has_none_parse_rate(monkeypatch: pytest.MonkeyPatch) -> No
     assert res.analyzer_calls == 0
     assert res.analyzer_parsed == 0
     assert res.analyzer_parse_rate is None
+
+
+def test_trace_sink_captures_per_generation_when_analyzer_on(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from capychem.eval import runner as runner_mod
+    from capychem.eval.trace import GenerationTrace
+    from capychem.oracle import OracleResult
+    from capychem.proposer import ProposalResult
+
+    pool = ["CCO", "c1ccccc1", "CCN", "CCC", "CCCC"]
+
+    def fake_llm_sync(task, population, *, n, seed, hypothesis=None):  # type: ignore[no-untyped-def]
+        return [ProposalResult(raw=pool[i % len(pool)], smiles=pool[i % len(pool)],
+                tokens_in=0, tokens_out=0) for i in range(n)]
+
+    def fake_score(smiles, task, **kw):  # type: ignore[no-untyped-def]
+        return [OracleResult(smiles=s, score=0.5, valid=True, wall_ms=1) for s in smiles]
+
+    monkeypatch.setenv("CAPYCHEM_ANALYZER_BACKEND", "stub")
+    monkeypatch.setattr(runner_mod, "propose_llm_sync", fake_llm_sync)
+    monkeypatch.setattr(runner_mod, "score_smiles", fake_score)
+    monkeypatch.setattr(runner_mod, "starting_population", lambda n: pool[:n])
+
+    sink: list[GenerationTrace] = []
+    res = run_reproduction("qed", budget=40, seed=42, pop_size=3, offspring=4,
+                           patience=9, mutation_strategy="llm", analyzer=True, trace_sink=sink)
+    assert res.analyzer_calls == len(sink)  # one trace per analyzer call
+    assert sink, "expected at least one captured generation"
+    first = sink[0]
+    assert first.analyzer_structured is not None  # stub always parses
+    assert first.prompt_used != first.prompt_unconditioned  # conditioning changed the prompt
+    assert first.analyzer_structured["focus"] in first.prompt_used  # focus reached the prompt
+    assert first.analyzer_structured["focus"] not in first.prompt_unconditioned
+
+
+def test_trace_sink_none_is_default_and_no_capture(monkeypatch: pytest.MonkeyPatch) -> None:
+    from capychem.eval import runner as runner_mod
+    from capychem.oracle import OracleResult
+    from capychem.proposer import ProposalResult
+
+    pool = ["CCO", "c1ccccc1", "CCN", "CCC"]
+
+    def fake_llm_sync(task, population, *, n, seed, hypothesis=None):  # type: ignore[no-untyped-def]
+        return [ProposalResult(raw=pool[i % len(pool)], smiles=pool[i % len(pool)],
+                tokens_in=0, tokens_out=0) for i in range(n)]
+
+    def fake_score(smiles, task, **kw):  # type: ignore[no-untyped-def]
+        return [OracleResult(smiles=s, score=0.5, valid=True, wall_ms=1) for s in smiles]
+
+    monkeypatch.setenv("CAPYCHEM_ANALYZER_BACKEND", "stub")
+    monkeypatch.setattr(runner_mod, "propose_llm_sync", fake_llm_sync)
+    monkeypatch.setattr(runner_mod, "score_smiles", fake_score)
+    monkeypatch.setattr(runner_mod, "starting_population", lambda n: pool[:n])
+
+    # default trace_sink=None: runs identically, returns a ReproResult, no error
+    res = run_reproduction("qed", budget=40, seed=42, pop_size=3, offspring=4,
+                           patience=9, mutation_strategy="llm", analyzer=True)
+    assert res.analyzer_calls > 0

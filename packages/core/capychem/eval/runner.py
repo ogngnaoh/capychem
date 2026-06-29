@@ -11,10 +11,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from capychem.eval.trace import GenerationTrace
 from capychem.loop.logic import build_analyzer_summary, merge_and_truncate
 from capychem.loop.seeds import load_starting_pop as starting_population  # pure file read
 from capychem.loop.state import Hypothesis, Scored
 from capychem.loop.strategy import (
+    build_prompt,
     fallback_fill,
     propose_llm_sync,
     resolve_effective_hypothesis,
@@ -63,6 +65,7 @@ def run_reproduction(
     freq_log: int = 100,
     mutation_strategy: str = "graph_ga",
     analyzer: bool = False,
+    trace_sink: list[GenerationTrace] | None = None,
 ) -> ReproResult:
     mol_buffer: dict[str, tuple[float, int]] = {}
 
@@ -143,7 +146,20 @@ def run_reproduction(
             analyzer_calls += 1
             if result.structured is not None:
                 analyzer_parsed += 1
-            hypothesis = resolve_effective_hypothesis(result, hypothesis)
+            new_h = resolve_effective_hypothesis(result, hypothesis)
+            if trace_sink is not None:
+                trace_sink.append(GenerationTrace(
+                    generation=generations,
+                    summary_top=summary.top,
+                    summary_bottom=summary.bottom,
+                    recent_top10_means=summary.recent_top10_means,
+                    prior_structured=hypothesis.structured if hypothesis else None,
+                    analyzer_raw=result.text,
+                    analyzer_structured=result.structured,
+                    prompt_used=build_prompt(task, pop_pairs, offspring, new_h),
+                    prompt_unconditioned=build_prompt(task, pop_pairs, offspring, None),
+                ))
+            hypothesis = new_h
 
         # PMO patience: top-100 mean improvement < 1e-3 -> decrement; break at 0
         cur_top = _top_k_mean(mol_buffer, 100)
