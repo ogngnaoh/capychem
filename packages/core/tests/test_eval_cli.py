@@ -134,3 +134,30 @@ def test_cli_analyzer_verdict_null_pivot(monkeypatch, capsys) -> None:  # type: 
     report = json.loads(capsys.readouterr().out)
     assert report["parse_rate_healthy"] is True and report["helps"] is False
     assert "NULL" in report["verdict"] and "pivot" in report["verdict"]
+
+
+def test_capture_analyzer_traces_mode_emits_traces(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    from capychem.eval import cli as cli_mod
+    from capychem.eval.runner import ReproResult
+    from capychem.eval.trace import GenerationTrace
+
+    def fake_run(task, budget, seed, *, trace_sink=None, **kw):  # type: ignore[no-untyped-def]
+        assert trace_sink is not None  # capture mode must pass a sink
+        trace_sink.append(GenerationTrace(
+            generation=2, summary_top=[("CCO", 0.5)], summary_bottom=[],
+            recent_top10_means=[0.5], prior_structured=None, analyzer_raw="raw",
+            analyzer_structured={"focus": "f", "avoid": []},
+            prompt_used="cond", prompt_unconditioned="plain",
+        ))
+        return ReproResult(mol_buffer={"CCO": (0.5, 1)}, generations=2, unique_calls=1,
+                           analyzer_calls=1, analyzer_parsed=1, analyzer_parse_rate=1.0)
+
+    monkeypatch.setattr(cli_mod, "run_reproduction", fake_run)
+    rc = cli_mod.main(["--task=jnk3", "--budget=300", "--seed=42",
+                       "--mutation-strategy=llm", "--capture-analyzer-traces"])
+    assert rc == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["task"] == "jnk3"
+    assert out["analyzer_calls"] == 1
+    assert out["traces"][0]["analyzer_structured"] == {"focus": "f", "avoid": []}
+    assert out["traces"][0]["prompt_used"] == "cond"

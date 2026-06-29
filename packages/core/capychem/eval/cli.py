@@ -14,6 +14,7 @@ import time
 from capychem.eval.baselines import GRAPH_GA_AUC_TOP10, compare_to_baseline
 from capychem.eval.metric import top_auc
 from capychem.eval.runner import run_reproduction
+from capychem.eval.trace import trace_to_dict
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -39,9 +40,39 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Run llm with-analyzer vs without-analyzer same-seed on --task; emit the value verdict.",  # noqa: E501
     )
+    p.add_argument(
+        "--capture-analyzer-traces",
+        action="store_true",
+        help="Run the LLM-with-analyzer arm once and dump per-generation hypotheses + prompts (diagnosis).",  # noqa: E501
+    )
     args = p.parse_args(argv)
 
     t0 = time.monotonic()
+    if args.capture_analyzer_traces:
+        from capychem.eval.trace import GenerationTrace
+
+        sink: list[GenerationTrace] = []
+        res = run_reproduction(
+            args.task, args.budget, args.seed,
+            pop_size=args.pop_size, offspring=args.offspring, mutation_rate=args.mutation_rate,
+            mutation_strategy="llm", analyzer=True, trace_sink=sink,
+        )
+        wall = time.monotonic() - t0
+        cap_report: dict[str, object] = {
+            "task": args.task,
+            "seed": args.seed,
+            "budget": args.budget,
+            "capture_analyzer_traces": True,
+            "analyzer_calls": res.analyzer_calls,
+            "analyzer_parsed": res.analyzer_parsed,
+            "analyzer_parse_rate": res.analyzer_parse_rate,
+            "traces": [trace_to_dict(t) for t in sink],
+            "wall_seconds": round(wall, 1),
+        }
+        json.dump(cap_report, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+        return 0
+
     if args.head_to_head:
         from capychem.eval.beat import run_head_to_head
 
