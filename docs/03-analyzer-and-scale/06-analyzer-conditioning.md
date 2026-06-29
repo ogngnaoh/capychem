@@ -29,17 +29,28 @@ only the headless path; `strategy.py` edits reach both paths for free). Four pha
 
 ## Tasks
 
-- [ ] T1 — `eval/trace.py` `GenerationTrace` + `trace_to_dict`; `trace_sink` seam in `run_reproduction`; trace tests (TDD).
-- [ ] T2 — `--capture-analyzer-traces` CLI mode; CLI test (TDD).
-- [ ] **GATE** — run the budget-300 jnk3 `direct` capture; classify Application/Timing/Content; record the read here.
-- [ ] T3 — implement the ONE matched approach (3A default / 3B / 3C) per the gate; TDD on stub.
+- [x] T1 — `eval/trace.py` `GenerationTrace` + `trace_to_dict`; `trace_sink` seam in `run_reproduction`; trace tests (TDD). — `3fee112..af70f02`
+- [x] T2 — `--capture-analyzer-traces` CLI mode; CLI test (TDD). — `6c16226`
+- [x] **GATE** — budget-300 jnk3 `direct` capture (parse 1.0). **Classification = APPLICATION → Approach 3A** (see Notes).
+- [ ] T3 — implement Approach **3A**: soften focus to optional inspiration + DROP `avoid` + condition ~half the batch; TDD on stub.
 - [ ] **VERIFY** — `--analyzer-verdict` jnk3 @ seed 42 budget 10000; record diff + trust guards + kill-switch read here.
 - [ ] Gates green: `uv run pytest` · `uv run mypy -p capychem -p capychem.api` · `uv run ruff check .`.
 
 ## Notes
 
-- **Evidence-first is load-bearing:** the diagnosis (slice-02 handoff) is *inferred from the code path*,
-  not proven — no real hypothesis text was ever persisted. Do not skip the GATE; it picks the fix.
+- **GATE finding (2026-06-29, budget-300 jnk3 direct, seed 42, parse 1.0, 3 analyzer calls):** the analyzer's
+  hypotheses are **accurate, not generic** — `focus` correctly identifies the winning chemotype each gen
+  (gen2: "amide linker between methyl-phenyl ring and naphthalene-like fused bicyclic"; top scorer
+  `Cc1ccc(NC(=O)Cc2cccc3ccccc23)c(C)c1` @0.49), refined with methoxy as the top-10 mean climbs
+  0.11→0.31→0.51→0.53. So **Approach 3C (content) is refuted**. The **root cause is over-constraint
+  (Application)**: the `avoid` list aggressively bans whole chemotype classes ("non-amide linkers",
+  "complex heterocycles", "large substituents") and the narrow `focus` pins one scaffold — applied as a
+  hard directive to all 70 offspring every gen → diversity collapse / premature over-exploitation, which
+  caps the with-arm below the free-exploring without-arm (slice-02: 0.678 < 0.743). **Decision → 3A, with
+  `avoid` DROPPED** (resolving the plan's drop-vs-demote open question on evidence).
+- **Evidence-first was load-bearing:** the prior diagnosis (slice-02 handoff) guessed "shallow/generic
+  hypotheses" as a possible cause — the GATE capture **refuted that**; the content is good, the application
+  is the problem. Skipping the GATE would have risked fixing the wrong mechanism.
 - **No-headroom risk:** jnk3 is the hardest task for the analyzer (LLM prior strongest). A clean
   trace-backed null is still a valid result; the authoritative bar is the slice-05 23-task sweep.
 - **Balance:** DeepSeek prepaid ≈ $1 — top up before VERIFY (full run ≈ $1; capture ≈ $0.15). Confirm the
