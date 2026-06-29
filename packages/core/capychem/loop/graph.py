@@ -12,9 +12,10 @@ from dataclasses import replace
 from typing import Any
 
 from capychem import proposer
-from capychem.db.models import Candidate, Generation, OracleCall
+from capychem.db.models import AnalyzerHypothesis, Candidate, Generation, OracleCall
 from capychem.loop import strategy, trace
 from capychem.loop.logic import (
+    build_analyzer_summary,
     build_summary,
     merge_and_truncate,
     stop_reason,
@@ -61,7 +62,8 @@ async def propose(state: LoopState) -> dict[str, Any]:
                     seed=seed,
                 ) as llm_span_id:
                     results = await strategy.propose_llm_async(
-                        state["task"], pop, n=state["offspring"], seed=seed
+                        state["task"], pop, n=state["offspring"], seed=seed,
+                        hypothesis=state.get("analyzer_hypothesis"),
                     )
                     gen_llm_cost = sum(r.cost_usd for r in results)
                     trace.update_span(
@@ -218,6 +220,63 @@ async def _persist(
             "population": survivors,
             "auc_curve": curve,
             "_made_progress": bool(new_scored),
+            "gen_db_id": gen.id,
+        }
+
+
+async def _analyze(
+    state: LoopState, sessionmaker: async_sessionmaker[AsyncSession]
+) -> dict[str, Any]:
+    # The differentiator (SPEC §6.4b). Runs only for an LLM run after gen >=1
+    # (gen 0 is the seed population; graph_ga has no hypothesis consumer). No-op
+    # otherwise — mirrors how `fallback` no-ops for non-llm strategies.
+    if state.get("mutation_strategy") != "llm" or state["gen_index"] < 1:
+        return {}
+    with trace.span(
+        "node:analyze",
+        trace_id=state.get("run_trace_id"),
+        parent_observation_id=state.get("gen_span_id"),
+    ):
+        prior = state.get("analyzer_hypothesis")
+        score_history = [v for _, v in state.get("auc_curve", [])]
+        summary = build_analyzer_summary(state["population"], score_history, prior)
+        seed = state["seed"] + state["gen_index"]
+        with trace.span(
+            "llm:analyze",
+            trace_id=state.get("run_trace_id"),
+            parent_observation_id=state.get("gen_span_id"),
+            model=proposer.llm_model(),
+            seed=seed,
+        ) as llm_span_id:
+            result = await strategy.run_analyzer_async(summary, seed=seed)
+            trace.update_span(
+                llm_span_id,
+                tokens_in=result.tokens_in,
+                tokens_out=result.tokens_out,
+                cost_usd=result.cost_usd,
+            )
+        # Effective hypothesis: the new one, else last-good, else neutral — the loop
+        # never stalls on malformed/empty/off-topic output (FR-007, edge case 3).
+        effective = strategy.resolve_effective_hypothesis(result, prior)
+        async with sessionmaker() as session:
+            hyp = AnalyzerHypothesis(
+                run_id=state["run_id"],
+                after_generation_index=state["gen_index"],
+                text=effective.text,
+                structured_json=effective.structured,
+                tokens_in=result.tokens_in,
+                tokens_out=result.tokens_out,
+                compute_cost_usd=result.cost_usd,
+            )
+            session.add(hyp)
+            await session.flush()  # hyp.id
+            gen = await session.get(Generation, state["gen_db_id"])
+            if gen is not None:
+                gen.analyzer_hypothesis_id = hyp.id
+            await session.commit()
+        return {
+            "analyzer_hypothesis": effective,
+            "llm_cost_usd": state.get("llm_cost_usd", 0.0) + result.cost_usd,
         }
 
 
@@ -266,18 +325,23 @@ def build_graph(
     async def persist(state: LoopState) -> dict[str, Any]:
         return await _persist(state, sessionmaker)
 
+    async def analyze(state: LoopState) -> dict[str, Any]:
+        return await _analyze(state, sessionmaker)
+
     builder: StateGraph[Any, Any, Any, Any] = StateGraph(LoopState)
     builder.add_node("propose", propose)
     builder.add_node("validate", validate)
     builder.add_node("fallback", fallback)
     builder.add_node("score", score)
     builder.add_node("persist", persist)
+    builder.add_node("analyze", analyze)
     builder.add_node("stop_check", stop_check)
     builder.set_entry_point("propose")
     builder.add_edge("propose", "validate")
     builder.add_edge("validate", "fallback")
     builder.add_edge("fallback", "score")
     builder.add_edge("score", "persist")
-    builder.add_edge("persist", "stop_check")
+    builder.add_edge("persist", "analyze")
+    builder.add_edge("analyze", "stop_check")
     builder.add_conditional_edges("stop_check", _route, {"continue": "propose", "stop": END})
     return builder.compile()
