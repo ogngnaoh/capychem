@@ -2,72 +2,59 @@
 
 ## Completed this session
 
-- **Slice 04 `twenty-three-task-surface` SHIPPED** (subagent-driven, 6 TDD tasks + final review).
-  Commits `bd177b1..82a0f2b` on branch `slice-04-twenty-three-task-surface` (+ planning docs `244b2d5`,
-  `ff002c4`). Pure plumbing, NO eval cost:
-  - `eval/tasks.py::PMO_TASKS` — the 23-task registry, single source of truth.
-  - `eval/baselines.py` — all 23 published Graph-GA baselines.
-  - `apps/api/.../schemas.py` — `task: str` + `field_validator` vs PMO_TASKS (FR-015 → 422).
-  - `eval/sweep.py` — mode-pluggable `run_sweep` (reproduce|head_to_head|analyzer_verdict; per-task error isolation).
-  - `eval/cli.py` — `capychem-eval --all` (mode from `--head-to-head`/`--analyzer-verdict`; default reproduce).
-  - `apps/web/app/page.tsx` — launch-page task `<select>` (all 23, default jnk3).
-- Gates green: **207 pytest**, mypy clean (36), ruff clean; web **vitest 13**, typecheck + lint clean.
-- Final whole-branch review (opus): **READY TO MERGE**, 0 Critical / 0 Important; the slice-05 primitive
-  signatures were hand-verified clean.
-- **Baseline-sum fact:** the 23 verbatim Table-2 values sum to **13.742**; the paper's reported Sum row is
-  **13.751** (display-rounding gap). So the sweep's computed `published_sum` = 13.742; prose may cite 13.751.
+- **Slice 05 `week-8-sweep-and-gate` SHIPPED** (the milestone headline). Branch
+  `slice-05-week8-sweep-and-gate`, commits `d3da81d` (spec) → `2a30fb6` (plan+slice doc) →
+  `9c2f9ad`/`f5dadd3`/`3ec9899`/`c2b0d51`/`9ff10c4`/`0f6328b` (T1–T5 + lint) → verdict + ship docs.
+  Built the **with-analyzer-LLM vs vanilla-Graph-GA** comparator (Approach A): `run_head_to_head(analyzer=True)`
+  + analyzer-health on `BeatVerdict`, `week8` sweep mode, `week8_verdict` guarded reader, `capychem-eval
+  --week8 --tasks`; cost-gate test proving the analyzer term is in the gated total. All TDD on the stub.
+- **Week-8 verdict: bar CLEARED — 7 trustworthy beats → on track, NO pivot.** 9-task high-headroom
+  subset @ budget=10000, seed=42, both `direct` backends, wall 139 min. **7/7 cleanly-measured tasks beat**
+  their own same-seed Graph-GA control (jnk3 +0.083, median1 +0.122, zaleplon +0.026, troglitazone +0.117,
+  perindopril +0.085, scaffold_hop +0.093, thiothixene +0.402); all guards healthy. Raw JSON committed at
+  `docs/03-analyzer-and-scale/week8-sweep-seed42.json`.
+- Gates green: **216 pytest**, mypy clean (36), ruff clean (no web touched).
 
 ## Slice status across milestone
 
-- 01 `analyzer-agent` → **shipped** (2026-06-28)
-- 02 `analyzer-value-verdict` → **shipped** (2026-06-28) — trustworthy clean NULL (original conditioning)
-- 06 `analyzer-conditioning` → **shipped** (2026-06-29) — WIN, replicated seeds 42 (+0.090) & 7 (+0.108)
-- 04 `twenty-three-task-surface` → **shipped** (2026-06-29) — registry + baselines + schema/UI + `--all` sweep
-- 03 `analyzer-live-surface` → planned (dep 01 ✓ — unblocked; no eval cost)
-- 05 `week-8-sweep-and-gate` → planned (deps 01 ✓, 04 ✓, 06 ✓ — ALL shipped → unblocked; needs balance top-up)
+- 01 `analyzer-agent` → shipped (2026-06-28)
+- 02 `analyzer-value-verdict` → shipped (2026-06-28) — trustworthy clean NULL (original conditioning)
+- 06 `analyzer-conditioning` → shipped (2026-06-29) — WIN, replicated seeds 42 (+0.090) & 7 (+0.108)
+- 04 `twenty-three-task-surface` → shipped (2026-06-29) — registry + baselines + schema/UI + `--all`
+- 05 `week-8-sweep-and-gate` → **shipped (2026-06-29)** — Week-8 bar CLEARED, 7 trustworthy beats
+- 03 `analyzer-live-surface` → planned (dep 01 ✓ — the ONLY remaining slice; NO eval cost)
 
 ## Current state
 
-- Branch `slice-04-twenty-three-task-surface` at `82a0f2b`, ready to merge. **Not yet merged to main** (the
-  finish-branch step follows this handoff). Pattern (per slice 06): ff-merge to main locally, do NOT push.
-- DeepSeek balance ≈ **$2.99** (topped up 2026-06-29; slice 04 spent $0). **Still short of a full 23-task
-  budget-10000 LLM sweep** (~$14–23: slice-06's single-task jnk3 dual-arm verdict was ~$1.0) — slice 05 must
-  scope the sweep (subset / reduced budget) or top up further before launching.
-- Analyzer = reasoning-OFF + 3A conditioning (unchanged this slice).
+- Branch `slice-05-week8-sweep-and-gate` ff-merged to `main` (local). **NOT pushed.** `main` is now ~18
+  commits ahead of `origin/main` (slices 04 + 05 + earlier).
+- DeepSeek balance ≈ **$2.91** (was $12.99; slice-05 sweep spent **$10.08**). Analyzer = reasoning-OFF + 3A.
+- **Cost calibration:** real per-task cost at budget=10000 is **~$1.2/task** (MPO/median tasks run many
+  generations before patience-stop — e.g. sitagliptin = 229 gens — vs jnk3's handful). A full-23 sweep ≈
+  **$25–30**, not the earlier $15–23 estimate. Budget m04's G1 ≥6/23 push accordingly.
 
 ## Next session start here
 
-- **Recommended: 05 `week-8-sweep-and-gate`** (the milestone headline; balance now topped up). Paste-ready
-  handoff prompt saved to the vault:
-  `~/Documents/personal-vault/prompts/handoff/2026-06-29-capychem-milestone-03-slice-05-week-8-sweep-handoff.md`.
-  Fresh planning cycle (brainstorm → design spec → plan → slice doc → execute). FIRST design decision is the
-  cost-vs-scope call (see Current state): $2.99 does not cover all 23 at budget 10000.
-  - **Comparator gotcha:** the existing `head_to_head` mode runs llm **without** analyzer; the Week-8 bar is
-    **with-analyzer-LLM vs vanilla Graph-GA** — slice 05 must add that comparator (new sweep mode or an
-    `analyzer=True` flag on `run_head_to_head`). `--all --analyzer-verdict` is the with/without DIFFERENTIATOR
-    axis (already proven on jnk3), NOT the Graph-GA Week-8 bar.
-- **Alternative (no cost): 03 `analyzer-live-surface`** — WS `analyzer.hypothesis` event + watch-live latest
-  hypothesis + run-detail full sequence (FR-009/FR-011, Story 2/3). Dep 01 ✓.
+- **Slice 03 `analyzer-live-surface`** — the last remaining milestone-03 slice (NO eval cost). WS
+  `analyzer.hypothesis` event + watch-live latest-hypothesis panel + run-detail full hypothesis sequence
+  (FR-009/FR-011, Story 2/3). Dep 01 ✓. Shipping it COMPLETES milestone 03 → then milestone 04.
 
 ## Active concerns
 
-- **`--all` sweep cost (slice 05):** a 23-task dual-arm `--analyzer-verdict` run is large. Confirm-before-invoke
-  (CLAUDE.md command note). Check balance: `GET https://api.deepseek.com/user/balance` (key in .env.local).
-- **`--analyzer-verdict` two-failure-mode read (carried):** always confirm BOTH `parse_rate_healthy` AND both
-  `*_valid_rate` ≥ ~0.8 — a $0-balance mid-run silently degrades the LLM arm to Graph-GA with parse-rate healthy.
-- **Non-blocking Minors from slice-04 final review (optional future cleanup):** `test_baseline_spot_values`
-  duplicates the jnk3 assertion + the `1e-2` sum tolerance is thin (could pin the exact 13.742 sum);
-  `eval/sweep.py::_run_one` has an unreachable `ValueError` (dead code); 2 pre-existing `cli.py` Minors
-  (fake_run kwargs assertion; module-level `trace_to_dict` import); no automated web↔core `PMO_TASKS` drift
-  guard; `--all` silently ignores `--mutation-strategy`/`--capture-analyzer-traces`.
-- Frozen docs (do NOT edit): slice-01, slice-06, **slice-04** docs + their specs/plans.
+- **Two legacy-harness anomalies surfaced by the real sweep (follow-ups, NOT slice-05 bugs):**
+  (1) median2 Graph-GA arm crashed — `IndexError` in `harness/.../graph_ga/crossover.py:142`
+  (`rxn.RunReactants((fa,fb))[0]` on empty result; guard the empty case). (2) sitagliptin_mpo oracle
+  returned **NaN scores** → NaN AUC; the two-guard read (valid+parse) does NOT flag a NaN AUC (slips
+  through as "guards ok, non-beat" — conservative, never inflates the count). Future hardening: add a
+  `math.isnan` measurement guard to `week8_verdict`.
+- A subset clears ≥3 cleanly but cannot cleanly *pivot*; the full-23 count (G1 ≥6/23) is milestone 04.
+- Frozen docs (do NOT edit): slice-01, -02, -04, -06, **-05** docs + their specs/plans.
 
 ## Slice log
 
 - 2026-06-28 — Slice 01 `analyzer-agent` SHIPPED (`015e7d1..2a84d46`).
 - 2026-06-28 — Slice 02 `analyzer-value-verdict` SHIPPED (`ee86685..33da829`). Trustworthy clean NULL.
-- 2026-06-29 — Slice 06 `analyzer-conditioning` SHIPPED (`3fee112..6a4bda3` + docs). WIN +0.090; hardened
-  seed-7 +0.108. Exit-criterion #5 MET. Pushed (`origin/main` → `cfef635`); main HEAD `507326e`.
-- 2026-06-29 — **Slice 04 `twenty-three-task-surface` SHIPPED** (`bd177b1..82a0f2b`, branch
-  `slice-04-twenty-three-task-surface`). Registry + 23 baselines + schema/UI selector + mode-pluggable
-  `--all` sweep. All gates green; final review READY-TO-MERGE. Exit-criterion #6 MET. NO eval cost.
+- 2026-06-29 — Slice 06 `analyzer-conditioning` SHIPPED. WIN +0.090; hardened seed-7 +0.108. Exit #5 MET.
+- 2026-06-29 — Slice 04 `twenty-three-task-surface` SHIPPED (`bd177b1..82a0f2b`). Exit #6 MET. No eval cost.
+- 2026-06-29 — **Slice 05 `week-8-sweep-and-gate` SHIPPED.** Week-8 bar CLEARED (7 trustworthy beats /
+  9-task subset). Exit #8 + #9 + #10 MET. Spend $10.08. Kill-switch did not fire.

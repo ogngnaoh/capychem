@@ -89,10 +89,14 @@ when that slice's work starts.
     — **shipped (2026-06-29)** — verdict: **WIN** on jnk3 @ seed 42 (with 0.764 > without 0.674, **+0.090**,
     flips slice-02's −0.066; parse 1.0, valid-rates 0.99/0.99). Single-seed/non-deterministic-backend caveat
     noted. — deps: 01, 02
-05. `week-8-sweep-and-gate` — run the 23-task with-analyzer-LLM vs Graph-GA sweep; validate the cost gate
-    at scale; render the ≥3/23 Week-8 verdict + kill-switch decision. — planned — deps: 01 ✓, 04 ✓, 06 ✓
-    (ALL deps now shipped → unblocked; run via `capychem-eval --all --analyzer-verdict`. Needs a DeepSeek
-    balance top-up first — a 23-task dual-arm LLM sweep far exceeds the ≈$1.38 balance.)
+05. `week-8-sweep-and-gate` — with-analyzer-LLM vs vanilla-Graph-GA sweep + cost gate + Week-8 verdict.
+    — **shipped (2026-06-29)** — verdict: **Week-8 bar CLEARED — 7 trustworthy beats → on track, no
+    pivot.** Added the comparator (`run_head_to_head(analyzer=True)` + `week8` sweep mode +
+    `week8_verdict` guarded reader + `capychem-eval --week8 --tasks`); ran a 9-task high-headroom subset
+    @ budget=10000, seed=42 (operator chose the subset over all-23; ~$10 spend). 7/7 cleanly-measured
+    tasks beat their own same-seed Graph-GA control (jnk3, median1, zaleplon_mpo, troglitazone_redisc,
+    perindopril_mpo, scaffold_hop, thiothixene_redisc); 2 legacy-harness anomalies excluded (median2
+    GA-crossover `IndexError`; sitagliptin_mpo oracle NaN). All guards healthy. — deps: 01 ✓, 04 ✓, 06 ✓
 
 ## Integration notes
 
@@ -161,7 +165,14 @@ when that slice's work starts.
    jnk3), and all 23 published Graph-GA baselines (`eval/baselines.py`). Per-task end-to-end scoring across
    23 is exercised by slice 05's `capychem-eval --all` sweep (the harness oracle is already task-agnostic).
 7. The hypothesis is surfaced live (watch-live latest) and in run-detail (full sequence).
-8. The 23-task with-analyzer-LLM vs Graph-GA sweep is run via the canonical eval module; the Week-8
-   verdict is rendered — ≥3/23 beat → on track; <3 → pivot to analyzer-only narrative (do not abandon).
+8. The with-analyzer-LLM vs Graph-GA sweep is run via the canonical eval module; the Week-8 verdict is
+   rendered — ≥3 beat → on track; <3 → pivot to analyzer-only narrative (do not abandon). → **MET (slice
+   05, 2026-06-29): Week-8 bar CLEARED — 7 trustworthy beats on a 9-task high-headroom subset @
+   budget=10000, seed=42 (operator chose the subset; ≥3 beats among the 23 = on track). On-track; no
+   pivot.** A subset cleanly clears ≥3 but cannot cleanly *pivot* (<3-of-9 would be inconclusive, not
+   <3/23); the full-23 count is the G1 ≥6/23 question, deferred to milestone 04.
 9. The cost gate fires on combined LLM (proposer + analyzer) + oracle spend; a full run stays under it.
-10. Gates green: pytest, mypy strict (both `-p`), ruff; web vitest, tsc, eslint.
+   → **MET (slice 05): `test_cost_cap_trips_on_analyzer_spend` proves the analyzer term is in the gated
+   `total_usd`; the real run cost ~$1.2/task ≪ the $50/run cap.**
+10. Gates green: pytest, mypy strict (both `-p`), ruff; web vitest, tsc, eslint. → **MET (slice 05): 216
+    pytest, mypy clean (36), ruff clean; no web surface touched this slice.**
