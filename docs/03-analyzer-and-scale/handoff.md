@@ -30,18 +30,24 @@
 
 - Branch `slice-04-twenty-three-task-surface` at `82a0f2b`, ready to merge. **Not yet merged to main** (the
   finish-branch step follows this handoff). Pattern (per slice 06): ff-merge to main locally, do NOT push.
-- DeepSeek balance ≈ **$1.38** (unchanged — slice 04 spent $0). Slice 05's 23-task LLM sweep needs a top-up.
+- DeepSeek balance ≈ **$2.99** (topped up 2026-06-29; slice 04 spent $0). **Still short of a full 23-task
+  budget-10000 LLM sweep** (~$14–23: slice-06's single-task jnk3 dual-arm verdict was ~$1.0) — slice 05 must
+  scope the sweep (subset / reduced budget) or top up further before launching.
 - Analyzer = reasoning-OFF + 3A conditioning (unchanged this slice).
 
 ## Next session start here
 
-- **Two unblocked options:**
-  - **03 `analyzer-live-surface`** (recommended if avoiding cost): WS `analyzer.hypothesis` event +
-    watch-live latest hypothesis + run-detail full sequence (FR-009/FR-011, Story 2/3). No eval cost, dep 01 ✓.
-  - **05 `week-8-sweep-and-gate`** (the milestone headline): run `capychem-eval --all --analyzer-verdict`
-    across 23 (with `CAPYCHEM_PROPOSER_BACKEND=direct` + `CAPYCHEM_ANALYZER_BACKEND=direct`, source
-    .env.local). **TOP UP the DeepSeek balance first** — a 23-task dual-arm LLM sweep far exceeds $1.38.
-- Either way: fresh planning cycle (design spec → plan → slice doc → execute).
+- **Recommended: 05 `week-8-sweep-and-gate`** (the milestone headline; balance now topped up). Paste-ready
+  handoff prompt saved to the vault:
+  `~/Documents/personal-vault/prompts/handoff/2026-06-29-capychem-milestone-03-slice-05-week-8-sweep-handoff.md`.
+  Fresh planning cycle (brainstorm → design spec → plan → slice doc → execute). FIRST design decision is the
+  cost-vs-scope call (see Current state): $2.99 does not cover all 23 at budget 10000.
+  - **Comparator gotcha:** the existing `head_to_head` mode runs llm **without** analyzer; the Week-8 bar is
+    **with-analyzer-LLM vs vanilla Graph-GA** — slice 05 must add that comparator (new sweep mode or an
+    `analyzer=True` flag on `run_head_to_head`). `--all --analyzer-verdict` is the with/without DIFFERENTIATOR
+    axis (already proven on jnk3), NOT the Graph-GA Week-8 bar.
+- **Alternative (no cost): 03 `analyzer-live-surface`** — WS `analyzer.hypothesis` event + watch-live latest
+  hypothesis + run-detail full sequence (FR-009/FR-011, Story 2/3). Dep 01 ✓.
 
 ## Active concerns
 
