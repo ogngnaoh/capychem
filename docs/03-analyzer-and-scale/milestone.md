@@ -61,7 +61,12 @@ docs are written when that slice's work starts.
     malformed-output fallback; reaches product loop + headless eval. — shipped (2026-06-28) — deps: none
 02. `analyzer-value-verdict` — extend the head-to-head to a with/without-analyzer axis; prove the
     analyzer adds AUC value on ≥1 task (jnk3) — the differentiator kill-switch (SPEC risk "analyzer may
-    not help"). — planned — deps: 01
+    not help"). **Required before the verdict is trustworthy:** this slice runs the first real `direct`
+    analyzer calls, so it MUST instrument the analyzer `parse_hypothesis` success rate — reasoning-ON CoT
+    can crowd out the `{focus, avoid}` JSON past `max_tokens≈2048`, which degrades to "no new signal" every
+    generation and would fake a "no value" verdict that no test catches (see Integration notes,
+    reasoning-budget risk). A null result is only valid once parse-success is confirmed healthy. — planned
+    — deps: 01
 03. `analyzer-live-surface` — WS `analyzer.hypothesis` event + watch-live latest hypothesis + run-detail
     full hypothesis sequence (FR-009/FR-011, Story 2/3). — planned — deps: 01
 04. `twenty-three-task-surface` — full PMO task registry + published Graph-GA baselines + launch
