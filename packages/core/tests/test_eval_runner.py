@@ -339,12 +339,15 @@ def test_trace_sink_captures_per_generation_when_analyzer_on(
     res = run_reproduction("qed", budget=40, seed=42, pop_size=3, offspring=4,
                            patience=9, mutation_strategy="llm", analyzer=True, trace_sink=sink)
     assert res.analyzer_calls == len(sink)  # one trace per analyzer call
-    assert sink, "expected at least one captured generation"
-    first = sink[0]
-    assert first.analyzer_structured is not None  # stub always parses
-    assert first.prompt_used != first.prompt_unconditioned  # conditioning changed the prompt
-    assert first.analyzer_structured["focus"] in first.prompt_used  # focus reached the prompt
-    assert first.analyzer_structured["focus"] not in first.prompt_unconditioned
+    assert len(sink) >= 2, "need >=2 generations to observe conditioning turn on"
+    # gen-1 record: the proposer had NO incoming hypothesis yet -> prompt_used is the plain prompt
+    assert sink[0].analyzer_structured is not None  # stub always parses
+    assert sink[0].prompt_used == sink[0].prompt_unconditioned
+    # the hypothesis PRODUCED at gen 1 conditions gen 2's propose -> captured in sink[1].prompt_used
+    h1_focus = sink[0].analyzer_structured["focus"]
+    assert sink[1].prompt_used != sink[1].prompt_unconditioned
+    assert h1_focus in sink[1].prompt_used
+    assert h1_focus not in sink[1].prompt_unconditioned
 
 
 def test_trace_sink_none_is_default_and_no_capture(monkeypatch: pytest.MonkeyPatch) -> None:

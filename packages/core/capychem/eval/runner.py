@@ -146,7 +146,6 @@ def run_reproduction(
             analyzer_calls += 1
             if result.structured is not None:
                 analyzer_parsed += 1
-            new_h = resolve_effective_hypothesis(result, hypothesis)
             if trace_sink is not None:
                 trace_sink.append(GenerationTrace(
                     generation=generations,
@@ -156,10 +155,10 @@ def run_reproduction(
                     prior_structured=hypothesis.structured if hypothesis else None,
                     analyzer_raw=result.text,
                     analyzer_structured=result.structured,
-                    prompt_used=build_prompt(task, pop_pairs, offspring, new_h),
+                    prompt_used=build_prompt(task, pop_pairs, offspring, hypothesis),
                     prompt_unconditioned=build_prompt(task, pop_pairs, offspring, None),
                 ))
-            hypothesis = new_h
+            hypothesis = resolve_effective_hypothesis(result, hypothesis)
 
         # PMO patience: top-100 mean improvement < 1e-3 -> decrement; break at 0
         cur_top = _top_k_mean(mol_buffer, 100)
