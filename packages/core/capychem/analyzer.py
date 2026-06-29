@@ -1,11 +1,14 @@
 """DeepSeek-v4-pro analyzer adapter (milestone-03 slice 01).
 
-The analyzer is a SEPARATE LLM call from the proposer. It runs with reasoning ON
-(the proposer forces it OFF for short SMILES) and a generous output budget, then
-forms a {"focus", "avoid"} hypothesis from one generation's results. It REUSES
-the proposer's DeepSeek transport (proposer is the DeepSeek-client home) but
-builds its own reasoning-ON payload + content/usage extraction + parse — do NOT
-copy the proposer's thinking:disabled / 128-token payload.
+The analyzer is a SEPARATE LLM call from the proposer. It runs with reasoning OFF
+(thinking:{type:disabled}, mirroring the proposer) because v4's chain-of-thought
+overran the max_tokens cap on a realistic 20-molecule summary — the hidden CoT
+consumed 2,500–3,900 tokens, leaving message.content empty and parse_hypothesis
+returning None every generation (parse-rate 0/3 in a real dry run). With reasoning
+OFF the model emits the prose + {focus,avoid} JSON directly in content (~300 tok),
+parsing reliably, and the analytical prose lands in the persisted hypothesis.text.
+It REUSES the proposer's DeepSeek transport (proposer is the DeepSeek-client home)
+but builds its own payload + content/usage extraction + parse.
 """
 
 from __future__ import annotations
@@ -27,8 +30,9 @@ from capychem.proposer import (
     llm_usd_per_1k_out,
 )
 
-# Reasoning ON needs room for the chain-of-thought tail PLUS the JSON hypothesis.
-_ANALYZER_MAX_OUTPUT_TOKENS = 2048
+# Reasoning OFF: the model emits prose + the {focus,avoid} JSON directly in content
+# (~300 tokens typical). 1024 leaves ample margin without wasting budget.
+_ANALYZER_MAX_OUTPUT_TOKENS = 1024
 # Lower than the proposer's 0.7: stabler analysis, better G6 reproducibility.
 _ANALYZER_TEMPERATURE = 0.3
 
@@ -123,17 +127,18 @@ def analyze_sync(prompt: str, *, seed: int = 0) -> AnalyzerResult:
 
 
 async def _one_analysis_row(prompt: str, *, seed: int, api_key: str) -> dict[str, Any]:
-    """One DeepSeek analyzer request. Reasoning ON: omit thinking:disabled and
-    leave a generous max_tokens so the chain-of-thought tail + JSON fit. Returns
-    a {raw, tokens_in, tokens_out} row carrying this request's own usage."""
+    """One DeepSeek analyzer request. Reasoning OFF (thinking:{type:disabled}),
+    mirroring the proposer: v4's hidden CoT overran the output cap on a realistic
+    summary and left message.content empty. With reasoning OFF the model emits
+    prose + the {focus,avoid} JSON directly in content. Returns a {raw, tokens_in,
+    tokens_out} row carrying this request's own usage."""
     payload = {
         "model": llm_model(),
         "messages": [{"role": "user", "content": prompt}],
         "temperature": _ANALYZER_TEMPERATURE,
         "seed": seed,
         "max_tokens": _ANALYZER_MAX_OUTPUT_TOKENS,
-        # NO "thinking": {"type": "disabled"} — the analyzer WANTS chain-of-thought;
-        # message.content holds the post-reasoning answer (the prose + JSON hypothesis).
+        "thinking": {"type": "disabled"},
     }
     body = await _deepseek_chat(payload, api_key=api_key)
     try:

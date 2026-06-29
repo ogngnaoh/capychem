@@ -67,9 +67,11 @@ async def test_modal_backend_not_implemented_this_slice(monkeypatch) -> None:
         await analyze_async("p")
 
 
-async def test_direct_payload_enables_reasoning_and_big_budget(monkeypatch) -> None:
-    # The analyzer is the OPPOSITE of the proposer: reasoning ON (no thinking:disabled)
-    # and a generous max_tokens for the chain-of-thought tail + the JSON hypothesis.
+async def test_direct_payload_disables_reasoning(monkeypatch) -> None:
+    # The analyzer now mirrors the proposer: reasoning OFF (thinking:{type:disabled})
+    # because v4's CoT overran max_tokens and left message.content empty (parse-rate
+    # 0/3 in a real dry run). With reasoning OFF the model emits prose + the
+    # {focus,avoid} JSON directly in content (~300 tok), parsing reliably.
     monkeypatch.setenv("CAPYCHEM_ANALYZER_BACKEND", "direct")
     monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
     monkeypatch.setenv("CAPYCHEM_LLM_USD_PER_1K_IN", "0.001")
@@ -86,7 +88,7 @@ async def test_direct_payload_enables_reasoning_and_big_budget(monkeypatch) -> N
 
     monkeypatch.setattr(analyzer, "_deepseek_chat", fake_chat)
     out = await analyze_async("analyze this", seed=5)
-    assert "thinking" not in captured  # reasoning ON
+    assert captured["thinking"] == {"type": "disabled"}  # reasoning OFF
     assert captured["max_tokens"] == analyzer._ANALYZER_MAX_OUTPUT_TOKENS
     assert captured["seed"] == 5
     assert out.structured == {"focus": "logP", "avoid": ["phenol"]}
