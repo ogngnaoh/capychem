@@ -80,3 +80,37 @@ def test_llm_valid_rate_none_when_no_llm_generations(
     v = run_head_to_head("jnk3", budget=3, seed=1, pop_size=3, offspring=2, mutation_rate=0.01)
     assert v.llm_valid_rate is None
     assert v.llm_valid_gate is None
+
+
+def test_head_to_head_analyzer_on_populates_health(monkeypatch: pytest.MonkeyPatch) -> None:
+    from capychem.analyzer import AnalyzerResult
+
+    _stub(monkeypatch, llm_pool=["CCO", "c1ccccc1", "CCN", "CCC"])
+    # the with-analyzer arm calls run_analyzer_sync (imported into runner); stub it parsed
+    monkeypatch.setattr(
+        runner_mod,
+        "run_analyzer_sync",
+        lambda summary, *, seed: AnalyzerResult(
+            text="focus rings", structured={"focus": "rings", "avoid": []},
+            tokens_in=0, tokens_out=0, cost_usd=0.0,
+        ),
+    )
+    v = run_head_to_head(
+        "jnk3", budget=8, seed=42, pop_size=3, offspring=4, mutation_rate=0.01, analyzer=True
+    )
+    assert v.analyzer is True
+    assert v.analyzer_calls >= 1
+    assert v.analyzer_parsed == v.analyzer_calls
+    assert v.analyzer_parse_rate == 1.0
+    assert v.parse_rate_healthy is True
+
+
+def test_head_to_head_analyzer_off_is_default_and_unhealthy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _stub(monkeypatch, llm_pool=["CCO", "c1ccccc1", "CCN", "CCC"])
+    v = run_head_to_head("jnk3", budget=8, seed=42, pop_size=3, offspring=4, mutation_rate=0.01)
+    assert v.analyzer is False
+    assert v.analyzer_calls == 0
+    assert v.analyzer_parse_rate is None
+    assert v.parse_rate_healthy is False  # no analyzer ran -> not "healthy"

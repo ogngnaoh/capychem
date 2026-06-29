@@ -16,6 +16,11 @@ from capychem.eval.metric import top_auc
 from capychem.eval.runner import run_reproduction
 from capychem.loop.logic import valid_smiles_gate
 
+# Mirror the valid-SMILES gate and verdict._PARSE_RATE_FLOOR: below this the
+# with-analyzer arm's hypotheses are not really parsing (a $0-balance mid-run
+# degrades the LLM arm to Graph-GA), so a beat is not trustworthy.
+_PARSE_RATE_FLOOR = 0.8
+
 
 @dataclass(frozen=True)
 class BeatVerdict:
@@ -31,6 +36,13 @@ class BeatVerdict:
     published_baseline: float | None  # sanity reference, if registered
     llm_unique_calls: int
     graph_ga_unique_calls: int
+    # with-analyzer-arm health (milestone 03 slice 05); defaults keep the
+    # existing analyzer-off head_to_head constructions unchanged.
+    analyzer: bool = False
+    analyzer_parse_rate: float | None = None
+    analyzer_calls: int = 0
+    analyzer_parsed: int = 0
+    parse_rate_healthy: bool = False
 
 
 def run_head_to_head(
@@ -41,8 +53,14 @@ def run_head_to_head(
     pop_size: int = 120,
     offspring: int = 70,
     mutation_rate: float = 0.067,
+    analyzer: bool = False,
 ) -> BeatVerdict:
-    """Run graph_ga and llm same-seed, measure both via top_auc, return the verdict."""
+    """Run graph_ga and llm same-seed, measure both via top_auc, return the verdict.
+
+    ``analyzer=True`` runs the LLM arm WITH the analyzer (the Week-8 bar:
+    with-analyzer-LLM vs vanilla Graph-GA). ``parse_rate_healthy`` then guards the
+    beat alongside ``llm_valid_gate``.
+    """
     ga = run_reproduction(
         task,
         budget,
@@ -60,11 +78,13 @@ def run_head_to_head(
         offspring=offspring,
         mutation_rate=mutation_rate,
         mutation_strategy="llm",
+        analyzer=analyzer,
     )
     ga_auc = top_auc(ga.mol_buffer, top_n=10, max_oracle_calls=budget)
     llm_auc = top_auc(llm.mol_buffer, top_n=10, max_oracle_calls=budget)
     rate = llm.valid_rate
     gate = valid_smiles_gate(rate) if rate is not None else None
+    parse_rate = llm.analyzer_parse_rate
     return BeatVerdict(
         task=task,
         seed=seed,
@@ -78,4 +98,11 @@ def run_head_to_head(
         published_baseline=GRAPH_GA_AUC_TOP10.get(task),
         llm_unique_calls=llm.unique_calls,
         graph_ga_unique_calls=ga.unique_calls,
+        analyzer=analyzer,
+        analyzer_parse_rate=parse_rate,
+        analyzer_calls=llm.analyzer_calls,
+        analyzer_parsed=llm.analyzer_parsed,
+        parse_rate_healthy=(
+            analyzer and parse_rate is not None and parse_rate >= _PARSE_RATE_FLOOR
+        ),
     )
