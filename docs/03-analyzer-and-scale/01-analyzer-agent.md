@@ -35,13 +35,18 @@ ALTER it).
 
 ## Tasks
 
-- [ ] T1 — `Hypothesis`/`AnalyzerSummary` types + `build_analyzer_summary` (pure).
-- [ ] T2 — `analyzer.py`: stub backend + `parse_hypothesis` matrix.
-- [ ] T3 — `analyzer.py`: direct DeepSeek backend (reasoning ON, cost, transient degrade).
-- [ ] T4 — strategy seam: analyzer prompt + `run_analyzer_*` + `build_prompt`/`propose_llm_*` conditioning + 8 fake updates.
-- [ ] T5 — `AnalyzerHypothesis` schema + `Generation` link (create_all; recreate dev/CI DB).
-- [ ] T6 — `analyze` node wired into the product loop (persist→analyze→stop_check; persist `gen_db_id`).
-- [ ] T7 — headless parity: `run_reproduction(analyzer=…)`, default off unchanged.
+- [x] T1 — `Hypothesis`/`AnalyzerSummary` types + `build_analyzer_summary` (pure). — `015e7d1`
+- [x] T2 — `analyzer.py`: stub backend + `parse_hypothesis` matrix. — `b543812`
+- [x] T3 — `analyzer.py`: direct DeepSeek backend (reasoning ON, cost, transient degrade). — `7a0723b`
+- [x] T4 — strategy seam: analyzer prompt + `run_analyzer_*` + `build_prompt`/`propose_llm_*` conditioning + 8 fake updates. — `8dcb32d`
+- [x] T5 — `AnalyzerHypothesis` schema + `Generation` link (create_all; recreate dev/CI DB). — `75cfa76`
+- [x] T6 — `analyze` node wired into the product loop (persist→analyze→stop_check; persist `gen_db_id`). — `4aa4b2e`
+- [x] T7 — headless parity: `run_reproduction(analyzer=…)`, default off unchanged. — `2a84d46`
+
+> **Shipped 2026-06-28** (commits `015e7d1..2a84d46`, 7 TDD tasks via subagent-driven-development; full
+> suite 179 passed, mypy + ruff clean; final whole-branch review: ready to merge). FROZEN — see handoff.
+> One approved deviation: the effective-hypothesis resolution was extracted into
+> `strategy.resolve_effective_hypothesis`, called by both the `analyze` node and the headless runner (DRY + G6).
 
 ## Notes
 

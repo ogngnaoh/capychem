@@ -58,8 +58,7 @@ docs are written when that slice's work starts.
 
 01. `analyzer-agent` — `AnalyzerHypothesis` entity + first migration; `analyze` node (gen ≥1) forming a
     hypothesis + conditioning the next proposer prompt; analyzer LLM adapter (reasoning decision);
-    malformed-output fallback; reaches product loop + headless eval. — in-progress (design+plan done,
-    implementation pending) — deps: none
+    malformed-output fallback; reaches product loop + headless eval. — shipped (2026-06-28) — deps: none
 02. `analyzer-value-verdict` — extend the head-to-head to a with/without-analyzer axis; prove the
     analyzer adds AUC value on ≥1 task (jnk3) — the differentiator kill-switch (SPEC risk "analyzer may
     not help"). — planned — deps: 01
@@ -91,6 +90,12 @@ docs are written when that slice's work starts.
   `thinking:{type:disabled}` + `_MAX_OUTPUT_TOKENS=128`; the analyzer is a separate call — do NOT copy
   the proposer payload. Cost → `RunCost.llm_cost_usd` (already summed into `total_usd`) +
   `AnalyzerHypothesis.compute_cost_usd`.
+- **Reasoning-budget risk (slice 02/05, surfaced in slice 01 final review).** The analyzer runs reasoning
+  ON with `max_tokens≈2048`. If DeepSeek-v4's chain-of-thought crowds out the `{focus, avoid}` JSON tail,
+  `parse_hypothesis` returns None and the loop silently falls back to "no new signal" every generation —
+  neutering the differentiator **without failing any test** (it degrades safely; stub backend never hits
+  this). When the first real `direct` verdict runs, instrument the parse-failure rate before trusting a
+  null result; raise `max_tokens` if CoT is truncating the JSON.
 - **Cost gate already exists.** Milestone-02 slice 05 wired the hard `cost.cost_cap_usd()` gate in
   `apps/api/.../runner.py` (`total_usd` = llm+oracle). Milestone 03 only adds analyzer spend into that
   total and validates the gate holds across the sweep.
