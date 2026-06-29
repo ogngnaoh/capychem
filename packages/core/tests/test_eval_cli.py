@@ -110,3 +110,27 @@ def test_cli_analyzer_verdict_invalid_when_parse_rate_unhealthy(monkeypatch, cap
     # an unhealthy parse-rate must read INVALID, never as a clean null
     assert report["parse_rate_healthy"] is False
     assert "INVALID" in report["verdict"]
+
+
+def test_cli_analyzer_verdict_null_pivot(monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    # Healthy parse-rate but the analyzer does NOT help (with_auc <= without_auc):
+    # the verdict must read NULL/pivot — the kill-switch's analyzer-only outcome.
+    from capychem.eval import verdict as verdict_mod
+    from capychem.eval.verdict import AnalyzerVerdict
+
+    def fake_verdict(task, budget, seed, **kw):  # type: ignore[no-untyped-def]
+        return AnalyzerVerdict(
+            task=task, seed=seed, budget=budget,
+            with_auc=0.60, without_auc=0.64, diff=-0.04, helps=False,
+            analyzer_parse_rate=0.96, analyzer_calls=20, analyzer_parsed=19,
+            parse_rate_healthy=True,
+            with_valid_rate=0.98, without_valid_rate=0.97,
+            with_unique_calls=2600, without_unique_calls=3100,
+        )
+
+    monkeypatch.setattr(verdict_mod, "run_analyzer_verdict", fake_verdict)
+    rc = main(["--task", "jnk3", "--budget", "10000", "--seed", "42", "--analyzer-verdict"])
+    assert rc == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["parse_rate_healthy"] is True and report["helps"] is False
+    assert "NULL" in report["verdict"] and "pivot" in report["verdict"]
