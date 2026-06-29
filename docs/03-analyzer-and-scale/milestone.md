@@ -53,8 +53,10 @@ prove it across the full **23-task PMO surface** and clear the **Week-8 bar** (b
 
 ## Slices
 
-Build order: `01 → {02 ∥ 03 ∥ 04} → 05`. Each is an independently shippable vertical slice; per-slice
-docs are written when that slice's work starts.
+Build order: `01 → {02 ∥ 03 ∥ 04} → 06 → 05`. Slice **06** was inserted after slice 02's clean NULL as
+the analyzer-iteration response to the kill-switch — it precedes the slice-05 sweep (which would also null
+on an unimproved analyzer). Each is an independently shippable vertical slice; per-slice docs are written
+when that slice's work starts.
 
 01. `analyzer-agent` — `AnalyzerHypothesis` entity + first migration; `analyze` node (gen ≥1) forming a
     hypothesis + conditioning the next proposer prompt; analyzer LLM adapter (reasoning decision);
@@ -75,8 +77,13 @@ docs are written when that slice's work starts.
     full hypothesis sequence (FR-009/FR-011, Story 2/3). — planned — deps: 01
 04. `twenty-three-task-surface` — full PMO task registry + published Graph-GA baselines + launch
     schema/UI selector for all 23 + all-23 sweep runner (`capychem-eval --all`). — planned — deps: none
+06. `analyzer-conditioning` — redesign how the analyzer hypothesis conditions the proposer (the slice-02
+    null is value-negative). Evidence-first: capture real hypotheses (`trace_sink` + `--capture-analyzer-traces`)
+    → diagnose → ONE matched fix (soften/diversify the application · gate to plateaus · descriptive output)
+    → re-verify via `--analyzer-verdict`. Single task (jnk3), single seed (42). — planned — deps: 01, 02
 05. `week-8-sweep-and-gate` — run the 23-task with-analyzer-LLM vs Graph-GA sweep; validate the cost gate
-    at scale; render the ≥3/23 Week-8 verdict + kill-switch decision. — planned — deps: 01, 04
+    at scale; render the ≥3/23 Week-8 verdict + kill-switch decision. — planned — deps: 01, 04, **06**
+    (the analyzer must be improved first, else the sweep likely also nulls)
 
 ## Integration notes
 
