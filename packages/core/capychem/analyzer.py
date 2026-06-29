@@ -100,7 +100,7 @@ def _stub_analyze(prompt: str, *, seed: int) -> AnalyzerResult:
 
 async def analyze_async(prompt: str, *, seed: int = 0) -> AnalyzerResult:
     """Analyze one generation via the configured backend. ``stub`` (default) is
-    deterministic + free; ``direct`` calls DeepSeek with reasoning ON; ``modal``
+    deterministic + free; ``direct`` calls DeepSeek with reasoning OFF; ``modal``
     is deferred this slice."""
     backend = _analyzer_backend()
     if backend == "stub":
@@ -123,7 +123,7 @@ def analyze_sync(prompt: str, *, seed: int = 0) -> AnalyzerResult:
     return asyncio.run(analyze_async(prompt, seed=seed))
 
 
-# --- direct backend (DeepSeek, reasoning ON) --------------------------------
+# --- direct backend (DeepSeek, reasoning OFF) -------------------------------
 
 
 async def _one_analysis_row(prompt: str, *, seed: int, api_key: str) -> dict[str, Any]:
