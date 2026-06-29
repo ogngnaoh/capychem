@@ -2,60 +2,66 @@
 
 ## Completed this session
 
-- **Slice 06 pushed to GitHub.** `origin/main` advanced `25e5730 → cfef635` (8 commits: slice 06 win + docs).
-- **Hardened the slice-06 win with a 2nd seed — it replicates, stronger.** `--analyzer-verdict` jnk3 @ **seed 7**,
-  budget 10000, both backends `direct`: with **0.7732** > without **0.6656**, **diff +0.1076**, parse **1.0 (80/80)**,
-  valid-rates 0.977 / 0.969 (both guards green). Exceeds slice-06 seed 42's +0.090 **and** the ~0.07 backend
-  day-drift noise. **Two-seed replication retires the single-seed-noise caveat** — the analyzer-adds-value
-  thesis on jnk3 is now solid (still single-task; the 23-task sweep is the multi-task arbiter).
-- Milestone exit-criterion #5 updated to record the cross-seed replication.
+- **Slice 04 `twenty-three-task-surface` SHIPPED** (subagent-driven, 6 TDD tasks + final review).
+  Commits `bd177b1..82a0f2b` on branch `slice-04-twenty-three-task-surface` (+ planning docs `244b2d5`,
+  `ff002c4`). Pure plumbing, NO eval cost:
+  - `eval/tasks.py::PMO_TASKS` — the 23-task registry, single source of truth.
+  - `eval/baselines.py` — all 23 published Graph-GA baselines.
+  - `apps/api/.../schemas.py` — `task: str` + `field_validator` vs PMO_TASKS (FR-015 → 422).
+  - `eval/sweep.py` — mode-pluggable `run_sweep` (reproduce|head_to_head|analyzer_verdict; per-task error isolation).
+  - `eval/cli.py` — `capychem-eval --all` (mode from `--head-to-head`/`--analyzer-verdict`; default reproduce).
+  - `apps/web/app/page.tsx` — launch-page task `<select>` (all 23, default jnk3).
+- Gates green: **207 pytest**, mypy clean (36), ruff clean; web **vitest 13**, typecheck + lint clean.
+- Final whole-branch review (opus): **READY TO MERGE**, 0 Critical / 0 Important; the slice-05 primitive
+  signatures were hand-verified clean.
+- **Baseline-sum fact:** the 23 verbatim Table-2 values sum to **13.742**; the paper's reported Sum row is
+  **13.751** (display-rounding gap). So the sweep's computed `published_sum` = 13.742; prose may cite 13.751.
 
 ## Slice status across milestone
 
 - 01 `analyzer-agent` → **shipped** (2026-06-28)
 - 02 `analyzer-value-verdict` → **shipped** (2026-06-28) — trustworthy clean NULL (original conditioning)
-- 06 `analyzer-conditioning` → **shipped** (2026-06-29) — WIN, now replicated across seeds 42 (+0.090) & 7 (+0.108)
-- 03 `analyzer-live-surface` → planned (dep 01 ✓ — unblocked)
-- 04 `twenty-three-task-surface` → planned (deps none — unblocked)
-- 05 `week-8-sweep-and-gate` → planned (deps 01 ✓, 04, 06 ✓)
+- 06 `analyzer-conditioning` → **shipped** (2026-06-29) — WIN, replicated seeds 42 (+0.090) & 7 (+0.108)
+- 04 `twenty-three-task-surface` → **shipped** (2026-06-29) — registry + baselines + schema/UI + `--all` sweep
+- 03 `analyzer-live-surface` → planned (dep 01 ✓ — unblocked; no eval cost)
+- 05 `week-8-sweep-and-gate` → planned (deps 01 ✓, 04 ✓, 06 ✓ — ALL shipped → unblocked; needs balance top-up)
 
 ## Current state
 
-- `main` == `origin/main` == `cfef635` (pushed, in sync). Working tree clean apart from this session's
-  milestone/handoff doc edits.
-- Analyzer = **reasoning-OFF** + **3A conditioning** (soften focus, no `avoid`, half-batch) for the rest of the milestone.
-- DeepSeek balance ≈ **$1.38** (after seed-7 run ~$1.33). **Slice 05's 23-task LLM sweep will need a top-up** —
-  $1.38 covers roughly one more single-task dual-arm run, not 23.
-- 2 non-blocking Minors logged in `.superpowers/sdd/progress.md` (cli `fake_run` kwargs assertion; cli
-  module-level `trace_to_dict` import) — optional cleanup if `eval/cli.py` is touched.
-- Stale leftover branch `slice-05-unique-call-budget-cost-ledger` exists locally (prior session) — unrelated, ignore.
+- Branch `slice-04-twenty-three-task-surface` at `82a0f2b`, ready to merge. **Not yet merged to main** (the
+  finish-branch step follows this handoff). Pattern (per slice 06): ff-merge to main locally, do NOT push.
+- DeepSeek balance ≈ **$1.38** (unchanged — slice 04 spent $0). Slice 05's 23-task LLM sweep needs a top-up.
+- Analyzer = reasoning-OFF + 3A conditioning (unchanged this slice).
 
 ## Next session start here
 
-- **Recommended next slice: 04 `twenty-three-task-surface`** — full PMO task registry + published Graph-GA
-  baselines (`eval/baselines.py`, see `agent_docs/pmo-auc-and-baselines.md`) + launch schema/UI selector for
-  all 23 + `capychem-eval --all` sweep runner. Pure plumbing, no eval cost, unblocks slice 05. Fresh planning
-  cycle (design spec → plan → slice doc → execute). **Slice 03** (live surface) is an independent alternative.
-- Before slice 05's sweep: **top up the DeepSeek balance** (23-task LLM run far exceeds $1.38).
+- **Two unblocked options:**
+  - **03 `analyzer-live-surface`** (recommended if avoiding cost): WS `analyzer.hypothesis` event +
+    watch-live latest hypothesis + run-detail full sequence (FR-009/FR-011, Story 2/3). No eval cost, dep 01 ✓.
+  - **05 `week-8-sweep-and-gate`** (the milestone headline): run `capychem-eval --all --analyzer-verdict`
+    across 23 (with `CAPYCHEM_PROPOSER_BACKEND=direct` + `CAPYCHEM_ANALYZER_BACKEND=direct`, source
+    .env.local). **TOP UP the DeepSeek balance first** — a 23-task dual-arm LLM sweep far exceeds $1.38.
+- Either way: fresh planning cycle (design spec → plan → slice doc → execute).
 
 ## Active concerns
 
-- **Single-seed caveat RETIRED** for jnk3 (replicated seeds 42 & 7). Remaining open question is breadth:
-  the win is one task — the 23-task sweep (slice 05) is the authoritative Week-8 bar.
+- **`--all` sweep cost (slice 05):** a 23-task dual-arm `--analyzer-verdict` run is large. Confirm-before-invoke
+  (CLAUDE.md command note). Check balance: `GET https://api.deepseek.com/user/balance` (key in .env.local).
 - **`--analyzer-verdict` two-failure-mode read (carried):** always confirm BOTH `parse_rate_healthy` AND both
-  `*_valid_rate` ≥ ~0.8 — a $0-balance mid-run silently degrades the LLM arm to Graph-GA with parse-rate still
-  healthy. Query `https://api.deepseek.com/user/balance` (key in `.env.local`) and confirm it covers the run first.
-- **Stale reasoning-ON references:** slice-01 design spec + frozen slice-01 doc still say "reasoning ON"
-  (reversed in slice 02). Do not edit the frozen slice-01/06 docs.
-- **Carried (deferred):** analyzer cost lands in `RunCost` one gen late (sub-cent); m02 live-UI plateau
-  callout check; `plateauNotice` double-call hoist in `LiveRun.tsx` (Minor).
+  `*_valid_rate` ≥ ~0.8 — a $0-balance mid-run silently degrades the LLM arm to Graph-GA with parse-rate healthy.
+- **Non-blocking Minors from slice-04 final review (optional future cleanup):** `test_baseline_spot_values`
+  duplicates the jnk3 assertion + the `1e-2` sum tolerance is thin (could pin the exact 13.742 sum);
+  `eval/sweep.py::_run_one` has an unreachable `ValueError` (dead code); 2 pre-existing `cli.py` Minors
+  (fake_run kwargs assertion; module-level `trace_to_dict` import); no automated web↔core `PMO_TASKS` drift
+  guard; `--all` silently ignores `--mutation-strategy`/`--capture-analyzer-traces`.
+- Frozen docs (do NOT edit): slice-01, slice-06, **slice-04** docs + their specs/plans.
 
 ## Slice log
 
-- 2026-06-28 — Slice 01 `analyzer-agent` SHIPPED (7 TDD tasks `015e7d1..2a84d46`).
-- 2026-06-28 — **Slice 02 `analyzer-value-verdict` SHIPPED** (`ee86685..33da829`). Verdict: trustworthy
-  clean NULL — analyzer does not add value on jnk3 @ seed 42 (0.678 vs 0.743) with the original conditioning.
-- 2026-06-29 — **Slice 06 `analyzer-conditioning` SHIPPED** (`3fee112..6a4bda3` + docs). Approach 3A
-  (soften focus, DROP `avoid`, half-batch). Verdict: **WIN** on jnk3 @ seed 42 (+0.090). Exit-criterion #5 MET.
-- 2026-06-29 — **Slice 06 pushed** (`origin/main` → `cfef635`) + **hardened**: seed-7 jnk3 verdict replicates
-  the win (with 0.773 > without 0.666, **+0.108**; parse 1.0; valid 0.98/0.97). Single-seed caveat retired.
+- 2026-06-28 — Slice 01 `analyzer-agent` SHIPPED (`015e7d1..2a84d46`).
+- 2026-06-28 — Slice 02 `analyzer-value-verdict` SHIPPED (`ee86685..33da829`). Trustworthy clean NULL.
+- 2026-06-29 — Slice 06 `analyzer-conditioning` SHIPPED (`3fee112..6a4bda3` + docs). WIN +0.090; hardened
+  seed-7 +0.108. Exit-criterion #5 MET. Pushed (`origin/main` → `cfef635`); main HEAD `507326e`.
+- 2026-06-29 — **Slice 04 `twenty-three-task-surface` SHIPPED** (`bd177b1..82a0f2b`, branch
+  `slice-04-twenty-three-task-surface`). Registry + 23 baselines + schema/UI selector + mode-pluggable
+  `--all` sweep. All gates green; final review READY-TO-MERGE. Exit-criterion #6 MET. NO eval cost.

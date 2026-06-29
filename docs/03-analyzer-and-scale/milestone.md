@@ -76,7 +76,12 @@ when that slice's work starts.
 03. `analyzer-live-surface` — WS `analyzer.hypothesis` event + watch-live latest hypothesis + run-detail
     full hypothesis sequence (FR-009/FR-011, Story 2/3). — planned — deps: 01
 04. `twenty-three-task-surface` — full PMO task registry + published Graph-GA baselines + launch
-    schema/UI selector for all 23 + all-23 sweep runner (`capychem-eval --all`). — planned — deps: none
+    schema/UI selector for all 23 + all-23 sweep runner (`capychem-eval --all`). — **shipped (2026-06-29)**
+    — verdict: pure plumbing, all gates green (207 pytest, mypy, ruff; web vitest+tsc+eslint), final
+    whole-branch review READY-TO-MERGE (0 Critical/Important). `eval/tasks.py::PMO_TASKS` is the single
+    source of truth; `--all` is mode-pluggable (reproduce|head_to_head|analyzer_verdict). NOTE: the 23
+    verbatim Table-2 values sum to **13.742** (paper's reported Sum row is 13.751 — display-rounding gap),
+    so the sweep's computed `published_sum` is 13.742. NO eval cost incurred. — deps: none
 06. `analyzer-conditioning` — redesign how the analyzer hypothesis conditions the proposer (the slice-02
     null was value-negative). Evidence-first: capture real hypotheses (`trace_sink` + `--capture-analyzer-traces`)
     → diagnose (Application: accurate hypotheses, over-constraining `avoid` + whole-batch directive) → fix
@@ -85,8 +90,9 @@ when that slice's work starts.
     flips slice-02's −0.066; parse 1.0, valid-rates 0.99/0.99). Single-seed/non-deterministic-backend caveat
     noted. — deps: 01, 02
 05. `week-8-sweep-and-gate` — run the 23-task with-analyzer-LLM vs Graph-GA sweep; validate the cost gate
-    at scale; render the ≥3/23 Week-8 verdict + kill-switch decision. — planned — deps: 01, 04, **06**
-    (the analyzer must be improved first, else the sweep likely also nulls)
+    at scale; render the ≥3/23 Week-8 verdict + kill-switch decision. — planned — deps: 01 ✓, 04 ✓, 06 ✓
+    (ALL deps now shipped → unblocked; run via `capychem-eval --all --analyzer-verdict`. Needs a DeepSeek
+    balance top-up first — a 23-task dual-arm LLM sweep far exceeds the ≈$1.38 balance.)
 
 ## Integration notes
 
@@ -150,7 +156,10 @@ when that slice's work starts.
    single-task, so the authoritative multi-task bar remains the slice-05 23-task sweep. **Kill-switch did NOT
    need to fire — analyzer-as-value-add stands** (no pivot).
 6. All 23 PMO tasks are launchable from the web (multi-task selector) and scored end-to-end; published
-   Graph-GA baselines registered.
+   Graph-GA baselines registered. → **MET (slice 04, 2026-06-29):** `eval/tasks.py::PMO_TASKS` registry
+   (single source of truth) feeds the API `field_validator`, the launch-page `<select>` (all 23, default
+   jnk3), and all 23 published Graph-GA baselines (`eval/baselines.py`). Per-task end-to-end scoring across
+   23 is exercised by slice 05's `capychem-eval --all` sweep (the harness oracle is already task-agnostic).
 7. The hypothesis is surfaced live (watch-live latest) and in run-detail (full sequence).
 8. The 23-task with-analyzer-LLM vs Graph-GA sweep is run via the canonical eval module; the Week-8
    verdict is rendered — ≥3/23 beat → on track; <3 → pivot to analyzer-only narrative (do not abandon).
