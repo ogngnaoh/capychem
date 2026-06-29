@@ -31,13 +31,54 @@ proposer+analyzer+oracle spend. Every score is an in-silico oracle score (PRD N6
 
 ## Tasks
 
-- [ ] T1 — `run_head_to_head(analyzer=…)` + analyzer-health on `BeatVerdict` (TDD, stub).
-- [ ] T2 — `week8` sweep mode (TDD, stub).
-- [ ] T3 — `week8_verdict` guarded reader (≥3 trustworthy gate) (TDD).
-- [ ] T4 — CLI `--week8` + `--tasks` subset wiring + verdict in output (TDD).
-- [ ] T5 — cost-gate verification test: analyzer spend is in the gated total.
-- [ ] T6 — full local gate → CHECKPOINT (balance ≥ ~$7) → real 9-task sweep (background) → two-guard read → verdict.
-- [ ] T7 — ship: milestone/handoff status flip, freeze this doc, dated log line, ff-merge to main.
+- [x] T1 — `run_head_to_head(analyzer=…)` + analyzer-health on `BeatVerdict` (TDD, stub).
+- [x] T2 — `week8` sweep mode (TDD, stub).
+- [x] T3 — `week8_verdict` guarded reader (≥3 trustworthy gate) (TDD).
+- [x] T4 — CLI `--week8` + `--tasks` subset wiring + verdict in output (TDD).
+- [x] T5 — cost-gate verification test: analyzer spend is in the gated total.
+- [x] T6 — full local gate → CHECKPOINT → real 9-task sweep (background) → two-guard read → verdict.
+- [x] T7 — ship: milestone/handoff status flip, freeze this doc, dated log line, ff-merge to main.
+
+## Result (2026-06-29) — Week-8 bar CLEARED ✓
+
+**7 trustworthy beats → ≥3 → on track. No pivot.** Sweep: 9 tasks, budget=10000, seed=42, both
+`direct` backends, wall 139 min. Raw JSON: `week8-sweep-seed42.json` (this folder). All AUCs are
+in-silico oracle scores (PRD N6); each beat is vs our **own same-seed** Graph-GA control.
+
+| task | llm_auc (w/ analyzer) | ga_auc | diff | beat | valid≥0.8 | parse healthy |
+|---|---|---|---|---|---|---|
+| jnk3 | 0.7672 | 0.6839 | +0.0834 | ✓ | ✓ | ✓ |
+| median1 | 0.3854 | 0.2637 | +0.1217 | ✓ | ✓ | ✓ |
+| zaleplon_mpo | 0.3877 | 0.3617 | +0.0260 | ✓ | ✓ | ✓ |
+| troglitazone_rediscovery | 0.4805 | 0.3637 | +0.1168 | ✓ | ✓ | ✓ |
+| perindopril_mpo | 0.6223 | 0.5375 | +0.0848 | ✓ | ✓ | ✓ |
+| scaffold_hop | 0.6381 | 0.5452 | +0.0929 | ✓ | ✓ | ✓ |
+| thiothixene_rediscovery | 0.9010 | 0.4994 | +0.4016 | ✓ | ✓ | ✓ |
+| median2 | — | — | — | harness crash | — | — |
+| sitagliptin_mpo | NaN | NaN | NaN | non-beat | ✓ | ✓ |
+
+**7 of 7 cleanly-measured tasks beat** (the analyzer-LLM beats vanilla Graph-GA on every task that
+produced a valid measurement), each by a clear margin and with both guards healthy. The Week-8
+kill-switch did **not** fire.
+
+**Two harness anomalies (NOT slice-05 bugs, NOT negative results):**
+- **median2** — the Graph-GA arm crashed: `IndexError: tuple index out of range` in legacy
+  `harness/capychem_harness/graph_ga/crossover.py:142` (`rxn.RunReactants((fa,fb))[0]` on an empty
+  result — a known GB-GA crossover instability hit on this seed's fragment pair). Per-task isolation
+  caught it; the task is excluded. *Follow-up: guard the empty-RunReactants case in the harness.*
+- **sitagliptin_mpo** — both arms ran the full 10000 unique calls (valid 0.96, parse 1.0, 229 analyzer
+  calls) but the **oracle returned NaN scores**, so `top_auc` is NaN. `NaN > NaN` is `False`, so it
+  conservatively counts as a non-beat (a NaN can never inflate the count). *Guard gap: the two-guard
+  read (valid + parse) does not flag a NaN AUC — it slips through as "guards ok, non-beat" rather than
+  "invalid measurement." Non-material here (verdict already cleared on 7 clean beats); future hardening
+  could add a `math.isnan` measurement guard.*
+
+**Cost gate (Exit #9):** the gate fires on combined proposer+analyzer+oracle spend
+(`test_cost_cap_trips_on_analyzer_spend`); the real run stayed far under the $50/run cap (~$1.2/task ≪ $50).
+
+**Spend:** $10.08 (DeepSeek balance $12.99 → $2.91). ~$1.2/task at budget=10000 — ~2× the jnk3-anchored
+estimate, because MPO/median tasks run many more generations before patience-stop (e.g. sitagliptin =
+229 generations) than jnk3. **Calibration for m04:** a full-23 sweep ≈ $25–30, not $15–23.
 
 ## Notes
 
