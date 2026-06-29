@@ -144,3 +144,46 @@ def run_sweep(
         tasks_run=len(ok_rows), tasks_failed=len(rows) - len(ok_rows),
         auc_sum=auc_sum, published_sum=published_sum, beats=beats, rows=rows,
     )
+
+
+def week8_verdict(report: SweepReport) -> dict[str, Any]:
+    """Guarded Week-8 read over a ``week8`` SweepReport.
+
+    A beat counts only if BOTH the with-analyzer arm's valid-SMILES gate passed AND
+    the analyzer parse-rate is healthy — a $0-balance mid-run silently degrades the
+    LLM arm to Graph-GA (the slice-02 failure mode), which the guards catch. On a
+    SUBSET, <3 trustworthy beats is INCONCLUSIVE, not "<3/23" -> not a clean pivot.
+    """
+    trustworthy = 0
+    degraded: list[str] = []
+    for r in report.rows:
+        if not r.ok:
+            continue
+        gate = r.payload.get("llm_valid_gate")
+        guards_ok = bool(gate and gate.get("passed")) and bool(
+            r.payload.get("parse_rate_healthy")
+        )
+        if not guards_ok:
+            degraded.append(r.task)
+            continue
+        if r.payload.get("beat"):
+            trustworthy += 1
+    on_track = trustworthy >= 3
+    if on_track:
+        verdict = (
+            f"Week-8 bar CLEARED: {trustworthy} trustworthy beats (>=3 of the 23 PMO "
+            "tasks) -> on track."
+        )
+    else:
+        verdict = (
+            f"INCONCLUSIVE: {trustworthy} trustworthy beats of {report.tasks_run} tasks "
+            "run (<3). On a subset this cannot conclude <3/23 -> NOT a clean pivot; "
+            "resolve with more budget."
+        )
+    return {
+        "trustworthy_beats": trustworthy,
+        "raw_beats": report.beats,
+        "on_track": on_track,
+        "degraded_tasks": degraded,
+        "week8_verdict": verdict,
+    }

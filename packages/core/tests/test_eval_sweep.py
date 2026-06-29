@@ -2,7 +2,7 @@ import pytest
 from capychem.eval import sweep as sweep_mod
 from capychem.eval.beat import BeatVerdict
 from capychem.eval.runner import ReproResult
-from capychem.eval.sweep import run_sweep
+from capychem.eval.sweep import run_sweep, week8_verdict
 from capychem.eval.verdict import AnalyzerVerdict
 
 
@@ -106,3 +106,51 @@ def test_per_task_error_isolation(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_unknown_mode_raises() -> None:
     with pytest.raises(ValueError):
         run_sweep(("qed",), budget=10, seed=42, mode="nonsense")
+
+
+def _week8_row(task, *, beat, valid_passed=True, parse_healthy=True):  # type: ignore[no-untyped-def]
+    from capychem.eval.sweep import SweepRow
+    return SweepRow(
+        task=task, ok=True, headline_auc=0.6 if beat else 0.4, beat=beat,
+        payload={
+            "beat": beat,
+            "llm_valid_gate": {"threshold": 0.8, "passed": valid_passed},
+            "parse_rate_healthy": parse_healthy,
+        },
+    )
+
+
+def test_week8_verdict_counts_only_guarded_beats() -> None:
+    from capychem.eval.sweep import SweepReport
+    rows = [
+        _week8_row("jnk3", beat=True),                                   # trustworthy
+        _week8_row("median1", beat=True),                               # trustworthy
+        _week8_row("median2", beat=True),                               # trustworthy -> >=3
+        _week8_row("sitagliptin_mpo", beat=True, parse_healthy=False),  # degraded, excluded
+        _week8_row("zaleplon_mpo", beat=False),                         # no beat
+        _week8_row("perindopril_mpo", beat=True, valid_passed=False),   # degraded, excluded
+    ]
+    report = SweepReport(
+        mode="week8", budget=10000, seed=42, tasks_run=6, tasks_failed=0,
+        auc_sum=0.0, published_sum=0.0, beats=4, rows=rows,
+    )
+    out = week8_verdict(report)
+    assert out["trustworthy_beats"] == 3
+    assert out["raw_beats"] == 4
+    assert out["on_track"] is True
+    assert set(out["degraded_tasks"]) == {"sitagliptin_mpo", "perindopril_mpo"}
+    assert "CLEARED" in out["week8_verdict"]
+
+
+def test_week8_verdict_inconclusive_below_three() -> None:
+    from capychem.eval.sweep import SweepReport
+    rows = [_week8_row("jnk3", beat=True), _week8_row("median1", beat=False)]
+    report = SweepReport(
+        mode="week8", budget=10000, seed=42, tasks_run=2, tasks_failed=0,
+        auc_sum=0.0, published_sum=0.0, beats=1, rows=rows,
+    )
+    out = week8_verdict(report)
+    assert out["trustworthy_beats"] == 1
+    assert out["on_track"] is False
+    assert "INCONCLUSIVE" in out["week8_verdict"]
+    assert "NOT a clean pivot" in out["week8_verdict"]
