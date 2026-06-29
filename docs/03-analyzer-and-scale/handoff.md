@@ -27,19 +27,25 @@
 
 ## Current state
 
-- Slice 02 **ff-merged to `main` locally** (main's tip); slice branch deleted. **`origin/main` NOT pushed**
-  — push deferred by choice (consistent with prior milestones). SDD ledger: `.superpowers/sdd/progress.md`.
+- Slice 02 **ff-merged to `main`** (main's tip); slice branch deleted. **Pushed to `origin/main`
+  (2026-06-28)** — origin now matches local (the prior milestone-02 + slice-03-01 backlog of unpushed
+  commits went up in the same push). SDD ledger: `.superpowers/sdd/progress.md`.
 - Analyzer is now **reasoning-OFF** for the rest of the milestone (the slice-01 design's reasoning-ON
   rationale is superseded). DeepSeek balance ≈ $1 left (was ~$2.37).
 
 ## Next session start here
 
-1. **DECIDE the milestone's response to the null** (the headline). Options: (a) iterate the analyzer —
-   the `{focus,avoid}` conditioning likely over-constrains the proposer (it beats GA *without* the
-   analyzer); try a softer/explore-preserving prompt before scaling. (b) Continue to the 23-task Week-8
-   sweep (slice 05) as the authoritative bar — jnk3 is one task/one seed. (c) Formally adopt the
-   analyzer-only narrative. Slices **03** (live surface) and **04** (23-task surface) are unblocked and
-   independent of this decision.
+1. **ITERATE THE ANALYZER** (decided direction — the analyzer is value-negative on jnk3 and we fix that
+   before scaling). Concrete first step: understand WHY it hurts. Inspect the real conditioned hypotheses
+   + compare the conditioned vs unconditioned proposer prompts/outputs from a jnk3 `direct` run (the
+   `{focus,avoid}` guidance likely over-constrains the proposer's recall of strong scaffolds — it beats GA
+   *without* the analyzer). Then brainstorm → spec → plan a new slice for a softer/explore-preserving
+   conditioning (e.g. guidance as optional inspiration not a directive; inject only when confident;
+   or blend rather than replace). This is a fresh planning cycle (its own design spec + plan + slice doc).
+   Re-verify with the `--analyzer-verdict` harness (now trustworthy: parse-rate guarded, reasoning-OFF).
+   - Slices **03** (live surface) and **04** (23-task surface) remain unblocked + independent if you'd
+     rather build surface work in parallel; **05** (Week-8 sweep) should wait until the analyzer is
+     improved, else it likely also nulls.
 
 ## Active concerns
 
