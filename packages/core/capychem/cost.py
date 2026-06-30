@@ -20,6 +20,14 @@ def cost_cap_usd() -> float:
     return float(os.environ.get("CAPYCHEM_COST_CAP_USD", _DEFAULT_COST_CAP_USD))
 
 
+async def run_cost_total(session: AsyncSession, run_id: int) -> float:
+    """The run's persisted total compute cost (oracle + llm), 0.0 if no RunCost
+    row yet. The read counterpart of record_oracle_cost; the detail/compare DB
+    path uses it so completed runs surface real cost (FR-013), not 0.0."""
+    row = await session.scalar(select(RunCost).where(RunCost.run_id == run_id))
+    return float(row.total_usd) if row is not None else 0.0
+
+
 async def oracle_cost_so_far(session: AsyncSession, run_id: int) -> float:
     total = await session.scalar(
         select(func.coalesce(func.sum(OracleCall.compute_cost_usd), 0.0)).where(

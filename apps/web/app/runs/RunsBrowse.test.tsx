@@ -91,4 +91,13 @@ describe("RunsBrowse", () => {
     fireEvent.click(screen.getByLabelText(/select run 2/i));
     expect(compare).not.toBeDisabled(); // exactly two selected
   });
+
+  it("navigates to /compare with both selected run ids when Compare is clicked", async () => {
+    render(<RunsBrowse />);
+    await waitFor(() => screen.getByText("jnk3"));
+    fireEvent.click(screen.getByLabelText(/select run 1/i));
+    fireEvent.click(screen.getByLabelText(/select run 2/i));
+    fireEvent.click(screen.getByRole("button", { name: /compare/i }));
+    expect(push).toHaveBeenCalledWith("/compare?a=1&b=2");
+  });
 });

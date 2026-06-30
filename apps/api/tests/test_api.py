@@ -116,6 +116,22 @@ async def test_ws_unknown_run_closes_4404() -> None:
                     assert exc_info.value.code == 4404
 
 
+async def test_compare_two_runs_and_404() -> None:
+    """GET /compare wiring: two existing runs -> 200 with both runs + an
+    auc_overlay list; a missing run -> 404 (the _run_snapshot None path)."""
+    async with app.router.lifespan_context(app):
+        async with _client() as c:
+            id_a = (await c.post("/runs", json=_BODY)).json()["run_id"]
+            id_b = (await c.post("/runs", json={**_BODY, "seed": 7})).json()["run_id"]
+            r = await c.get(f"/compare?a={id_a}&b={id_b}")
+            assert r.status_code == 200
+            payload = r.json()
+            assert payload["a"]["run_id"] == id_a
+            assert payload["b"]["run_id"] == id_b
+            assert isinstance(payload["auc_overlay"], list)
+            assert (await c.get(f"/compare?a={id_a}&b=99999999")).status_code == 404
+
+
 async def test_hypotheses_for_returns_rows_ordered() -> None:
     from capychem.api.routes_runs import _hypotheses_for
     from capychem.db.models import AnalyzerHypothesis, Base

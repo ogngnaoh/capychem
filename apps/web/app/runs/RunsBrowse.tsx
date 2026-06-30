@@ -117,7 +117,7 @@ export function RunsBrowse() {
           variant="outline"
           size="sm"
           disabled={selected.length !== 2}
-          title="Compare ships next"
+          onClick={() => router.push(`/compare?a=${selected[0]}&b=${selected[1]}`)}
         >
           Compare ({selected.length}/2)
         </Button>

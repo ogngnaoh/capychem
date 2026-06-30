@@ -31,6 +31,27 @@ export type RunListItem = {
   budget: number;
   started_at: string;
 };
+export type CompareRun = {
+  run_id: number;
+  task: string;
+  status: string;
+  best_score: number | null;
+  oracle_calls: number;
+  budget: number;
+  cost_so_far_usd: number;
+  top_k: TopMolecule[];
+  hypotheses: AnalyzerHypothesis[];
+};
+export type AucOverlayPoint = {
+  oracle_calls: number;
+  a: number | null;
+  b: number | null;
+};
+export type ComparePayload = {
+  a: CompareRun;
+  b: CompareRun;
+  auc_overlay: AucOverlayPoint[];
+};
 export type CreateRunBody = {
   task: string;
   budget: number;
@@ -78,6 +99,12 @@ export async function listRuns(
   if (params.task) q.set("task", params.task);
   const qs = q.toString();
   const r = await fetch(`${API_URL}/runs${qs ? `?${qs}` : ""}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+export async function getCompare(a: number, b: number): Promise<ComparePayload> {
+  const r = await fetch(`${API_URL}/compare?a=${a}&b=${b}`);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
 }

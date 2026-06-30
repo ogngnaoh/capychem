@@ -79,6 +79,36 @@ class RunListItem(BaseModel):
     started_at: datetime
 
 
+class CompareRun(BaseModel):
+    """One run's side of the compare payload — the subset of RunSnapshot the
+    compare view shows (no auc_curve: the overlay is the resampled series)."""
+
+    run_id: int
+    task: str
+    status: str
+    best_score: float | None
+    oracle_calls: int
+    budget: int
+    cost_so_far_usd: float
+    top_k: list[TopMolecule]
+    hypotheses: list[AnalyzerHypothesisOut]
+
+
+class AucOverlayPoint(BaseModel):
+    """One x of the shared oracle-call grid; a/b are each run's top-10 mean at
+    that x (None before a run's first scored generation)."""
+
+    oracle_calls: int
+    a: float | None
+    b: float | None
+
+
+class ComparePayload(BaseModel):
+    a: CompareRun
+    b: CompareRun
+    auc_overlay: list[AucOverlayPoint]
+
+
 class GenerationCompleteEvent(BaseModel):
     type: Literal["generation.complete"] = "generation.complete"
     generation_index: int

@@ -71,9 +71,9 @@ independently shippable vertical slice; per-slice docs are written when that sli
     (FR-010, Story 3). — shipped — deps: none
 02. `compare-runs` — `GET /compare?a=&b=` (both runs' top-K, AUC resampled to a common oracle-call x-axis,
     hypothesis sequences, per-run oracle-call + cost stats) + web compare view overlaying AUC + side-by-side
-    top-K (FR-012/013, Story 4). — next — deps: 01
+    top-K (FR-012/013, Story 4). — shipped — deps: 01
 03. `web-polish` — clean 1280px render, no horizontal scroll on run-detail + compare; demo-responsiveness
-    pass across the surface (NFR, G3). — planned — deps: 02
+    pass across the surface (NFR, G3). — next — deps: 02
 04. `g1-full-23-sweep` — two harness pre-sweep guards (median2 `IndexError`; sitagliptin NaN) + authoritative
     `capychem-eval --all` with-analyzer-LLM vs Graph-GA sweep (budget=10000, seed=42) establishing the G1
     ≥6/23 count; run+verdict slice (G1). — planned — deps: none (Track A independent); before 05

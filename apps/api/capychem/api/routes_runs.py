@@ -5,9 +5,12 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from capychem import cost
+from capychem.api.compare import build_compare_payload
 from capychem.api.runner import RunRegistry
 from capychem.api.schemas import (
     AnalyzerHypothesisOut,
+    ComparePayload,
     CreateRunRequest,
     RunListItem,
     RunSnapshot,
@@ -140,16 +143,18 @@ async def list_runs_endpoint(
     return build_run_list(rows, live_by_id, status=status, task=task, sort=sort, order=order)
 
 
-async def _hypotheses_for(
-    session: AsyncSession, run_id: int
-) -> list[AnalyzerHypothesisOut]:
+async def _hypotheses_for(session: AsyncSession, run_id: int) -> list[AnalyzerHypothesisOut]:
     rows = (
-        await session.execute(
-            select(AnalyzerHypothesis)
-            .where(AnalyzerHypothesis.run_id == run_id)
-            .order_by(AnalyzerHypothesis.after_generation_index)
+        (
+            await session.execute(
+                select(AnalyzerHypothesis)
+                .where(AnalyzerHypothesis.run_id == run_id)
+                .order_by(AnalyzerHypothesis.after_generation_index)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     return [
         AnalyzerHypothesisOut(
             after_generation_index=r.after_generation_index,
@@ -160,37 +165,70 @@ async def _hypotheses_for(
     ]
 
 
+async def _run_snapshot(
+    session: AsyncSession, registry: RunRegistry, run_id: int
+) -> RunSnapshot | None:
+    """Build a run's snapshot the single way detail and compare share: the live
+    registry snapshot when present, else the persisted DB row (None if unknown —
+    the 404 source for both endpoints).
+
+    The DB path covers runs not in the registry (e.g. after a restart) AND a live
+    run before its first generation boundary (snapshot stays None until the first
+    generation.complete). summary_json comes from build_summary: top_k is
+    [{smiles, score}] and auc_curve is [{oracle_calls, top10_mean}] — both match
+    the schema dicts. It reads RunCost so completed runs surface real cost
+    (FR-013), not the 0.0 default; the live snapshot already carries cost."""
+    hyps = await _hypotheses_for(session, run_id)
+    live = registry.snapshot(run_id)
+    if live is not None:
+        return RunSnapshot(**live, hypotheses=hyps)
+    row = await session.get(Run, run_id)
+    if row is None:
+        return None
+    summary = row.summary_json or {}
+    status, best_score, oracle_calls = _db_fields(row)  # shared with the list view
+    return RunSnapshot(
+        run_id=row.id,
+        task=row.task,
+        status=status,
+        budget=row.budget,
+        plateau_window=row.plateau_window,
+        generation_index=summary.get("generations", 0),
+        oracle_calls_used=oracle_calls,
+        best_score=best_score,
+        top_k=summary.get("top_k", []),
+        auc_curve=summary.get("auc_curve", []),
+        cost_so_far_usd=await cost.run_cost_total(session, run_id),
+        hypotheses=hyps,
+    )
+
+
 @router.get("/runs/{run_id}", response_model=RunSnapshot)
 async def get_run_endpoint(run_id: int, request: Request) -> RunSnapshot:
     sm = sessionmaker_of(request)
+    registry = registry_of(request)
     async with sm() as session:
-        hyps = await _hypotheses_for(session, run_id)
-        live = registry_of(request).snapshot(run_id)
-        if live is not None:
-            return RunSnapshot(**live, hypotheses=hyps)
-        # No in-memory snapshot: read the DB row. Covers runs not in the registry
-        # (e.g. after a restart) AND a live run before its first generation boundary
-        # (snapshot stays None until the first generation.complete).
-        # summary_json comes from build_summary: top_k is [{smiles, score}] and
-        # auc_curve is [{oracle_calls, top10_mean}] — both match the schema dicts.
-        row = await session.get(Run, run_id)
-        if row is None:
-            raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
-        summary = row.summary_json or {}
-        status, best_score, oracle_calls = _db_fields(row)  # shared with the list view
-        return RunSnapshot(
-            run_id=row.id,
-            task=row.task,
-            status=status,
-            budget=row.budget,
-            plateau_window=row.plateau_window,
-            generation_index=summary.get("generations", 0),
-            oracle_calls_used=oracle_calls,
-            best_score=best_score,
-            top_k=summary.get("top_k", []),
-            auc_curve=summary.get("auc_curve", []),
-            hypotheses=hyps,
-        )
+        snap = await _run_snapshot(session, registry, run_id)
+    if snap is None:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return snap
+
+
+@router.get("/compare", response_model=ComparePayload)
+async def compare_runs_endpoint(request: Request, a: int, b: int) -> ComparePayload:
+    """Read-only aggregation of two existing runs (FR-012/013). 404 if either is
+    unknown. The two AUC curves are resampled onto a common oracle-call x-axis so
+    they overlay-compare (SPEC §6.4d)."""
+    sm = sessionmaker_of(request)
+    registry = registry_of(request)
+    async with sm() as session:
+        snap_a = await _run_snapshot(session, registry, a)
+        snap_b = await _run_snapshot(session, registry, b)
+    if snap_a is None:
+        raise HTTPException(status_code=404, detail=f"Run {a} not found")
+    if snap_b is None:
+        raise HTTPException(status_code=404, detail=f"Run {b} not found")
+    return build_compare_payload(snap_a, snap_b)
 
 
 @router.post("/runs/{run_id}/stop")
