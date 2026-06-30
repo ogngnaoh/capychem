@@ -45,16 +45,17 @@ render, sort header changes query, status filter, row link, two-checkbox selecti
 
 ## Tasks
 
-- [ ] `RunListItem` schema in `schemas.py`
-- [ ] Pure `run_list_item(row, live_snapshot)` derivation helper (shared list/detail)
-- [ ] `GET /runs` endpoint: merge → filter (`status`, `task`) → sort (`sort`/`order`, nulls-last)
-- [ ] Backend test: sqlite-seeded merge + sort + filter + nulls-last (fast, deterministic)
-- [ ] `listRuns(params)` + `RunListItem` type in `lib/api.ts`
-- [ ] `app/runs/page.tsx` browse table (columns above, sortable headers, status filter, row links)
-- [ ] Two-run selection state + disabled-until-2 Compare button (placeholder; seam for slice 02)
-- [ ] `/ ↔ /runs` cross-links; relative-time formatter for `started_at`
-- [ ] Frontend vitest for the browse page
-- [ ] Gates green: pytest · mypy strict (`-p capychem -p capychem.api`) · ruff · web vitest · tsc · eslint
+- [x] `RunListItem` schema in `schemas.py`
+- [x] Pure `run_list_item(row, live_snapshot)` derivation helper (shared list/detail via `_db_fields`)
+- [x] `GET /runs` endpoint: merge → filter (`status`, `task`) → sort (`sort`/`order`, nulls-last)
+- [x] Backend test: pure-function merge + every sort + nulls-last + filters + list==detail invariant
+- [x] `listRuns(params)` + `RunListItem` type in `lib/api.ts`
+- [x] `app/runs/page.tsx` server shell + `RunsBrowse.tsx` table (columns above, sortable headers, status filter, row links)
+- [x] Two-run selection state + disabled-until-2 Compare placeholder (seam for slice 02)
+- [x] `/ ↔ /runs` cross-links; relative-time formatter for `started_at`
+- [x] Frontend vitest for the browse page
+- [x] Gates green: pytest · mypy strict (`-p capychem -p capychem.api`) · ruff · web vitest · tsc · eslint
+- [x] Frontend-design critic loop: APPROVED at round 2 (Builder↔Critic, cap N=10) — card surface, outline strategy badges, right-aligned numerics
 
 ## Notes
 

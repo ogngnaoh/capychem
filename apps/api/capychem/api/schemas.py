@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Literal
 
 from capychem.eval.tasks import PMO_TASKS
@@ -62,6 +63,20 @@ class RunSnapshot(BaseModel):
     auc_curve: list[CurvePoint]
     cost_so_far_usd: float = 0.0
     hypotheses: list[AnalyzerHypothesisOut] = []
+
+
+class RunListItem(BaseModel):
+    """Lighter than RunSnapshot for the runs-list view; carries started_at
+    (RunSnapshot does not), omits top_k/auc_curve/hypotheses."""
+
+    run_id: int
+    task: str
+    mutation_strategy: str
+    status: str
+    best_score: float | None
+    oracle_calls: int
+    budget: int
+    started_at: datetime
 
 
 class GenerationCompleteEvent(BaseModel):

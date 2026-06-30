@@ -21,6 +21,16 @@ export type RunSnapshot = {
   cost_so_far_usd?: number;
   hypotheses?: AnalyzerHypothesis[];
 };
+export type RunListItem = {
+  run_id: number;
+  task: string;
+  mutation_strategy: string;
+  status: string;
+  best_score: number | null;
+  oracle_calls: number;
+  budget: number;
+  started_at: string;
+};
 export type CreateRunBody = {
   task: string;
   budget: number;
@@ -54,6 +64,20 @@ export async function createRun(
 
 export async function getRun(id: number): Promise<RunSnapshot> {
   const r = await fetch(`${API_URL}/runs/${id}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+export async function listRuns(
+  params: { sort?: string; order?: string; status?: string; task?: string } = {},
+): Promise<RunListItem[]> {
+  const q = new URLSearchParams();
+  if (params.sort) q.set("sort", params.sort);
+  if (params.order) q.set("order", params.order);
+  if (params.status) q.set("status", params.status);
+  if (params.task) q.set("task", params.task);
+  const qs = q.toString();
+  const r = await fetch(`${API_URL}/runs${qs ? `?${qs}` : ""}`);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
 }

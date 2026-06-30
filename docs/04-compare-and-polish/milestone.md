@@ -68,10 +68,10 @@ independently shippable vertical slice; per-slice docs are written when that sli
 
 01. `runs-list-and-browse` — `GET /runs` list endpoint (sort/filter by status · best_score · oracle_calls
     · started_at) + web browse page listing all runs, linking to run-detail and (later) compare
-    (FR-010, Story 3). — planned — deps: none
+    (FR-010, Story 3). — shipped — deps: none
 02. `compare-runs` — `GET /compare?a=&b=` (both runs' top-K, AUC resampled to a common oracle-call x-axis,
     hypothesis sequences, per-run oracle-call + cost stats) + web compare view overlaying AUC + side-by-side
-    top-K (FR-012/013, Story 4). — planned — deps: 01
+    top-K (FR-012/013, Story 4). — next — deps: 01
 03. `web-polish` — clean 1280px render, no horizontal scroll on run-detail + compare; demo-responsiveness
     pass across the surface (NFR, G3). — planned — deps: 02
 04. `g1-full-23-sweep` — two harness pre-sweep guards (median2 `IndexError`; sitagliptin NaN) + authoritative
