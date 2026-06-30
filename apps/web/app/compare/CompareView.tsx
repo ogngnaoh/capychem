@@ -206,7 +206,7 @@ function TopKCard({ run, color }: { run: CompareRun; color: string }) {
               run.top_k.map((m, i) => (
                 <TableRow key={m.smiles}>
                   <TableCell className="tabular-nums text-muted-foreground">{i + 1}</TableCell>
-                  <TableCell className="font-mono text-xs break-all">{m.smiles}</TableCell>
+                  <TableCell className="font-mono text-xs whitespace-normal break-all">{m.smiles}</TableCell>
                   <TableCell className="tabular-nums text-right">{m.score.toFixed(4)}</TableCell>
                 </TableRow>
               ))
@@ -238,7 +238,7 @@ function HypothesisColumn({ run }: { run: CompareRun }) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xs text-zinc-500">{label}</div>
+      <div className="text-xs text-muted-foreground">{label}</div>
       <div className="text-lg font-semibold tabular-nums">{value}</div>
     </div>
   );

@@ -24,7 +24,7 @@ function Entry({ h, latest }: { h: AnalyzerHypothesis; latest: boolean }) {
     <details open={latest} className="rounded-md border px-3 py-2">
       <summary className="cursor-pointer text-sm font-medium">
         After gen {h.after_generation_index}
-        {latest && <span className="ml-2 text-xs text-zinc-500">· latest</span>}
+        {latest && <span className="ml-2 text-xs text-muted-foreground">· latest</span>}
       </summary>
       <p className="mt-2 text-sm text-zinc-700">{h.text}</p>
       <Chips structured={h.structured_json} />

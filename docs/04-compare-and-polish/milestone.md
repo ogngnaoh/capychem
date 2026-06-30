@@ -73,10 +73,10 @@ independently shippable vertical slice; per-slice docs are written when that sli
     hypothesis sequences, per-run oracle-call + cost stats) + web compare view overlaying AUC + side-by-side
     top-K (FR-012/013, Story 4). — shipped — deps: 01
 03. `web-polish` — clean 1280px render, no horizontal scroll on run-detail + compare; demo-responsiveness
-    pass across the surface (NFR, G3). — next — deps: 02
+    pass across the surface (NFR, G3). — shipped — deps: 02
 04. `g1-full-23-sweep` — two harness pre-sweep guards (median2 `IndexError`; sitagliptin NaN) + authoritative
     `capychem-eval --all` with-analyzer-LLM vs Graph-GA sweep (budget=10000, seed=42) establishing the G1
-    ≥6/23 count; run+verdict slice (G1). — planned — deps: none (Track A independent); before 05
+    ≥6/23 count; run+verdict slice (G1). — next — deps: none (Track A independent); before 05
 05. `readme-and-langfuse-walkthrough` — recruiter-legible README + Langfuse trace walkthroughs of the closed
     loop, legible without chemistry; folds in the G1 verdict and states its denominator honestly (G3). —
     planned — deps: 01, 02, 03, 04 (documents the finished surface) — **last**

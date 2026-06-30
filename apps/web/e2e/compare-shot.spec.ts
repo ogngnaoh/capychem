@@ -21,7 +21,12 @@ const PAYLOAD = {
     budget: 10000,
     cost_so_far_usd: 2.4137,
     top_k: [
-      { smiles: "O=C(Nc1ccc(F)cc1)c1ccc2[nH]ncc2c1", score: 0.8814 },
+      // deliberately long, to force the wrap and prove no horizontal scroll
+      {
+        smiles:
+          "CC(C)C[C@H](NC(=O)[C@@H](N)Cc1ccccc1)C(=O)N[C@@H](Cc1ccc(O)cc1)C(=O)N[C@@H](CCCCN)C(=O)O",
+        score: 0.8814,
+      },
       { smiles: "COc1ccc(CNc2ncnc3[nH]ccc23)cc1", score: 0.8602 },
       { smiles: "Cc1cc(Nc2ncnc3sccc23)ccc1Cl", score: 0.8471 },
       { smiles: "O=C(Nc1cccnc1)c1ccc2nc[nH]c2c1", score: 0.8359 },

@@ -100,7 +100,7 @@ export function LiveRun({ runId }: { runId: number }) {
           <Badge variant={running ? "default" : "secondary"}>
             {snap.status}
           </Badge>
-          <span className="text-xs text-zinc-500">{conn}</span>
+          <span className="text-xs text-muted-foreground">{conn}</span>
           {running && (
             <Button
               size="sm"
@@ -154,9 +154,19 @@ export function LiveRun({ runId }: { runId: number }) {
         <CardContent className="h-56">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={snap.auc_curve}>
-              <XAxis dataKey="oracle_calls" />
+              <XAxis
+                dataKey="oracle_calls"
+                type="number"
+                domain={["dataMin", "dataMax"]}
+                allowDecimals={false}
+              />
               <YAxis domain={[0, 1]} />
-              <Line type="monotone" dataKey="top10_mean" dot={false} />
+              <Line
+                type="monotone"
+                dataKey="top10_mean"
+                dot={false}
+                isAnimationActive={false}
+              />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
@@ -170,19 +180,23 @@ export function LiveRun({ runId }: { runId: number }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>#</TableHead>
+                <TableHead className="w-8">#</TableHead>
                 <TableHead>SMILES</TableHead>
-                <TableHead>Score</TableHead>
+                <TableHead className="text-right">Score</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {snap.top_k.map((m, i) => (
                 <TableRow key={m.smiles}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell className="font-mono text-xs">
+                  <TableCell className="tabular-nums text-muted-foreground">
+                    {i + 1}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs whitespace-normal break-all">
                     {m.smiles}
                   </TableCell>
-                  <TableCell>{m.score.toFixed(4)}</TableCell>
+                  <TableCell className="tabular-nums text-right">
+                    {m.score.toFixed(4)}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -199,7 +213,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="text-xs text-zinc-500">{label}</div>
+        <div className="text-xs text-muted-foreground">{label}</div>
         <div className="text-2xl font-semibold tabular-nums">{value}</div>
       </CardContent>
     </Card>
