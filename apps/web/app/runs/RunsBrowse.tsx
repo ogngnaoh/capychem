@@ -90,7 +90,7 @@ export function RunsBrowse() {
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 p-8">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Runs</h1>
+        <h1 className="text-xl font-heading font-normal">Runs</h1>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
           ← Launch a run
         </Link>
@@ -123,7 +123,7 @@ export function RunsBrowse() {
         </Button>
       </div>
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       <div className="rounded-xl ring-1 ring-foreground/10 bg-card overflow-hidden">
         <Table>
@@ -166,7 +166,7 @@ export function RunsBrowse() {
                   <TableRow
                     key={r.run_id}
                     onClick={() => router.push(`/runs/${r.run_id}`)}
-                    className="cursor-pointer"
+                    className="cursor-pointer data-[state=selected]:bg-accent"
                     data-state={isSelected ? "selected" : undefined}
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>

@@ -80,7 +80,7 @@ export function LiveRun({ runId }: { runId: number }) {
   if (loadErr) {
     return (
       <main className="p-8">
-        <p className="text-red-600">Failed to load run {runId}: {loadErr}</p>
+        <p className="text-destructive">Failed to load run {runId}: {loadErr}</p>
       </main>
     );
   }
@@ -93,7 +93,7 @@ export function LiveRun({ runId }: { runId: number }) {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">
+        <h1 className="text-xl font-heading font-normal">
           Run {snap.run_id} · {snap.task}
         </h1>
         <div className="flex items-center gap-3">
@@ -118,13 +118,13 @@ export function LiveRun({ runId }: { runId: number }) {
             </Button>
           )}
           {stopErr && (
-            <span className="text-xs text-red-600">{stopErr}</span>
+            <span className="text-xs text-destructive">{stopErr}</span>
           )}
         </div>
       </div>
 
       {notice && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="rounded-md border border-chart-4/40 bg-chart-4/10 px-4 py-3 text-sm text-foreground">
           {notice}
         </div>
       )}
@@ -164,6 +164,7 @@ export function LiveRun({ runId }: { runId: number }) {
               <Line
                 type="monotone"
                 dataKey="top10_mean"
+                stroke="#cc785c"
                 dot={false}
                 isAnimationActive={false}
               />

@@ -19,6 +19,15 @@
     long-SMILES fixture) and a long SMILES into `compare-shot.spec.ts` to stress the wrap.
 - Gates green: backend ruff · mypy (37) · pytest **240**; web vitest **26** · tsc · eslint.
 
+- **Anthropic / claude.ai design re-skin SHIPPED** (out-of-band — user-requested via an agent-team, NOT a
+  planned milestone-04 slice). Gated build→critic loop (Scout → Builder w/ `frontend-design` → Critic w/
+  Playwright 1280px screenshots), **2 rounds, both PASS, zero blocking**; **$0**. Global warm-token overhaul
+  in `app/globals.css` (cream `#faf9f5` canvas, coral `#cc785c` primary/ring, warm grays @ oklch hue ~83°,
+  8px radius, the 5 chart tokens) + `layout.tsx` fonts (**Inter** body + **Source Serif 4** headings @ weight
+  400, Geist Mono kept) across all 4 routes; serif `CardTitle`; coral+warm-blue (`#d97757`/`#6a9bcc`) chart
+  pair; warm on-token plateau notice; coral button hover/active. **Zero off-token colors remain.** Slice-03
+  responsiveness wins untouched. Storyboard spec: session scratchpad `design-tokens-spec.md` (not in repo).
+
 ## Slice status across milestone
 
 - 01 `runs-list-and-browse` → **shipped** · 02 `compare-runs` → **shipped** · 03 `web-polish` → **shipped**
@@ -53,6 +62,9 @@
   the narrow 4-up card (forcing nowrap reintroduces overflow — left); the terminal-run `done` next to the
   status badge is the WS connection indicator, not a duplicate.
 - **Track B (slice 04) pre-sweep guards stay mandatory:** median2 `IndexError`; sitagliptin NaN.
+- **Web surface is now Anthropic-themed** — slice 05's README/Langfuse screenshots will show the cream+coral+
+  serif surface. Two redesign coverage nits (code-verified, not screenshot-verified): the warm plateau notice
+  (no `plateaued` fixture renders it) and the browse `bg-accent` selected-row state (no row selected in fixture).
 
 ## Slice log
 
@@ -61,3 +73,5 @@
 - 2026-06-30 — Slice 02 `compare-runs` SHIPPED (`main @ b0d6202`); cost-read fix on shared `_run_snapshot`.
 - 2026-06-30 — Slice 03 `web-polish` SHIPPED: 1280px demo-responsiveness pass — SMILES wrap, unified numeric
   AUC x-axis, token consistency; Exit #4 MET. Critic APPROVED round 1. $0. ff-merged to main (not pushed).
+- 2026-06-30 — **Anthropic/claude.ai design re-skin SHIPPED** (out-of-band, agent-team, 2 PASS rounds, $0):
+  warm cream+coral token overhaul + Source Serif 4 / Inter across all 4 routes. ff-merged to main (not pushed).

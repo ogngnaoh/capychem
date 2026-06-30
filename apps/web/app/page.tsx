@@ -64,7 +64,7 @@ export default function Home() {
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 p-8">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">CapyChem</h1>
+        <h1 className="text-xl font-heading font-normal">CapyChem</h1>
         <Link
           href="/runs"
           className="text-sm text-muted-foreground hover:text-foreground"
@@ -130,7 +130,7 @@ export default function Home() {
               </select>
             </div>
             <div className="col-span-2 flex items-center justify-between">
-              {error && <span className="text-sm text-red-600">{error}</span>}
+              {error && <span className="text-sm text-destructive">{error}</span>}
               <Button type="submit" disabled={busy} className="ml-auto">
                 {busy ? "Starting…" : "Start run"}
               </Button>

@@ -24,8 +24,8 @@ import {
 import { getCompare, type CompareRun, type ComparePayload } from "@/lib/api";
 import { HypothesisSection } from "../runs/[id]/HypothesisSection";
 
-const RUN_A_COLOR = "#2563eb"; // blue-600
-const RUN_B_COLOR = "#e11d48"; // rose-600
+const RUN_A_COLOR = "#d97757"; // coral
+const RUN_B_COLOR = "#6a9bcc"; // warm blue
 
 function runLabel(r: CompareRun): string {
   return `#${r.run_id} · ${r.task}`;
@@ -77,14 +77,14 @@ export function CompareView({ a, b }: { a: number; b: number }) {
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 p-8">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Compare runs</h1>
+        <h1 className="text-xl font-heading font-normal">Compare runs</h1>
         <Link href="/runs" className="text-sm text-muted-foreground hover:text-foreground">
           ← Runs
         </Link>
       </header>
 
       {error ? (
-        <p className="text-sm text-red-600">Failed to load comparison: {error}</p>
+        <p className="text-sm text-destructive">Failed to load comparison: {error}</p>
       ) : !payload ? (
         <p className="text-sm text-muted-foreground">Loading comparison…</p>
       ) : (
