@@ -21,7 +21,7 @@ from capychem.loop.logic import (
     stop_reason,
 )
 from capychem.loop.seeds import load_starting_pop as _load_starting_pop
-from capychem.loop.state import LoopState, Scored
+from capychem.loop.state import HypothesisRecord, LoopState, Scored
 from capychem.oracle import score_batch_async
 from capychem.validate import validate_batch_with_stats
 from langgraph.graph import END, StateGraph
@@ -274,8 +274,14 @@ async def _analyze(
             if gen is not None:
                 gen.analyzer_hypothesis_id = hyp.id
             await session.commit()
+        record: HypothesisRecord = {
+            "after_generation_index": state["gen_index"],
+            "text": effective.text,
+            "structured_json": effective.structured,
+        }
         return {
             "analyzer_hypothesis": effective,
+            "analyzer_hypotheses": [*state.get("analyzer_hypotheses", []), record],
             "llm_cost_usd": state.get("llm_cost_usd", 0.0) + result.cost_usd,
         }
 

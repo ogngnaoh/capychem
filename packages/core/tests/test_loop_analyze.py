@@ -123,6 +123,32 @@ async def test_analyze_fallback_on_malformed_keeps_running(sm, monkeypatch) -> N
     assert hyps and all(h.structured_json is None for h in hyps)
 
 
+async def test_analyze_accumulates_surface_record_list(sm, monkeypatch) -> None:
+    """Each LLM gen>=1 appends a {after_generation_index, text, structured_json}
+    record to state['analyzer_hypotheses'], in order, mirroring the persisted rows."""
+    cfg = RunConfig(task="qed", budget=200, seed=42, pop_size=6, offspring=4,
+                    mutation_rate=0.01, plateau_window=9, max_generations=3,
+                    mutation_strategy="llm")
+    run_id, final = await _run(sm, cfg, monkeypatch)
+    recs = final.get("analyzer_hypotheses")
+    assert recs and len(recs) >= 1
+    assert all(r["after_generation_index"] >= 1 for r in recs)
+    assert all(isinstance(r["text"], str) and r["text"] for r in recs)
+    idxs = [r["after_generation_index"] for r in recs]
+    assert idxs == sorted(idxs)  # appended in generation order
+    # the surface list mirrors the persisted AnalyzerHypothesis rows
+    async with sm() as s:
+        rows = (
+            await s.execute(
+                select(AnalyzerHypothesis).order_by(AnalyzerHypothesis.after_generation_index)
+            )
+        ).scalars().all()
+    assert [r["after_generation_index"] for r in recs] == [
+        row.after_generation_index for row in rows
+    ]
+    assert [r["text"] for r in recs] == [row.text for row in rows]
+
+
 async def test_analyzer_cost_flows_into_llm_cost(sm, monkeypatch) -> None:
     async def costly(summary, *, seed):
         return AnalyzerResult(text='{"focus": "x", "avoid": []}',

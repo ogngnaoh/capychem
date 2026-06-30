@@ -44,6 +44,16 @@ class AnalyzerSummary:
     prior: Hypothesis | None
 
 
+class HypothesisRecord(TypedDict):
+    """Surface-ready snapshot of one persisted hypothesis. Accumulated in
+    ``LoopState`` purely so the in-process runner can observe and broadcast it —
+    the loop itself never touches the WS layer."""
+
+    after_generation_index: int
+    text: str
+    structured_json: dict[str, Any] | None
+
+
 class LoopState(TypedDict, total=False):
     # config / identity
     run_id: int
@@ -69,6 +79,7 @@ class LoopState(TypedDict, total=False):
     gen_span_id: str | None
     # analyzer hypothesis and generation id
     analyzer_hypothesis: Hypothesis | None  # hypothesis threaded to next propose
+    analyzer_hypotheses: list[HypothesisRecord]  # append-only surface log (runner observes)
     gen_db_id: int  # just-persisted Generation row id for analyze link
     # transient per-iteration carriers (read across nodes — MUST be declared, or
     # mypy errors `TypedDict has no key`; the leading underscore is just a naming
