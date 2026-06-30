@@ -36,12 +36,16 @@ milestone exit criterion #7.
 
 ## Tasks
 
-- [ ] T1 — Core: `HypothesisRecord` + `analyzer_hypotheses` accumulation in `_analyze` (`state.py`, `graph.py`).
-- [ ] T2 — API: `analyzer.hypothesis` event schema + runner observe-and-broadcast (`schemas.py`, `runner.py`).
-- [ ] T3 — API: `RunSnapshot.hypotheses` + `_hypotheses_for` query wired into both GET branches (`routes_runs.py`).
-- [ ] T4 — Web: `AnalyzerHypothesis` type + `applyEvent` `analyzer.hypothesis` case (`api.ts`, `runEvents.ts`).
-- [ ] T5 — Web: unified `HypothesisSection` + `LiveRun` wiring + `plateauNotice` hoist.
-- [ ] Final — full gates (pytest, mypy both `-p`, ruff; vitest, tsc, eslint) + manual live acceptance (no spend); then ship docs (milestone/handoff flip, freeze, log) → milestone 03 complete.
+- [x] T1 — Core: `HypothesisRecord` + `analyzer_hypotheses` accumulation in `_analyze` (`state.py`, `graph.py`). — `4f48c79`
+- [x] T2 — API: `analyzer.hypothesis` event schema + runner observe-and-broadcast (`schemas.py`, `runner.py`). — `d6b31a3`
+- [x] T3 — API: `RunSnapshot.hypotheses` + `_hypotheses_for` query wired into both GET branches (`routes_runs.py`). — `16586f5`
+- [x] T4 — Web: `AnalyzerHypothesis` type + `applyEvent` `analyzer.hypothesis` case (`api.ts`, `runEvents.ts`). — `7c30297`
+- [x] T5 — Web: unified `HypothesisSection` + `LiveRun` wiring + `plateauNotice` hoist. — `b7e9aa7` (+ `1c2f293` avoid-chip key fix)
+- [x] Final — gates green (220 pytest, mypy 36, ruff; 18 vitest, tsc, eslint); whole-branch review (opus) READY TO MERGE; ship docs → milestone 03 complete.
+
+> **Shipped 2026-06-30** (commits `57ccb2c` spec → `ea6fe0c` plan+slicedoc → `4f48c79`..`b7e9aa7` 5 TDD tasks →
+> `1c2f293` review follow-up). Subagent-driven-development: each task implemented + reviewed fresh-context,
+> all per-task reviews clean (0 Crit/Imp), final whole-branch review READY TO MERGE. FROZEN — see handoff.
 
 ## Notes
 

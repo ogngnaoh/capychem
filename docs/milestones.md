@@ -11,7 +11,8 @@
 03. 02-end-to-end-loop → docs/02-end-to-end-loop/ — shipped (2026-06-28)
     SPEC Phase 2. Modal LLM + worker pool; FastAPI REST + WS; Postgres; launch + watch-live on one PMO task; first beat-Graph-GA attempt.
     Slices: 01 launch-and-watch-jnk3 ✓ · 03 modal-llm-propose ✓ · 04 llm-proposer+ga-fallback ✓ · 05 unique-call-budget+cost-ledger ✓ · 06 beat-graph-ga finale ✓ (LLM beats GA on jnk3, week-7 kill-switch passed) · 02 plateau-stop ✓ (FR-003 plateau stop + live signal). All slices shipped → milestone complete.
-04. 03-analyzer-and-scale → docs/03-analyzer-and-scale/ ← active
+04. 03-analyzer-and-scale → docs/03-analyzer-and-scale/ — shipped (2026-06-30)
     SPEC Phase 3. Analyzer agent (the differentiator); all 23 PMO tasks; cost gate; Week-8 bar (≥3/23 beat → on track).
-05. 04-compare-and-polish → docs/04-compare-and-polish/ — planned
+    Slices: 01 analyzer-agent ✓ · 02 analyzer-value-verdict ✓ · 06 analyzer-conditioning ✓ (WIN +0.090/+0.108) · 04 twenty-three-task-surface ✓ · 05 week-8-sweep-and-gate ✓ (bar CLEARED, 7 beats) · 03 analyzer-live-surface ✓ (WS+REST+UI hypothesis surface). All slices shipped → milestone complete.
+05. 04-compare-and-polish → docs/04-compare-and-polish/ ← active
     SPEC Phase 4. Compare-runs flow; web polish; recruiter-legible README + Langfuse trace walkthroughs.

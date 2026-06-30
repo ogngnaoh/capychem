@@ -74,7 +74,11 @@ when that slice's work starts.
     signal; strategic response in handoff.
     — deps: 01
 03. `analyzer-live-surface` — WS `analyzer.hypothesis` event + watch-live latest hypothesis + run-detail
-    full hypothesis sequence (FR-009/FR-011, Story 2/3). — planned — deps: 01
+    full hypothesis sequence (FR-009/FR-011, Story 2/3). — **shipped (2026-06-30)** — verdict: surface-only,
+    no spend; 5 TDD tasks (core accumulation → runner observe/broadcast → REST `RunSnapshot.hypotheses` →
+    web reducer → unified "Analyzer reasoning" section). Decoupling held (core never imports the WS layer);
+    live-WS and REST-replay paths provably cannot drift (same `gen_index`+`effective` source). Final
+    whole-branch review (opus): READY TO MERGE, 0 Critical/Important. **Milestone 03 complete.** — deps: 01
 04. `twenty-three-task-surface` — full PMO task registry + published Graph-GA baselines + launch
     schema/UI selector for all 23 + all-23 sweep runner (`capychem-eval --all`). — **shipped (2026-06-29)**
     — verdict: pure plumbing, all gates green (207 pytest, mypy, ruff; web vitest+tsc+eslint), final
@@ -164,7 +168,11 @@ when that slice's work starts.
    (single source of truth) feeds the API `field_validator`, the launch-page `<select>` (all 23, default
    jnk3), and all 23 published Graph-GA baselines (`eval/baselines.py`). Per-task end-to-end scoring across
    23 is exercised by slice 05's `capychem-eval --all` sweep (the harness oracle is already task-agnostic).
-7. The hypothesis is surfaced live (watch-live latest) and in run-detail (full sequence).
+7. The hypothesis is surfaced live (watch-live latest) and in run-detail (full sequence). → **MET (slice 03,
+   2026-06-30):** WS `analyzer.hypothesis` event (runner observes `state["analyzer_hypotheses"]` growth,
+   core untouched) + `RunSnapshot.hypotheses` from the durable rows (both GET branches) + unified
+   "Analyzer reasoning" section in `LiveRun` (newest-first, latest expanded, focus/avoid chips, empty→nothing).
+   220 backend + 18 web tests green; whole-branch review READY TO MERGE.
 8. The with-analyzer-LLM vs Graph-GA sweep is run via the canonical eval module; the Week-8 verdict is
    rendered — ≥3 beat → on track; <3 → pivot to analyzer-only narrative (do not abandon). → **MET (slice
    05, 2026-06-29): Week-8 bar CLEARED — 7 trustworthy beats on a 9-task high-headroom subset @
