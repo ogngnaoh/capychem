@@ -16,6 +16,7 @@ import {
 import { getRun, stopRun, wsUrl, type RunSnapshot } from "@/lib/api";
 import { applyEvent, type RunEvent } from "@/lib/runEvents";
 import { plateauNotice } from "@/lib/plateau";
+import { HypothesisSection } from "./HypothesisSection";
 
 const TERMINAL = new Set([
   "exhausted",
@@ -87,6 +88,7 @@ export function LiveRun({ runId }: { runId: number }) {
   if (!snap) return <main className="p-8">Loading run {runId}…</main>;
 
   const running = !TERMINAL.has(snap.status);
+  const notice = plateauNotice(snap.status, snap.plateau_window);
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 p-8">
@@ -121,9 +123,9 @@ export function LiveRun({ runId }: { runId: number }) {
         </div>
       </div>
 
-      {plateauNotice(snap.status, snap.plateau_window) && (
+      {notice && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          {plateauNotice(snap.status, snap.plateau_window)}
+          {notice}
         </div>
       )}
 
@@ -187,6 +189,8 @@ export function LiveRun({ runId }: { runId: number }) {
           </Table>
         </CardContent>
       </Card>
+
+      <HypothesisSection hypotheses={snap.hypotheses ?? []} />
     </main>
   );
 }
