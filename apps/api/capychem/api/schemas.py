@@ -39,6 +39,16 @@ class CurvePoint(BaseModel):
     top10_mean: float
 
 
+class AnalyzerHypothesisOut(BaseModel):
+    after_generation_index: int
+    text: str
+    structured_json: dict[str, Any] | None = None
+
+
+class AnalyzerHypothesisEvent(AnalyzerHypothesisOut):
+    type: Literal["analyzer.hypothesis"] = "analyzer.hypothesis"
+
+
 class RunSnapshot(BaseModel):
     run_id: int
     task: str

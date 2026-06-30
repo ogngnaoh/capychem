@@ -99,6 +99,61 @@ async def test_runner_stop_halts_run() -> None:
     await engine.dispose()
 
 
+async def test_drive_broadcasts_analyzer_hypothesis_events(monkeypatch) -> None:
+    """The runner observes analyzer_hypotheses growth in loop state and broadcasts
+    one analyzer.hypothesis event per new record. Fast + isolated: a fake graph
+    streams the growing list directly; the core loop is never touched."""
+    from capychem.api import runner as runner_mod
+    from capychem.db.models import Base
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    sm = async_sessionmaker(engine, expire_on_commit=False)
+
+    class FakeGraph:
+        async def astream(self, initial, *, config, stream_mode):  # type: ignore[no-untyped-def]
+            yield {
+                **initial,
+                "analyzer_hypotheses": [
+                    {"after_generation_index": 1, "text": "h1",
+                     "structured_json": {"focus": "amide", "avoid": ["phenol"]}},
+                ],
+            }
+            yield {
+                **initial,
+                "analyzer_hypotheses": [
+                    {"after_generation_index": 1, "text": "h1",
+                     "structured_json": {"focus": "amide", "avoid": ["phenol"]}},
+                    {"after_generation_index": 2, "text": "h2", "structured_json": None},
+                ],
+            }
+
+    monkeypatch.setattr(runner_mod, "build_graph", lambda sm_: FakeGraph())
+
+    reg = RunRegistry(sm)
+    run_id = await reg.start_run(
+        RunConfig(task="qed", budget=10, seed=1, pop_size=4, offspring=4,
+                  mutation_rate=0.01, plateau_window=2, max_generations=2,
+                  mutation_strategy="llm")
+    )
+    queue = reg.subscribe(run_id)
+    events: list[dict[str, Any]] = []
+    async with asyncio.timeout(10):
+        while True:
+            ev = await queue.get()
+            events.append(ev)
+            if ev["type"] == "run.complete":
+                break
+    hyps = [e for e in events if e["type"] == "analyzer.hypothesis"]
+    assert [h["after_generation_index"] for h in hyps] == [1, 2]
+    assert hyps[0]["text"] == "h1"
+    assert hyps[0]["structured_json"] == {"focus": "amide", "avoid": ["phenol"]}
+    assert hyps[1]["structured_json"] is None
+    await engine.dispose()
+
+
 async def test_drive_threads_mutation_strategy_into_loop_state(monkeypatch) -> None:
     """The background runner threads cfg.mutation_strategy into the initial LoopState.
 

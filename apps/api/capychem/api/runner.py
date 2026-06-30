@@ -15,7 +15,12 @@ from dataclasses import dataclass, field
 from typing import Any, cast
 
 from capychem import cost
-from capychem.api.schemas import GenerationCompleteEvent, RunCompleteEvent, TopMolecule
+from capychem.api.schemas import (
+    AnalyzerHypothesisEvent,
+    GenerationCompleteEvent,
+    RunCompleteEvent,
+    TopMolecule,
+)
 from capychem.loop import trace
 from capychem.loop.graph import build_graph
 from capychem.loop.logic import build_summary
@@ -158,6 +163,7 @@ class RunRegistry:
         # Each generation is 7 node-steps (analyze added in milestone 03); allow headroom.
         recursion_limit = cfg.max_generations * 7 + 10
         last_curve_len = 0
+        last_hyp_len = 0
         final_state: dict[str, Any] = {}
         stopped = False
         cost_capped = False
@@ -173,6 +179,17 @@ class RunRegistry:
         try:
             async for state in stream:
                 final_state = state
+                hyps = state.get("analyzer_hypotheses", [])
+                if len(hyps) > last_hyp_len:
+                    for rec in hyps[last_hyp_len:]:
+                        handle.broadcast(
+                            AnalyzerHypothesisEvent(
+                                after_generation_index=rec["after_generation_index"],
+                                text=rec["text"],
+                                structured_json=rec["structured_json"],
+                            ).model_dump()
+                        )
+                    last_hyp_len = len(hyps)
                 if len(state.get("auc_curve", [])) > last_curve_len:
                     last_curve_len = len(state["auc_curve"])
                     handle.snapshot = _snapshot_from_state(handle.run_id, cfg, state)
