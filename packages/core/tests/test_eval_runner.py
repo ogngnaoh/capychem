@@ -373,3 +373,74 @@ def test_trace_sink_none_is_default_and_no_capture(monkeypatch: pytest.MonkeyPat
     res = run_reproduction("qed", budget=40, seed=42, pop_size=3, offspring=4,
                            patience=9, mutation_strategy="llm", analyzer=True)
     assert res.analyzer_calls > 0
+
+
+def test_nan_oracle_score_never_enters_buffer(monkeypatch: pytest.MonkeyPatch) -> None:
+    # An oracle (e.g. sitagliptin_mpo) can return NaN for a VALID SMILES. NaN is not
+    # None, so it slips past the `r.score is not None` gate and poisons the buffer.
+    # The finiteness guard must drop it: the NaN-scored SMILES never enters mol_buffer
+    # and every stored score is finite.
+    import math
+
+    from capychem.oracle import Offspring, OracleResult
+
+    counter = {"n": 0}
+
+    def fake_score(smiles, task, **kw):  # type: ignore[no-untyped-def]
+        out = []
+        for s in smiles:
+            score = float("nan") if s == "c1ccccc1" else 0.5
+            out.append(OracleResult(smiles=s, score=score, valid=True, wall_ms=1))
+        return out
+
+    def fake_propose(population, n_offspring, **kw):  # type: ignore[no-untyped-def]
+        # distinct offspring each call so the run reaches budget exhaustion pre-guard
+        # (so the assertion is reached) rather than spinning on a never-growing buffer.
+        offs = []
+        for _ in range(n_offspring):
+            counter["n"] += 1
+            offs.append(Offspring(smiles="C" * (counter["n"] + 2), parents=(0, 0)))
+        return offs
+
+    monkeypatch.setattr(runner_mod, "score_smiles", fake_score)
+    monkeypatch.setattr(runner_mod, "propose_offspring", fake_propose)
+    monkeypatch.setattr(runner_mod, "starting_population", lambda n: ["CCO", "c1ccccc1"][:n])
+
+    res = run_reproduction("qed", budget=20, seed=42, pop_size=2, offspring=3, patience=3)
+    assert "c1ccccc1" not in res.mol_buffer  # NaN-scored SMILES dropped at ingestion
+    assert all(math.isfinite(score) for score, _ in res.mol_buffer.values())
+
+
+def test_all_nan_offspring_terminates_on_patience_not_budget(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Seeds score finite; every distinct offspring scores NaN. Pre-guard, the NaN
+    # enters the buffer and poisons the patience comparison (`NaN - prev < 1e-3` is
+    # False -> patience resets), so the loop only stops at budget exhaustion (the
+    # observed ~229-generation sitagliptin blowup). Guarded, the NaN is dropped, the
+    # top-100 mean is stable, and patience stops the loop in a handful of generations.
+    from capychem.oracle import Offspring, OracleResult
+
+    counter = {"n": 0}
+
+    def fake_score(smiles, task, **kw):  # type: ignore[no-untyped-def]
+        out = []
+        for s in smiles:
+            score = 0.9 if s in {"CCO", "c1ccccc1"} else float("nan")
+            out.append(OracleResult(smiles=s, score=score, valid=True, wall_ms=1))
+        return out
+
+    def fake_propose(population, n_offspring, **kw):  # type: ignore[no-untyped-def]
+        offs = []
+        for _ in range(n_offspring):
+            counter["n"] += 1
+            offs.append(Offspring(smiles="C" * (counter["n"] + 2), parents=(0, 0)))
+        return offs
+
+    monkeypatch.setattr(runner_mod, "score_smiles", fake_score)
+    monkeypatch.setattr(runner_mod, "propose_offspring", fake_propose)
+    monkeypatch.setattr(runner_mod, "starting_population", lambda n: ["CCO", "c1ccccc1"][:n])
+
+    res = run_reproduction("qed", budget=60, seed=42, pop_size=2, offspring=3, patience=3)
+    assert res.unique_calls < 60  # stopped by patience, not budget exhaustion
+    assert res.generations <= 6  # patience=3 -> a handful of generations past gen 0

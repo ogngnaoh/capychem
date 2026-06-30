@@ -1,4 +1,7 @@
-# Vendored verbatim from mol_opt (main/graph_ga/), originally jensengroup/GB_GA. Unmodified.
+# Vendored from mol_opt (main/graph_ga/), originally jensengroup/GB_GA. Near-verbatim:
+# the only change is a guard on the two `rxn.RunReactants((fa, fb))[0]` sites
+# (crossover_ring, crossover_non_ring) — empty products raised IndexError and crashed
+# the propose subprocess (observed on the median2 task). See harness/tests/test_crossover_guard.py.
 import random
 
 import numpy as np
@@ -106,7 +109,9 @@ def crossover_ring(parent_A, parent_B):
             new_mol_trial = []
             for fa in fragments_A:
                 for fb in fragments_B:
-                    new_mol_trial.append(rxn1.RunReactants((fa, fb))[0])
+                    products = rxn1.RunReactants((fa, fb))  # GUARD: may be empty
+                    if products:
+                        new_mol_trial.append(products[0])
 
         new_mols = []
         for rs in rxn_smarts2:
@@ -139,7 +144,9 @@ def crossover_non_ring(parent_A, parent_B):
         new_mol_trial = []
         for fa in fragments_A:
             for fb in fragments_B:
-                new_mol_trial.append(rxn.RunReactants((fa, fb))[0])
+                products = rxn.RunReactants((fa, fb))  # GUARD: may be empty
+                if products:
+                    new_mol_trial.append(products[0])
 
         new_mols = []
         for mol in new_mol_trial:

@@ -9,6 +9,7 @@ score is an in-silico oracle score, per PRD N6).
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 from capychem.eval.trace import GenerationTrace
@@ -81,7 +82,16 @@ def run_reproduction(
         room = budget - len(mol_buffer)
         if room > 0 and unseen:
             for r in score_smiles(unseen[:room], task):
-                if r.valid and r.score is not None and r.smiles not in mol_buffer:
+                # A valid SMILES can still score NaN/±inf (e.g. sitagliptin_mpo). NaN is
+                # not None, so it slips past the None gate and poisons the patience read
+                # (`NaN - prev < 1e-3` is always False -> no early stop -> budget blowup)
+                # and the AUC. Drop non-finite scores at ingestion.
+                if (
+                    r.valid
+                    and r.score is not None
+                    and math.isfinite(r.score)
+                    and r.smiles not in mol_buffer
+                ):
                     mol_buffer[r.smiles] = (r.score, len(mol_buffer) + 1)
         return [(s, mol_buffer[s][0]) for s in smiles_list if s in mol_buffer]
 
