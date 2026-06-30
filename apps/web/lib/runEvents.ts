@@ -1,4 +1,4 @@
-import type { RunSnapshot, TopMolecule } from "./api";
+import type { AnalyzerHypothesis, RunSnapshot, TopMolecule } from "./api";
 
 export type RunEvent =
   | { type: "ping" }
@@ -10,6 +10,12 @@ export type RunEvent =
       oracle_calls_used: number;
       cost_so_far_usd?: number;
       top_k: TopMolecule[];
+    }
+  | {
+      type: "analyzer.hypothesis";
+      after_generation_index: number;
+      text: string;
+      structured_json: { focus?: string; avoid?: string[] } | null;
     }
   | { type: "run.complete"; run_id: number; status: string; summary: unknown };
 
@@ -30,6 +36,22 @@ export function applyEvent(snap: RunSnapshot, ev: RunEvent): RunSnapshot {
           { oracle_calls: ev.oracle_calls_used, top10_mean: ev.top10_mean },
         ],
       };
+    case "analyzer.hypothesis": {
+      const rec: AnalyzerHypothesis = {
+        after_generation_index: ev.after_generation_index,
+        text: ev.text,
+        structured_json: ev.structured_json,
+      };
+      const kept = (snap.hypotheses ?? []).filter(
+        (h) => h.after_generation_index !== ev.after_generation_index,
+      );
+      return {
+        ...snap,
+        hypotheses: [...kept, rec].sort(
+          (a, b) => a.after_generation_index - b.after_generation_index,
+        ),
+      };
+    }
     case "run.complete":
       return { ...snap, status: ev.status };
     default:

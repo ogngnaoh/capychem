@@ -2,6 +2,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export type TopMolecule = { smiles: string; score: number };
 export type CurvePoint = { oracle_calls: number; top10_mean: number };
+export type AnalyzerHypothesis = {
+  after_generation_index: number;
+  text: string;
+  structured_json: { focus?: string; avoid?: string[] } | null;
+};
 export type RunSnapshot = {
   run_id: number;
   task: string;
@@ -14,6 +19,7 @@ export type RunSnapshot = {
   top_k: TopMolecule[];
   auc_curve: CurvePoint[];
   cost_so_far_usd?: number;
+  hypotheses?: AnalyzerHypothesis[];
 };
 export type CreateRunBody = {
   task: string;

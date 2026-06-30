@@ -61,4 +61,34 @@ describe("applyEvent", () => {
     expect(snapshot.auc_curve).toEqual([]); // original untouched
     expect(snapshot.generation_index).toBe(0);
   });
+  it("analyzer.hypothesis appends a record to hypotheses", () => {
+    const next = applyEvent(base, {
+      type: "analyzer.hypothesis", after_generation_index: 1, text: "h1",
+      structured_json: { focus: "amide", avoid: ["phenol"] },
+    });
+    expect(next.hypotheses).toEqual([
+      { after_generation_index: 1, text: "h1", structured_json: { focus: "amide", avoid: ["phenol"] } },
+    ]);
+  });
+  it("analyzer.hypothesis replaces (dedups) a same-index record and stays sorted", () => {
+    const seeded = {
+      ...base,
+      hypotheses: [
+        { after_generation_index: 1, text: "old", structured_json: null },
+        { after_generation_index: 3, text: "g3", structured_json: null },
+      ],
+    };
+    const next = applyEvent(seeded, {
+      type: "analyzer.hypothesis", after_generation_index: 1, text: "new", structured_json: null,
+    });
+    expect(next.hypotheses!.map((h) => h.after_generation_index)).toEqual([1, 3]);
+    expect(next.hypotheses![0].text).toBe("new");
+  });
+  it("analyzer.hypothesis does not mutate the input snapshot (purity)", () => {
+    const snapshot = { ...base, hypotheses: [] as NonNullable<RunSnapshot["hypotheses"]> };
+    applyEvent(snapshot, {
+      type: "analyzer.hypothesis", after_generation_index: 1, text: "h1", structured_json: null,
+    });
+    expect(snapshot.hypotheses).toEqual([]);
+  });
 });
