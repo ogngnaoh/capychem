@@ -61,6 +61,7 @@ class RunSnapshot(BaseModel):
     top_k: list[TopMolecule]
     auc_curve: list[CurvePoint]
     cost_so_far_usd: float = 0.0
+    hypotheses: list[AnalyzerHypothesisOut] = []
 
 
 class GenerationCompleteEvent(BaseModel):

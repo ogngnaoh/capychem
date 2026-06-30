@@ -18,6 +18,7 @@ import pytest
 from capychem.api.main import app
 from httpx_ws import WebSocketDisconnect, aconnect_ws
 from httpx_ws.transport import ASGIWebSocketTransport
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 _BODY = {
     "task": "qed",
@@ -49,6 +50,7 @@ async def test_create_then_snapshot_then_complete_over_ws() -> None:
 
             snap = (await c.get(f"/runs/{run_id}")).json()
             assert snap["run_id"] == run_id and snap["budget"] == 40
+            assert snap["hypotheses"] == []  # graph_ga run has no analyzer hypotheses
 
             types: list[str] = []
             async with asyncio.timeout(120):
@@ -112,3 +114,54 @@ async def test_ws_unknown_run_closes_4404() -> None:
                     with pytest.raises(WebSocketDisconnect) as exc_info:
                         await ws.receive_json()
                     assert exc_info.value.code == 4404
+
+
+async def test_hypotheses_for_returns_rows_ordered() -> None:
+    from capychem.api.routes_runs import _hypotheses_for
+    from capychem.db.models import AnalyzerHypothesis, Base
+    from capychem.run import RunConfig, create_run
+
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    sm = async_sessionmaker(engine, expire_on_commit=False)
+    async with sm() as s:
+        run_id = await create_run(s, RunConfig(
+            task="jnk3", budget=100, seed=42, pop_size=10, offspring=4,
+            mutation_rate=0.01, plateau_window=5, max_generations=10,
+            mutation_strategy="llm"))
+    async with sm() as s:
+        s.add_all([
+            AnalyzerHypothesis(run_id=run_id, after_generation_index=2, text="second",
+                               structured_json=None),
+            AnalyzerHypothesis(run_id=run_id, after_generation_index=1, text="first",
+                               structured_json={"focus": "amide", "avoid": ["phenol"]}),
+        ])
+        await s.commit()
+        out = await _hypotheses_for(s, run_id)
+    assert [h.after_generation_index for h in out] == [1, 2]
+    assert out[0].text == "first"
+    assert out[0].structured_json == {"focus": "amide", "avoid": ["phenol"]}
+    assert out[1].structured_json is None
+    await engine.dispose()
+
+
+async def test_llm_run_emits_and_lists_analyzer_hypotheses() -> None:
+    body = {**_BODY, "mutation_strategy": "llm", "budget": 120, "max_generations": 8}
+    async with app.router.lifespan_context(app):
+        async with _client() as c:
+            run_id = (await c.post("/runs", json=body)).json()["run_id"]
+            types: list[str] = []
+            async with asyncio.timeout(180):
+                async with aconnect_ws(f"http://test/ws/runs/{run_id}", c) as ws:
+                    while True:
+                        msg = await ws.receive_json()
+                        if msg["type"] == "ping":
+                            continue
+                        types.append(msg["type"])
+                        if msg["type"] == "run.complete":
+                            break
+            assert "analyzer.hypothesis" in types
+            snap = (await c.get(f"/runs/{run_id}")).json()
+            assert len(snap["hypotheses"]) >= 1
+            assert all(h["after_generation_index"] >= 1 for h in snap["hypotheses"])
