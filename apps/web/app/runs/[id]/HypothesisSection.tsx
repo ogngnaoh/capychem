@@ -10,8 +10,8 @@ function Chips({ structured }: { structured: AnalyzerHypothesis["structured_json
   return (
     <div className="mt-2 flex flex-wrap gap-1">
       {focus && <Badge variant="secondary">focus: {focus}</Badge>}
-      {avoid.map((a) => (
-        <Badge key={a} variant="outline">
+      {avoid.map((a, i) => (
+        <Badge key={`${i}-${a}`} variant="outline">
           avoid: {a}
         </Badge>
       ))}
