@@ -55,23 +55,42 @@ balance topped up 2026-06-30 for exactly this). Sanity-check one task on a small
 
 ## Tasks
 
-- [ ] Restore the accidentally-deleted `agent_docs/pmo-auc-and-baselines.md` (referenced by
-      `metric.py:4`; unrelated to slice 04, do not bundle into the slice commit silently).
-- [ ] TDD Guard 1: write failing `harness/tests/test_crossover_guard.py`; guard both crossover sites;
-      test passes under `harness/.venv`.
-- [ ] TDD Guard 2: write failing NaN-ingestion + patience-termination tests in
-      `test_eval_runner.py`; add `math.isfinite` guard in `score_unique`; tests pass.
-- [ ] Gates green pre-sweep: `uv run pytest`, `mypy -p capychem -p capychem.api`, `ruff check .`
-      (web untouched but keep vitest/tsc/eslint green).
-- [ ] Sanity check: `capychem-eval --task=qed --budget=10000 --seed=42` (or a small budget) + confirm
-      both guards behave; verify the GA crossover path and a NaN-prone task no longer blow up.
-- [ ] **CHECKPOINT (spend):** confirm with operator before the full `--all --week8` sweep.
-- [ ] Run the authoritative `capychem-eval --all --week8 --budget=10000 --seed=42`; capture JSON.
-- [ ] Render the G1 verdict: trustworthy_beats / 23; ≥6 → goal met; <6 → documented honestly. Confirm
-      all 23 rows are `ok=True` (trustworthy); list any degraded tasks.
-- [ ] **CHECKPOINT (merge):** review the verdict + diff with operator before shipping.
-- [ ] Ship: freeze this doc, flip slice 04 → shipped + advance slice 05 pointer in milestone.md +
-      handoff.md, dated "Slice 04 shipped" log line, commit refs; merge to main (push on operator ask).
+- [x] Restore the accidentally-deleted `agent_docs/pmo-auc-and-baselines.md` (referenced by `metric.py:4`).
+- [x] TDD Guard 1: `harness/tests/test_crossover_guard.py`; guarded both crossover sites (`6b4efb1`).
+- [x] TDD Guard 2: NaN-ingestion + patience tests in `test_eval_runner.py`; `math.isfinite` guard (`6b4efb1`).
+- [x] **Guard 3 (surfaced by the smoke): drd2 SVM-pickle shim** in `harness/score.py` + `test_drd2_oracle.py`
+      (`00b03a6`). drd2's oracle was returning all-invalid → GA-arm crash; now scores correctly.
+- [x] Gates green: ruff · mypy (37) · pytest (242, +2) · harness crossover (2) · harness drd2 (1).
+- [x] Sanity checks (no spend): qed + sitagliptin graph_ga reproduce — guards behave.
+- [x] **CHECKPOINT (spend):** operator chose smoke-first. 1-task DeepSeek probe (qed@500) healthy.
+- [x] **Smoke: `--all --week8 --budget=2000 --seed=42`** (raw JSON `smoke-23-2k-seed42.json`, this folder):
+      **22/22 evaluated tasks beat** (drd2 excluded — its oracle bug found+fixed here, not yet re-swept).
+- [ ] **Run the authoritative `--all --week8 --budget=10000 --seed=42`** (drd2 now included); capture JSON.
+- [ ] **Investigate sitagliptin_mpo >1 AUC** (smoke: llm=2.26, ga=1.75 — PMO scores must be [0,1]; the
+      valid+parse two-guard read does NOT check score range). Decide: real PMO property, or a harness
+      normalization bug → is sitagliptin's row trustworthy? Range-guard if needed.
+- [ ] Render the G1 verdict: trustworthy_beats / 23; confirm all 23 `ok=True`; list any degraded/excluded.
+- [ ] **CHECKPOINT (merge):** review verdict + diff with operator before shipping.
+- [ ] Ship: freeze this doc, flip slice 04 → shipped + advance slice 05 in milestone.md + handoff.md,
+      dated "Slice 04 shipped" log line, commit refs; merge to main (push on operator ask).
+
+## Progress & findings — session 1 (2026-06-30/07-01), branch `slice-04-g1-full-23-sweep`
+
+- **Three harness fixes landed + TDD'd, gates green** (`6b4efb1` guards; `00b03a6` drd2). The two planned
+  guards PLUS a third (drd2 SVM shim) the smoke surfaced.
+- **2k smoke = decisive breadth signal:** 22/22 evaluated tasks beat vanilla Graph-GA with the analyzer,
+  all valid-gates + parse-rates healthy. Standouts: mestranol +0.54, albuterol +0.38, troglitazone +0.35,
+  celecoxib +0.30. Thin: qed +0.007, deco_hop +0.036, median2 +0.051.
+- **Devil's-advocate review → verdict POLISH (run full 10k), ~85% confidence.** Decisive points, all
+  repo-verified: (1) the slice Goal + Exit #5 require **budget=10000, all-23, trustworthy** — a 2k screen +
+  9-task week-8 doesn't meet the written bar; (2) **sitagliptin's smoke row is out of range** (>1) → NOT
+  trustworthy, the two-guard read misses it; (3) **drd2 never run through a sweep**; (4) **2k→10k is unsafe
+  for thin margins** — troglitazone shrank +0.35@2k → +0.12@10k (week-8) as GA got more generations, so
+  qed +0.007 etc. could flip. G1 pass/fail IS already settled (week-8: 7 trustworthy beats @10k ≥ 6); the
+  full run is about a clean, unasterisked denominator, not about passing.
+- **Cost:** week-8 was $10.08 for 9 tasks @10k (incl. sitagliptin's now-guarded blowup). Full-23 @10k ≈
+  **$25–30**; DeepSeek-v4-pro $0.435/$0.87 per M in/out. Keep a safe balance so a mid-run $0 doesn't
+  silently degrade the LLM arm to GA (slice-02 failure mode; guards catch it but the run is wasted).
 
 ## Notes / decisions (deviations from the literal handoff, all justified)
 
