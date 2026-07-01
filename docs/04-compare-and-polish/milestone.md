@@ -76,10 +76,11 @@ independently shippable vertical slice; per-slice docs are written when that sli
     pass across the surface (NFR, G3). — shipped — deps: 02
 04. `g1-full-23-sweep` — two harness pre-sweep guards (median2 `IndexError`; sitagliptin NaN) + authoritative
     `capychem-eval --all` with-analyzer-LLM vs Graph-GA sweep (budget=10000, seed=42) establishing the G1
-    ≥6/23 count; run+verdict slice (G1). — next — deps: none (Track A independent); before 05
+    ≥6/23 count; run+verdict slice (G1). — shipped (2026-07-01; **G1 MET** — 21 trustworthy beats of 21
+    comparable tasks, ≥6 bar crushed; 2 of 23 excluded-for-cause; $18.94) — deps: none (Track A independent)
 05. `readme-and-langfuse-walkthrough` — recruiter-legible README + Langfuse trace walkthroughs of the closed
     loop, legible without chemistry; folds in the G1 verdict and states its denominator honestly (G3). —
-    planned — deps: 01, 02, 03, 04 (documents the finished surface) — **last**
+    next — deps: 01, 02, 03, 04 (documents the finished surface) — **last**
 
 ## Integration notes
 

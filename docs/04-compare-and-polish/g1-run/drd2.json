@@ -1,0 +1,47 @@
+{
+  "sweep": true,
+  "mode": "week8",
+  "budget": 10000,
+  "seed": 42,
+  "tasks_run": 1,
+  "tasks_failed": 0,
+  "auc_sum": 0.9855716071775461,
+  "published_sum": 0.964,
+  "beats": 1,
+  "rows": [
+    {
+      "task": "drd2",
+      "ok": true,
+      "headline_auc": 0.9855716071775461,
+      "beat": true,
+      "payload": {
+        "task": "drd2",
+        "seed": 42,
+        "budget": 10000,
+        "llm_auc": 0.9855716071775461,
+        "graph_ga_auc": 0.9611299700612371,
+        "diff": 0.02444163711630898,
+        "beat": true,
+        "llm_valid_rate": 0.9945054945054945,
+        "llm_valid_gate": {
+          "threshold": 0.8,
+          "passed": true
+        },
+        "published_baseline": 0.964,
+        "llm_unique_calls": 921,
+        "graph_ga_unique_calls": 3582,
+        "analyzer": true,
+        "analyzer_parse_rate": 1.0,
+        "analyzer_calls": 13,
+        "analyzer_parsed": 13,
+        "parse_rate_healthy": true
+      }
+    }
+  ],
+  "wall_seconds": 351.1,
+  "trustworthy_beats": 1,
+  "raw_beats": 1,
+  "on_track": false,
+  "degraded_tasks": [],
+  "week8_verdict": "INCONCLUSIVE: 1 trustworthy beats of 1 tasks run (<3). On a subset this cannot conclude <3/23 -> NOT a clean pivot; resolve with more budget."
+}

@@ -1,0 +1,47 @@
+{
+  "sweep": true,
+  "mode": "week8",
+  "budget": 10000,
+  "seed": 42,
+  "tasks_run": 1,
+  "tasks_failed": 0,
+  "auc_sum": 0.6954896068237022,
+  "published_sum": 0.661,
+  "beats": 1,
+  "rows": [
+    {
+      "task": "amlodipine_mpo",
+      "ok": true,
+      "headline_auc": 0.6954896068237022,
+      "beat": true,
+      "payload": {
+        "task": "amlodipine_mpo",
+        "seed": 42,
+        "budget": 10000,
+        "llm_auc": 0.6954896068237022,
+        "graph_ga_auc": 0.6416809700593176,
+        "diff": 0.05380863676438463,
+        "beat": true,
+        "llm_valid_rate": 0.9900874635568513,
+        "llm_valid_gate": {
+          "threshold": 0.8,
+          "passed": true
+        },
+        "published_baseline": 0.661,
+        "llm_unique_calls": 2684,
+        "graph_ga_unique_calls": 6834,
+        "analyzer": true,
+        "analyzer_parse_rate": 1.0,
+        "analyzer_calls": 49,
+        "analyzer_parsed": 49,
+        "parse_rate_healthy": true
+      }
+    }
+  ],
+  "wall_seconds": 909.9,
+  "trustworthy_beats": 1,
+  "raw_beats": 1,
+  "on_track": false,
+  "degraded_tasks": [],
+  "week8_verdict": "INCONCLUSIVE: 1 trustworthy beats of 1 tasks run (<3). On a subset this cannot conclude <3/23 -> NOT a clean pivot; resolve with more budget."
+}

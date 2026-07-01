@@ -1,0 +1,47 @@
+{
+  "sweep": true,
+  "mode": "week8",
+  "budget": 10000,
+  "seed": 42,
+  "tasks_run": 1,
+  "tasks_failed": 0,
+  "auc_sum": 0.8382866166666834,
+  "published_sum": 0.831,
+  "beats": 1,
+  "rows": [
+    {
+      "task": "osimertinib_mpo",
+      "ok": true,
+      "headline_auc": 0.8382866166666834,
+      "beat": true,
+      "payload": {
+        "task": "osimertinib_mpo",
+        "seed": 42,
+        "budget": 10000,
+        "llm_auc": 0.8382866166666834,
+        "graph_ga_auc": 0.8104385973898496,
+        "diff": 0.02784801927683378,
+        "beat": true,
+        "llm_valid_rate": 0.9952380952380953,
+        "llm_valid_gate": {
+          "threshold": 0.8,
+          "passed": true
+        },
+        "published_baseline": 0.831,
+        "llm_unique_calls": 1576,
+        "graph_ga_unique_calls": 3282,
+        "analyzer": true,
+        "analyzer_parse_rate": 1.0,
+        "analyzer_calls": 27,
+        "analyzer_parsed": 27,
+        "parse_rate_healthy": true
+      }
+    }
+  ],
+  "wall_seconds": 620.4,
+  "trustworthy_beats": 1,
+  "raw_beats": 1,
+  "on_track": false,
+  "degraded_tasks": [],
+  "week8_verdict": "INCONCLUSIVE: 1 trustworthy beats of 1 tasks run (<3). On a subset this cannot conclude <3/23 -> NOT a clean pivot; resolve with more budget."
+}

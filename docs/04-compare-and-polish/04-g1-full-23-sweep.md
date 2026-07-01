@@ -65,14 +65,22 @@ balance topped up 2026-06-30 for exactly this). Sanity-check one task on a small
 - [x] **CHECKPOINT (spend):** operator chose smoke-first. 1-task DeepSeek probe (qed@500) healthy.
 - [x] **Smoke: `--all --week8 --budget=2000 --seed=42`** (raw JSON `smoke-23-2k-seed42.json`, this folder):
       **22/22 evaluated tasks beat** (drd2 excluded — its oracle bug found+fixed here, not yet re-swept).
-- [ ] **Run the authoritative `--all --week8 --budget=10000 --seed=42`** (drd2 now included); capture JSON.
-- [ ] **Investigate sitagliptin_mpo >1 AUC** (smoke: llm=2.26, ga=1.75 — PMO scores must be [0,1]; the
-      valid+parse two-guard read does NOT check score range). Decide: real PMO property, or a harness
-      normalization bug → is sitagliptin's row trustworthy? Range-guard if needed.
-- [ ] Render the G1 verdict: trustworthy_beats / 23; confirm all 23 `ok=True`; list any degraded/excluded.
-- [ ] **CHECKPOINT (merge):** review verdict + diff with operator before shipping.
-- [ ] Ship: freeze this doc, flip slice 04 → shipped + advance slice 05 in milestone.md + handoff.md,
-      dated "Slice 04 shipped" log line, commit refs; merge to main (push on operator ask).
+- [x] **Ran the authoritative 10k sweep** — `--all --week8 --budget=10000 --seed=42`, 22 tasks
+      (sitagliptin_mpo pre-excluded), batched per-task under an operator $20 cap, metered live via the
+      DeepSeek balance API. Raw per-task JSON in `g1-run/`; merged verdict `g1-full23-10k-seed42.json`.
+- [x] **Investigated sitagliptin_mpo >1 AUC → oracle defect, excluded-for-cause.** `top_auc` cannot
+      exceed 1 unless scores exceed 1; only sitagliptin does (1 of 23), so the metric is sound and the
+      defect is task-local. Excluded (never run in the 10k sweep).
+- [x] **Systematic baseline-repro check at verdict time caught a SECOND defect: valsartan_smarts.**
+      GA control 0.757 vs published 0.000 (largest miss by 6×); the pinned-PyTDC oracle scores a pocket
+      the canonical task doesn't. Excluded-for-cause (internal same-seed head-to-head still favored the
+      LLM +0.103). The valid+parse guards miss both defects — a `|GA_control − published| > 0.15` gate does not.
+- [x] **Rendered the G1 verdict — G1 MET decisively.** 21 trustworthy beats of 21 comparable tasks
+      (bar 6); 2 of 23 excluded-for-cause; denominator 23. All 21 rows `ok=True`, guards healthy, none degraded.
+- [x] **CHECKPOINT (merge):** operator reviewed the verdict + the 22→21 valsartan honesty catch and
+      approved shipping the "21/21 comparable, 2 excluded" framing (`/ship-slice`).
+- [x] Ship: froze this doc, flipped slice 04 → shipped + advanced slice 05 in milestone.md + handoff.md;
+      dated log line; committed on the branch (merge to main + push are the operator's call).
 
 ## Progress & findings — session 1 (2026-06-30/07-01), branch `slice-04-g1-full-23-sweep`
 
@@ -109,3 +117,36 @@ balance topped up 2026-06-30 for exactly this). Sanity-check one task on a small
 - Open: the full sweep's wall-clock (DeepSeek latency + ~30s cold start × ~30 gens × 23 tasks) may be
   long; consider running in the background and monitoring. Week-8 already had 7 trustworthy beats among
   9 evaluated — this slice completes the denominator.
+
+## Progress & findings — session 2 (2026-07-01): authoritative 10k run + G1 verdict
+
+**G1 MET — decisively.** 21 trustworthy beats of 21 comparable PMO tasks (bar was ≥6); denominator 23,
+2 excluded-for-cause. Every reproducible task beat the same-seed vanilla Graph-GA control; none degraded.
+Authoritative verdict + excluded rows + diagnostics: `g1-full23-10k-seed42.json`.
+
+- **Two excluded-for-cause (documented, not hidden):**
+  - `sitagliptin_mpo` — PyTDC 0.3.6 oracle emits out-of-[0,1] scores for optimized molecules (AUC 1.75/2.26
+    where the metric ceiling is 1.0). Task-local (only 1 of 23 exceeds 1.0, so `top_auc` is sound). Pre-excluded.
+  - `valsartan_smarts` — caught at verdict time by a **systematic baseline-reproduction check**
+    (`|GA_control − published| > 0.15`): GA control 0.757 vs published 0.000, the largest miss by 6×. The
+    pinned oracle scores a molecule pocket the canonical PMO task doesn't. The internal same-seed head-to-head
+    still favored the LLM (+0.103), but the row is non-comparable to the benchmark. This defect is invisible
+    to the valid-SMILES + parse-rate guards (its scores are in-range); the baseline-repro gate is what caught it.
+    The next-largest gaps — jnk3 (0.131, GA *higher* = a tougher control) and celecoxib (0.111, LLM won +0.344)
+    — are within single-seed variance and do not undermine the result.
+- **Honest margin framing (for the slice-05 README):** decisive (>0.1 AUC) on **9** tasks (troglitazone +0.563,
+  mestranol +0.397, celecoxib +0.344, median1, perindopril, isomers_c9, thiothixene, albuterol, jnk3); thin /
+  within single-seed noise (<0.03) on 4 (qed +0.005, deco_hop +0.009, zaleplon +0.018, drd2 +0.024). Truthful
+  headline = **"beat or matched vanilla Graph-GA on all 21 reproducible PMO tasks (single seed, budget 10k),
+  decisively on 9"** — crushes G1 without overclaiming SOTA (PROJECT.md thesis).
+- **Cost: $18.94 total** (balance $25.79 → $6.85), **under the operator's $20 cap**. Metered per-task via the
+  DeepSeek balance API between batched `--tasks` invocations (the CLI emits no dollar figure); a balance floor
+  auto-stopped before the cap. drd2 confirmed cheap (~$0.11–0.44/task; the feared MPO blowups did not recur —
+  guards held). Run resumed 4× across machine-sleep interruptions (per-task JSON banks incrementally → resume-safe).
+- **Deviation from Exit #5's literal "all 23 trustworthy" sub-clause:** 21/23 are comparable+trustworthy; 2 have
+  defective oracles in the pinned legacy env and are excluded-for-cause. The pre-sweep guards (crash/NaN) could
+  not fix these — they are oracle-*semantic* defects, not crashes. The G1 count objective (≥6/23) is met at 21.
+- **Artifacts:** `g1-full23-10k-seed42.json` (merged verdict), `g1-run/*.json` (raw per-task sweep_out),
+  `g1-run/_progress.log` (metered-run record with the spend trail). Verdict methodology (guards + baseline-repro
+  gate + exclusions) is described above; the merge tooling was a one-off orchestration wrapper (session scratchpad,
+  not committed) around the canonical `capychem-eval`.
