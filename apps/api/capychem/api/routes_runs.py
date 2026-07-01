@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from capychem import cost
+from capychem.api import config
 from capychem.api.compare import build_compare_payload
 from capychem.api.runner import RunRegistry
 from capychem.api.schemas import (
@@ -200,6 +201,7 @@ async def _run_snapshot(
         auc_curve=summary.get("auc_curve", []),
         cost_so_far_usd=await cost.run_cost_total(session, run_id),
         hypotheses=hyps,
+        trace_url=config.trace_url(summary.get("trace_id")),
     )
 
 
@@ -212,6 +214,21 @@ async def get_run_endpoint(run_id: int, request: Request) -> RunSnapshot:
     if snap is None:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
     return snap
+
+
+@router.get("/trace/{run_id}")
+async def get_trace_endpoint(run_id: int, request: Request) -> dict[str, str | None]:
+    """Langfuse deep link for a run (FR-014 / SPEC §6.3). 404 if the run is
+    unknown; ``trace_url`` is null when the run has no persisted trace id or
+    LANGFUSE_PROJECT_ID is unconfigured (the UI hides the link, never shows a
+    broken one)."""
+    sm = sessionmaker_of(request)
+    async with sm() as session:
+        row = await session.get(Run, run_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    summary = row.summary_json or {}
+    return {"trace_url": config.trace_url(summary.get("trace_id"))}
 
 
 @router.get("/compare", response_model=ComparePayload)

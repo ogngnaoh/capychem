@@ -269,6 +269,11 @@ class RunRegistry:
                     generations=last_curve_len,
                     oracle_calls=final_state.get("calls_used", 0),
                 )
+        # Persist the run's Langfuse trace id in summary_json so the run-detail
+        # view can deep-link to it (FR-014). No schema change — summary_json is an
+        # existing JSON column. None when Langfuse is off or the run errored.
+        if summary is not None and run_trace_id is not None:
+            summary = {**summary, "trace_id": run_trace_id}
         async with self._sm() as session:
             await finalize_run(session, handle.run_id, {"stop_reason": status, "summary": summary})
         trace.flush()

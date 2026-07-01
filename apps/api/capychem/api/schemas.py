@@ -63,6 +63,8 @@ class RunSnapshot(BaseModel):
     auc_curve: list[CurvePoint]
     cost_so_far_usd: float = 0.0
     hypotheses: list[AnalyzerHypothesisOut] = []
+    # Langfuse deep link (FR-014); None while a run is live or when unconfigured.
+    trace_url: str | None = None
 
 
 class RunListItem(BaseModel):

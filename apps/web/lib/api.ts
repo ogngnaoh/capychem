@@ -20,6 +20,7 @@ export type RunSnapshot = {
   auc_curve: CurvePoint[];
   cost_so_far_usd?: number;
   hypotheses?: AnalyzerHypothesis[];
+  trace_url?: string | null;
 };
 export type RunListItem = {
   run_id: number;

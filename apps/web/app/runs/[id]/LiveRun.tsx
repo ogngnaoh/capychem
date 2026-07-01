@@ -101,6 +101,16 @@ export function LiveRun({ runId }: { runId: number }) {
             {snap.status}
           </Badge>
           <span className="text-xs text-muted-foreground">{conn}</span>
+          {snap.trace_url && (
+            <a
+              href={snap.trace_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              View trace ↗
+            </a>
+          )}
           {running && (
             <Button
               size="sm"
