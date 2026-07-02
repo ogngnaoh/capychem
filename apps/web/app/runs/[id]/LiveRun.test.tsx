@@ -8,15 +8,18 @@ vi.mock("@/lib/api", () => ({
   getRun: (...a: unknown[]) => getRun(...a),
   stopRun: vi.fn(),
   wsUrl: (id: number) => `ws://test/ws/runs/${id}`,
+  moleculeSvgUrl: (s: string) => `svg:${s}`,
 }));
 
-// recharts needs ResizeObserver (absent in jsdom); stub it so we test the header.
+// recharts needs ResizeObserver (absent in jsdom); stub it so we test the cockpit chrome.
 vi.mock("recharts", () => ({
   ResponsiveContainer: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   LineChart: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   Line: () => null,
   XAxis: () => null,
   YAxis: () => null,
+  CartesianGrid: () => null,
+  ReferenceLine: () => null,
 }));
 
 import { LiveRun } from "./LiveRun";
@@ -55,5 +58,32 @@ describe("LiveRun trace link (FR-014)", () => {
     render(<LiveRun runId={271} />);
     await screen.findByText(/Run 271/);
     expect(screen.queryByRole("link", { name: /view trace/i })).toBeNull();
+  });
+});
+
+describe("Cockpit surfacing (slice 03b)", () => {
+  it("renders analyzer reasoning, the valid-SMILES vital, and the Graph-GA beating delta", async () => {
+    getRun.mockResolvedValue(
+      terminalSnap({
+        graph_ga_baseline: 0.77,
+        valid_smiles_rate: 0.93,
+        hypotheses: [
+          {
+            after_generation_index: 3,
+            text: "Fluorinated anilides held the top of the population.",
+            structured_json: { focus: "para-F anilide", avoid: ["phenol"] },
+          },
+        ],
+      }),
+    );
+    render(<LiveRun runId={271} />);
+    await screen.findByText(/Analyzer reasoning/i);
+    expect(
+      screen.getByText("Fluorinated anilides held the top of the population."),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/focus: para-F anilide/i)).toBeInTheDocument();
+    expect(screen.getByText("93%")).toBeInTheDocument();
+    // latest top-10 mean (0.94) beats the baseline (0.77)
+    expect(screen.getByText(/Beating baseline/i)).toBeInTheDocument();
   });
 });

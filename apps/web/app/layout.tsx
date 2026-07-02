@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Inter, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
+import { AppShell } from "@/components/workbench/AppShell";
+
+// Applies the persisted theme before first paint so dark mode never flashes light.
+const NO_FLASH_THEME = `try{if(localStorage.getItem('theme')==='dark'){document.documentElement.classList.add('dark')}}catch(e){}`;
 
 const inter = Inter({
   subsets: ["latin"],
@@ -36,7 +40,10 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${sourceSerif.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME }} />
+        <AppShell>{children}</AppShell>
+      </body>
     </html>
   );
 }

@@ -1,56 +1,61 @@
 "use client";
 
-// HI-FI PROTOTYPE — Workbench cockpit (the star). One run, live -> completed.
-// Frozen grid (01-decisions.md §1): analyzer REASONING is the hero (left, 1.5fr);
-// AUC-vs-Graph-GA is co-primary (right, 1fr). Both above the top-molecules grid.
-// Generation-level granularity only (WS carries no per-candidate stream).
+// Workbench cockpit (the star) — one run, live → completed. Ported from app/proto/_cockpit
+// and wired to the live run snapshot. Analyzer REASONING is the hero (left, 1.5fr); AUC vs
+// the Graph-GA baseline is co-primary (right, 1fr). Generation-level granularity only (the
+// WS carries no per-candidate stream). Presentational: LiveRun owns the data-flow.
 
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { RunSnapshot } from "@/lib/api";
-import { AucPanel } from "./_chart";
+import { AucPanel } from "@/components/workbench/charts";
 import {
-  GA_BASELINE_AUC,
-  IMPROVED_ROWS_COMPLETED,
-  IMPROVED_ROWS_RUNNING,
-  RUN_STRATEGY,
-  VALID_SMILES_RATE_COMPLETED,
-  VALID_SMILES_RATE_RUNNING,
-} from "./_mock";
-import { Eyebrow, LoopDiagram, Meter, MoleculeTile, StatTile, StatusChip } from "./_ui";
+  Eyebrow,
+  LoopDiagram,
+  Meter,
+  MoleculeTile,
+  StatTile,
+  StatusChip,
+} from "@/components/workbench/ui";
 
 export function Cockpit({
   snap,
   running,
+  conn,
+  onStop,
+  stopErr,
+  notice,
 }: {
   snap: RunSnapshot;
   running: boolean;
+  conn: "connecting" | "live" | "done";
+  onStop: () => void;
+  stopErr: string | null;
+  notice: string | null;
 }) {
-  const improved = running ? IMPROVED_ROWS_RUNNING : IMPROVED_ROWS_COMPLETED;
-  const validRate = running
-    ? VALID_SMILES_RATE_RUNNING
-    : VALID_SMILES_RATE_COMPLETED;
+  const validRate = snap.valid_smiles_rate ?? null;
+  const baseline = snap.graph_ga_baseline ?? null;
   const hyps = [...(snap.hypotheses ?? [])].sort(
     (a, b) => b.after_generation_index - a.after_generation_index,
   );
   const current = hyps[0];
   const prior = hyps.slice(1);
+  const costSub =
+    snap.llm_cost_usd != null && snap.oracle_cost_usd != null
+      ? `LLM $${snap.llm_cost_usd.toFixed(2)} · oracle $${snap.oracle_cost_usd.toFixed(2)}`
+      : "compute equiv.";
 
   return (
     <div className="flex flex-col gap-5">
       {/* Header */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <h1 className="font-heading text-2xl font-normal tracking-tight">
-            Run {snap.run_id}
-          </h1>
+          <h1 className="font-heading text-2xl font-normal tracking-tight">Run {snap.run_id}</h1>
           <span className="font-mono text-sm text-muted-foreground">{snap.task}</span>
           <StatusChip status={snap.status} />
-          <span className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground">
-            {RUN_STRATEGY}
-          </span>
+          <span className="text-xs text-muted-foreground">{conn}</span>
           <div className="ml-auto flex items-center gap-3">
             {snap.trace_url && (
               <a
@@ -63,7 +68,7 @@ export function Cockpit({
               </a>
             )}
             {running ? (
-              <Button size="sm" variant="destructive">
+              <Button size="sm" variant="destructive" onClick={onStop}>
                 Stop
               </Button>
             ) : (
@@ -73,6 +78,12 @@ export function Cockpit({
             )}
           </div>
         </div>
+        {stopErr && <span className="text-xs text-destructive">{stopErr}</span>}
+        {notice && (
+          <div className="rounded-lg border border-chart-4/40 bg-chart-4/10 px-4 py-3 text-sm text-foreground">
+            {notice}
+          </div>
+        )}
         {/* Live loop-step indicator (cockpit only) */}
         <LoopDiagram activeStep={running ? "analyze" : "stop"} compact />
       </div>
@@ -102,11 +113,11 @@ export function Cockpit({
         <StatTile
           label="Cost"
           value={`$${(snap.cost_so_far_usd ?? 0).toFixed(2)}`}
-          sub="compute equiv."
+          sub={costSub}
         />
         <StatTile
           label="Valid SMILES"
-          value={`${Math.round(validRate * 100)}%`}
+          value={validRate != null ? `${Math.round(validRate * 100)}%` : "—"}
           sub="RDKit-validated"
         />
       </div>
@@ -182,11 +193,7 @@ export function Cockpit({
             </h2>
           </div>
           <div className="min-h-0 flex-1 px-4 pb-4">
-            <AucPanel
-              curve={snap.auc_curve}
-              baseline={GA_BASELINE_AUC}
-              running={running}
-            />
+            <AucPanel curve={snap.auc_curve} baseline={baseline} running={running} />
           </div>
         </Card>
       </section>
@@ -199,45 +206,36 @@ export function Cockpit({
             2D structure · SMILES · in-silico oracle score
           </span>
         </div>
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          {snap.top_k.map((m, i) => {
-            const isImproved = improved.has(i);
-            return (
+        {snap.top_k.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+            No molecules scored yet.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {snap.top_k.map((m, i) => (
               <div
                 key={m.smiles}
-                className={[
-                  "flex items-start gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10",
-                  isImproved ? "border-l-2 border-primary" : "",
-                ].join(" ")}
+                className="flex items-start gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10"
               >
-                <MoleculeTile />
+                <MoleculeTile smiles={m.smiles} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs tabular-nums text-muted-foreground">
-                      #{i + 1}
-                    </span>
-                    <span className="text-sm font-semibold tabular-nums">
-                      {m.score.toFixed(4)}
-                    </span>
-                    {isImproved && (
-                      <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-[0.65rem] font-medium text-primary ring-1 ring-primary/30">
-                        ↑ improved
-                      </span>
-                    )}
+                    <span className="text-xs tabular-nums text-muted-foreground">#{i + 1}</span>
+                    <span className="text-sm font-semibold tabular-nums">{m.score.toFixed(4)}</span>
                   </div>
                   <div className="mt-1.5 font-mono text-xs leading-relaxed break-all text-muted-foreground">
                     {m.smiles}
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <p className="text-xs text-muted-foreground">
         Every score above is an in-silico oracle / benchmark score.{" "}
-        <Link href="/proto/overview" className="underline decoration-border underline-offset-4">
+        <Link href="/" className="underline decoration-border underline-offset-4">
           What is this?
         </Link>
       </p>

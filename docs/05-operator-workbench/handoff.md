@@ -1,28 +1,26 @@
-# Handoff — Milestone 05 (Operator Workbench)
+# Handoff — Milestone 05 (Operator Workbench) — COMPLETE
 
 ## Completed this session
-- **CP0/CP1/CP2 all approved.** Slices 01 (low-fi) + 02 (hi-fi) shipped.
-- **Slice 01:** low-fi wireframes; §8 decisions frozen in `01-decisions.md`.
-- **Slice 02:** hi-fi on-token pass of Overview + Workbench (running/completed) + Launcher + Runs/Compare re-skin + dark-mode toggle. Verified independently: typecheck 0, lint 0, Playwright 13/13 (1280px no-scroll light+dark), no hardcoded hex, honesty canon intact.
-- Operator set a standing goal: **drive the agent loop through revision rounds autonomously until the output is approved** (no per-checkpoint pause).
+- **Milestone 05 shipped** — all 3 slices, 4 checkpoints (CP0 shape, CP1 structure, CP2 visual, CP3 ship). Operator approved CP0–CP2; CP3 driven autonomously via the revision-loop goal.
+- **Slice 01** (low-fi wireframes) — §8 decisions frozen in `01-decisions.md`. Commit `cce5a66`.
+- **Slice 02** (hi-fi on-token + dark toggle) — commit `36bc5c7`.
+- **Slice 03a** (backend: `GET /catalog`, grounded/guardrailed `POST /intent/resolve` [deterministic + LLM seam], RDKit `GET /molecule/svg`, nullable `RunSnapshot` fields valid_smiles_rate/graph_ga_baseline/llm+oracle cost) — commit `8a74e89`. mypy strict clean, pytest 77, Critic PASS.
+- **Slice 03b** (productionized `/proto/*` → real routes `/`,`/launch`,`/runs`,`/runs/[id]`,`/compare` on live REST/WS; real 2D structures; shell + dark toggle; `/proto` removed; tests updated) + a revision round (23-PMO spacing, seed-SMILES honesty caption, 23-task e2e fixture). typecheck 0, lint 0, vitest 30, e2e 17. Two synchronous Critics: PASS, 0 blocking.
 
-## Slice status across milestone
-- 01 low-fi-wireframes → **shipped** (CP1 ✓)
-- 02 hifi-surfaces-and-launcher → **shipped** (CP2 ✓)
-- 03 productionize-and-wire → **in-progress** (Phase 3 starting; may sub-split 03a/03b/03c)
+## Slice status
+- 01 low-fi-wireframes → shipped (CP1)
+- 02 hifi-surfaces-and-launcher → shipped (CP2)
+- 03 productionize-and-wire → shipped (CP3)
 
 ## Current state
-- Branch `main`. Slices 01–02 committed. Web dev server on :3000 serves `/proto/*` (hi-fi, light+dark).
-- Agent-team: Builder (`general-purpose`, reused) + Critic (`agent-team-reviewer`). NOTE: background reviewers only emit idle pings via mailbox — **run the Critic synchronously** (`run_in_background:false`) in slice 03 to get its report; gate evidence otherwise gathered by orchestrator directly.
+- Branch `main`. Real app on the new design: `/` Overview · `/launch` hybrid launcher · `/runs` list · `/runs/[id]` live cockpit · `/compare`. Backend endpoints live on :8000. Web dev on :3000.
+- Agent-team learning: `agent-team-*` subagents (and general-purpose mailbox *continuations*) only emit idle pings — **run reviewers synchronously** (`run_in_background:false`) to get their report; verify Builder claims independently (a Builder mis-reported typecheck once and skipped 2 of 3 revision items on a mailbox continuation).
 
 ## Next session start here
-Drive **slice 03 (productionize + backend)**, decomposed:
-1. **03a backend:** grounded LLM intent-resolution endpoint (+ guardrails + cost); **RDKit server-SVG** for 2D structures (`structure_svg` field or `GET /molecule/svg`); surface missing read-fields (valid-SMILES rate, per-task GA baseline, cost) on `RunSnapshot`/schemas + `api.ts`.
-2. **03b frontend:** productionize `/proto/*` into the real `/`, `/runs`, `/runs/[id]`, `/compare` wired to live REST/WS + new endpoints/fields; port proto components; update existing web tests; remove `/proto` scaffold once verified.
-3. **03c verify:** end-to-end against real data (~290 runs in Postgres), a11y light+dark, 1280px screenshots of running/completed/empty on real routes, typecheck api+web, tests green → ⏸ Checkpoint 3 (ship).
+Milestone complete; project scope ends at 05. If continuing: (1) launch a *real* new run end-to-end (needs Modal/LLM up — `modal serve apps/worker/app.py`) to exercise the live launch→cockpit flow beyond mocks; (2) optional follow-ups: wire seed-SMILES population through `createRun`+loop (a deliberate non-goal this milestone), an automated axe a11y pass, and the LLM intent-resolution path (env-gated seam already in place).
 
-## Active concerns
-- Infra needed for 03: FastAPI :8000 + Postgres + (for intent resolution) an LLM path (Modal/DeepSeek) — probe availability; if the LLM path is unavailable in this env, ship a deterministic-fuzzy fallback behind the same grounded/guardrailed interface so the resolver still works, and leave the LLM upgrade seam.
-- Productionizing replaces the working `LiveRun`/`RunsBrowse`/`CompareView` + their `*.test.tsx` — update tests alongside.
-- Data gaps to fill in 03a: valid-SMILES rate (in `summary_json`), cost split (`RunCost`), GA baseline (from `g1-full23-10k-seed42.json`) — none currently on `RunSnapshot`.
+## Active concerns / honest caveats
+- **New-run launch needs Modal/LLM** (absent in this env). All read/browse/cockpit/compare surfaces are wired live against the ~290 existing Postgres runs (Critic loaded run 335 live); `launch.spec.ts` exercises launch→`/runs/{id}` against mocks.
+- Intent resolver is deterministic here (grounded + guardrailed); LLM seam is env-gated and untested live.
+- Pre-existing hardcoded hex in `components/ui/button.tsx` (not this milestone).
 - Honest-figure canon: **21 of 21 comparable, 2 of 23 excluded-for-cause** — never "21/23".

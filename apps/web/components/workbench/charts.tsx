@@ -1,9 +1,10 @@
 "use client";
 
-// HI-FI PROTOTYPE charts — on-token via CSS vars (no hardcoded hex). This-run =
+// Shared workbench charts — on-token via CSS vars (no hardcoded hex). This-run =
 // chart-1 (coral); Graph-GA baseline = muted-foreground dashed reference line;
-// Compare B = chart-2 (blue). Instantaneous panel labeled "top-10 mean" (the
-// AUC-integral claim lives on the Overview rigor strip).
+// Compare B = chart-2 (blue). Ported from the CP2-approved hi-fi prototype
+// (app/proto/_chart.tsx); AucPanel's baseline is now nullable (the run snapshot's
+// graph_ga_baseline may be absent).
 
 import {
   CartesianGrid,
@@ -27,27 +28,34 @@ export function AucPanel({
   running,
 }: {
   curve: CurvePoint[];
-  baseline: number;
+  baseline: number | null;
   running: boolean;
 }) {
   const latest = curve.length ? curve[curve.length - 1].top10_mean : 0;
-  const delta = latest - baseline;
+  const hasBaseline = baseline !== null;
+  const delta = hasBaseline ? latest - baseline : 0;
   const beating = delta >= 0;
   const deltaLabel = `${beating ? "+" : "−"}${Math.abs(delta).toFixed(3)}`;
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-baseline justify-between gap-2">
-        <span
-          className={[
-            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-            beating
-              ? "bg-primary/12 text-primary ring-1 ring-primary/30"
-              : "bg-muted text-muted-foreground ring-1 ring-border",
-          ].join(" ")}
-        >
-          {beating ? "Beating baseline" : "Behind baseline"} by {deltaLabel}
-        </span>
+        {hasBaseline ? (
+          <span
+            className={[
+              "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+              beating
+                ? "bg-primary/12 text-primary ring-1 ring-primary/30"
+                : "bg-muted text-muted-foreground ring-1 ring-border",
+            ].join(" ")}
+          >
+            {beating ? "Beating baseline" : "Behind baseline"} by {deltaLabel}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">
+            no Graph-GA baseline for this task
+          </span>
+        )}
         <span className="text-xs text-muted-foreground">top-10 mean · in-silico</span>
       </div>
 
@@ -74,17 +82,19 @@ export function AucPanel({
               width={36}
               tickFormatter={fmt2}
             />
-            <ReferenceLine
-              y={baseline}
-              stroke="var(--color-muted-foreground)"
-              strokeDasharray="5 4"
-              label={{
-                value: `Graph-GA ${baseline.toFixed(3)}`,
-                position: "insideBottomRight",
-                fontSize: 10,
-                fill: "var(--color-muted-foreground)",
-              }}
-            />
+            {hasBaseline && (
+              <ReferenceLine
+                y={baseline}
+                stroke="var(--color-muted-foreground)"
+                strokeDasharray="5 4"
+                label={{
+                  value: `Graph-GA ${baseline.toFixed(3)}`,
+                  position: "insideBottomRight",
+                  fontSize: 10,
+                  fill: "var(--color-muted-foreground)",
+                }}
+              />
+            )}
             <Line
               type="monotone"
               dataKey="top10_mean"
@@ -102,10 +112,12 @@ export function AucPanel({
           <span className="inline-block h-0.5 w-4 rounded bg-primary" />
           This run{running ? " (live)" : ""}
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-0 w-4 border-t border-dashed border-muted-foreground" />
-          Graph-GA baseline (in-silico)
-        </span>
+        {hasBaseline && (
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-0 w-4 border-t border-dashed border-muted-foreground" />
+            Graph-GA baseline (in-silico)
+          </span>
+        )}
       </div>
     </div>
   );

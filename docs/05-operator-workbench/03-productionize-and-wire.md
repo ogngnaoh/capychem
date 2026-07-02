@@ -1,6 +1,8 @@
 # Slice 05.03 — Productionize + wire to live data (backend + frontend)
 
-**Status:** in-progress · **Phase:** 3 (of 3) · **Gate:** ⏸ CHECKPOINT 3 (ship)
+**Status:** shipped (2026-07-02) · **Phase:** 3 (of 3) · **Gate:** ✓ CHECKPOINT 3 (ship)
+
+> Frozen. 03a (backend: `/catalog`, grounded `/intent/resolve`, RDKit `/molecule/svg`, new `RunSnapshot` fields) + 03b (productionized `/proto/*` into the real routes on live REST/WS; real 2D structures; `/proto` removed). Verified: mypy strict clean, pytest 77, ruff clean; web typecheck 0, lint 0, vitest 30, e2e 17 (1280px no-scroll light+dark); live smoke against real data (run 335, 23-task live catalog). Two fresh-context Critics: PASS, 0 blocking. **Infra caveat:** launching a *new* run end-to-end needs Modal/LLM (absent here); the resolver ships deterministic (grounded + guardrailed) with an LLM seam, and all read/browse/cockpit/compare surfaces are wired live against the ~290 existing runs.
 
 ## Goal
 

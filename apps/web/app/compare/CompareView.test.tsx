@@ -1,10 +1,18 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ComparePayload } from "@/lib/api";
+import type { ComparePayload, RunListItem } from "@/lib/api";
 
 const getCompare = vi.fn();
-vi.mock("@/lib/api", () => ({ getCompare: (...a: unknown[]) => getCompare(...a) }));
+const listRuns = vi.fn();
+vi.mock("@/lib/api", () => ({
+  getCompare: (...a: unknown[]) => getCompare(...a),
+  listRuns: (...a: unknown[]) => listRuns(...a),
+  moleculeSvgUrl: (s: string) => `svg:${s}`,
+}));
+
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
 // recharts needs a real width/height (0 in jsdom) — stub to render children only.
 vi.mock("recharts", () => {
@@ -16,12 +24,35 @@ vi.mock("recharts", () => {
     Line: Null,
     XAxis: Null,
     YAxis: Null,
-    Legend: Null,
-    Tooltip: Null,
+    CartesianGrid: Null,
+    ReferenceLine: Null,
   };
 });
 
 import { CompareView } from "./CompareView";
+
+const RUNS: RunListItem[] = [
+  {
+    run_id: 11,
+    task: "jnk3",
+    mutation_strategy: "llm",
+    status: "exhausted",
+    best_score: 0.8812,
+    oracle_calls: 10000,
+    budget: 10000,
+    started_at: "2026-06-30T12:00:00Z",
+  },
+  {
+    run_id: 9,
+    task: "qed",
+    mutation_strategy: "graph_ga",
+    status: "plateaued",
+    best_score: 0.9377,
+    oracle_calls: 3400,
+    budget: 10000,
+    started_at: "2026-06-30T10:00:00Z",
+  },
+];
 
 const PAYLOAD: ComparePayload = {
   a: {
@@ -60,11 +91,12 @@ const PAYLOAD: ComparePayload = {
 
 describe("CompareView", () => {
   beforeEach(() => {
-    getCompare.mockReset();
-    getCompare.mockResolvedValue(PAYLOAD);
+    getCompare.mockReset().mockResolvedValue(PAYLOAD);
+    listRuns.mockReset().mockResolvedValue(RUNS);
+    push.mockClear();
   });
 
-  it("fetches the two runs and renders both identities, top-K, cost, and hypotheses", async () => {
+  it("fetches the two runs and renders both identities, top-K, cost, and the analyzer split", async () => {
     render(<CompareView a={11} b={9} />);
     await waitFor(() => expect(screen.getAllByText(/jnk3/).length).toBeGreaterThan(0));
     expect(getCompare).toHaveBeenCalledWith(11, 9);
@@ -73,11 +105,20 @@ describe("CompareView", () => {
     // side-by-side top-K
     expect(screen.getByText("CCOc1ccccc1")).toBeInTheDocument();
     expect(screen.getByText("c1ccccc1O")).toBeInTheDocument();
-    // per-run cost surfaced (FR-013)
-    expect(screen.getByText("1.2345")).toBeInTheDocument();
-    // hypothesis sequence for run a
-    expect(screen.getByText("refine amide scaffold")).toBeInTheDocument();
-    expect(screen.getByText("focus: amide")).toBeInTheDocument();
+    // per-run cost surfaced (FR-013), now formatted to 2dp
+    expect(screen.getByText("$1.23")).toBeInTheDocument();
+    // the analyzer story: LLM run has a hypothesis, GA run shows "no analyzer step"
+    expect(screen.getByText(/1 analyzer hypothesis/i)).toBeInTheDocument();
+    expect(screen.getByText(/no analyzer step/i)).toBeInTheDocument();
+  });
+
+  it("routes to a new comparison when a run selector changes", async () => {
+    render(<CompareView a={11} b={9} />);
+    await waitFor(() => expect(screen.getAllByText(/jnk3/).length).toBeGreaterThan(0));
+    const selectA = screen.getByRole("combobox", { name: /Run A/i });
+    // change Run A to run 9 → /compare?a=9&b=9
+    fireEvent.change(selectA, { target: { value: "9" } });
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/compare?a=9&b=9"));
   });
 
   it("guards against missing run ids without fetching", () => {

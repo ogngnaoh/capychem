@@ -1,51 +1,66 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { CatalogGroup, RunListItem } from "@/lib/api";
 
-const push = vi.fn();
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+const getCatalog = vi.fn();
+const listRuns = vi.fn();
+vi.mock("@/lib/api", () => ({
+  getCatalog: (...a: unknown[]) => getCatalog(...a),
+  listRuns: (...a: unknown[]) => listRuns(...a),
+  moleculeSvgUrl: (s: string) => `svg:${s}`,
+}));
 
-const createRun = vi.fn().mockResolvedValue({ run_id: 7 });
-vi.mock("@/lib/api", () => ({ createRun: (...a: unknown[]) => createRun(...a) }));
+import { Overview } from "./Overview";
 
-import Home from "./page";
+const CATALOG: CatalogGroup[] = [
+  { group: "Drug-likeness", tasks: [{ name: "qed", description: "Overall drug-likeness." }] },
+  {
+    group: "Target activity",
+    tasks: [
+      { name: "drd2", description: "Dopamine D2." },
+      { name: "jnk3", description: "JNK3 kinase." },
+      { name: "gsk3b", description: "GSK-3β." },
+      { name: "extra", description: "spillover" },
+    ],
+  },
+];
 
-describe("launch form", () => {
+const RECENT: RunListItem[] = [
+  {
+    run_id: 284,
+    task: "troglitazone_rediscovery",
+    mutation_strategy: "llm",
+    status: "running",
+    best_score: 0.7431,
+    oracle_calls: 4200,
+    budget: 10000,
+    started_at: "2026-07-02T09:48:00Z",
+  },
+];
+
+describe("Overview", () => {
   beforeEach(() => {
-    createRun.mockClear();
-    push.mockClear();
+    getCatalog.mockReset().mockResolvedValue(CATALOG);
+    listRuns.mockReset().mockResolvedValue(RECENT);
   });
 
-  it("renders the form with a task selector defaulting to jnk3", () => {
-    render(<Home />);
-    screen.getByText(/Launch an optimization/i);
-    const select = screen.getByLabelText(/^Task$/i) as HTMLSelectElement;
-    expect(select.value).toBe("jnk3");
-    screen.getByLabelText(/Mutation strategy/i);
-    screen.getByLabelText(/Plateau window/i);
+  it("renders the hero, the loop, and the verbatim benchmark figure canon (in-silico, honest)", async () => {
+    render(<Overview />);
+    expect(screen.getByText(/in as few oracle calls as possible/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^The loop$/i })).toBeInTheDocument();
+    // figure canon must be verbatim + honest (never "21/23", never efficacy)
+    expect(screen.getByText(/all 21 comparable PMO tasks/i)).toBeInTheDocument();
+    expect(screen.getByText(/decisive \(~0\.1 AUC\+\) on 9/i)).toBeInTheDocument();
+    expect(screen.queryByText(/21\/23/)).toBeNull();
   });
 
-  it("submits the default task=jnk3 with the chosen strategy", async () => {
-    render(<Home />);
-    fireEvent.change(screen.getByLabelText(/Mutation strategy/i), {
-      target: { value: "llm" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /Start run/i }));
-    await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1));
-    expect(createRun).toHaveBeenCalledWith(
-      expect.objectContaining({ task: "jnk3", mutation_strategy: "llm" }),
-    );
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/runs/7"));
-  });
-
-  it("submits the selected task when changed", async () => {
-    render(<Home />);
-    fireEvent.change(screen.getByLabelText(/^Task$/i), {
-      target: { value: "drd2" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /Start run/i }));
-    await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1));
-    expect(createRun).toHaveBeenCalledWith(
-      expect.objectContaining({ task: "drd2" }),
-    );
+  it("lists recent runs from listRuns() and the catalog peek from getCatalog()", async () => {
+    render(<Overview />);
+    await waitFor(() => expect(screen.getByText("troglitazone_rediscovery")).toBeInTheDocument());
+    // catalog peek group + a task chip
+    expect(screen.getByText("Drug-likeness")).toBeInTheDocument();
+    expect(screen.getByText("qed")).toBeInTheDocument();
+    // "See all N objectives" reflects the fetched task count (1 + 4 = 5)
+    expect(screen.getByText(/See all 5 objectives/i)).toBeInTheDocument();
   });
 });

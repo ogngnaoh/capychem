@@ -1,7 +1,17 @@
-// HI-FI PROTOTYPE shared components — on-token (globals.css), coral restrained to
-// primary action / live state / this-run series. Structural/neutral everywhere else.
+// Shared workbench UI — on-token (globals.css tokens), coral restrained to the
+// primary action / live state / this-run series. Ported from the CP2-approved hi-fi
+// prototype (app/proto/_ui.tsx). Pure presentational; safe in server or client trees.
 
-import { LOOP_STEPS } from "./_mock";
+import { moleculeSvgUrl } from "@/lib/api";
+
+// The 5 loop steps; `analyze` is the differentiator (MOLLEO / Graph-GA lack it).
+export const LOOP_STEPS = [
+  { key: "propose", label: "Propose" },
+  { key: "score", label: "Score" },
+  { key: "analyze", label: "Analyze" },
+  { key: "redesign", label: "Redesign" },
+  { key: "stop", label: "Stop" },
+] as const;
 
 // Small uppercase eyebrow — encodes section context, set in the utility register.
 export function Eyebrow({ children }: { children: React.ReactNode }) {
@@ -12,9 +22,27 @@ export function Eyebrow({ children }: { children: React.ReactNode }) {
   );
 }
 
-// A neutral placeholder for a 2D molecular structure. Low-fi/hi-fi both use a clean
-// motif; slice 03 renders RDKit SVG server-side (see 01-decisions.md §5).
-export function MoleculeTile({ size = 52 }: { size?: number }) {
+// A framed 2D molecular structure. With a `smiles`, renders the server-side RDKit
+// SVG (GET /molecule/svg); without one, a neutral placeholder motif.
+export function MoleculeTile({ smiles, size = 52 }: { smiles?: string; size?: number }) {
+  if (smiles) {
+    return (
+      <div
+        className="flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-card"
+        style={{ width: size, height: size }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={moleculeSvgUrl(smiles, size * 2, size * 2)}
+          alt={`2D structure of ${smiles}`}
+          width={size}
+          height={size}
+          loading="lazy"
+          className="h-full w-full object-contain p-0.5"
+        />
+      </div>
+    );
+  }
   return (
     <div
       className="flex shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-muted/50"
@@ -69,7 +97,7 @@ export function StatTile({
 
 // A slim progress bar built from tokens.
 export function Meter({ value, max }: { value: number; max: number }) {
-  const pct = Math.max(0, Math.min(100, (value / max) * 100));
+  const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   return (
     <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
       <div
@@ -82,8 +110,8 @@ export function Meter({ value, max }: { value: number; max: number }) {
 
 // The loop as a left-to-right sequence of chips reading like a sentence:
 // propose → score → ANALYZE → redesign → stop. `analyze` is emphasised (coral) as
-// the differentiator. `activeStep` (cockpit only) marks the live step; omit it on
-// the Overview for a static teaching diagram.
+// the differentiator. `activeStep` (cockpit) marks the live step; omit it on the
+// Overview for a static teaching diagram.
 export function LoopDiagram({
   activeStep,
   compact = false,
@@ -140,7 +168,7 @@ export function InSilicoTag({ className = "" }: { className?: string }) {
   );
 }
 
-// Status chip — never color-only (label carries meaning); coral reserved for the
+// Status chip — never color-only (the label carries meaning); coral reserved for the
 // live "running" state.
 export function StatusChip({ status }: { status: string }) {
   const live = status === "running";
@@ -161,14 +189,5 @@ export function StatusChip({ status }: { status: string }) {
       )}
       {status}
     </span>
-  );
-}
-
-// Thin ribbon marking these routes as disposable prototypes.
-export function ProtoRibbon() {
-  return (
-    <div className="border-b border-dashed border-border bg-muted/40 px-6 py-1 text-center text-[0.68rem] tracking-[0.14em] text-muted-foreground uppercase">
-      Prototype · hi-fi on-token · mock data
-    </div>
   );
 }

@@ -61,12 +61,11 @@ describe("RunsBrowse", () => {
     );
   });
 
-  it("re-fetches filtered by status when the status select changes", async () => {
+  it("re-fetches filtered by status when a status pill is clicked", async () => {
     render(<RunsBrowse />);
     await waitFor(() => screen.getByText("jnk3"));
-    fireEvent.change(screen.getByLabelText(/status filter/i), {
-      target: { value: "running" },
-    });
+    // pills are derived from the statuses seen (running, exhausted) + "all"
+    fireEvent.click(screen.getByRole("button", { name: /^running$/i }));
     await waitFor(() =>
       expect(listRuns).toHaveBeenLastCalledWith(
         expect.objectContaining({ status: "running" }),
