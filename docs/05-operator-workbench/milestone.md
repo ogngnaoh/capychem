@@ -35,8 +35,8 @@ tokens, honest about being an in-silico demonstrator.
 ## Slices (execution order)
 
 1. **`01-low-fi-wireframes`** — interactive low-fi prototype pages of the two hero surfaces (Overview + Workbench cockpit) to settle structure cheaply, resolving the spec §8 design open questions. Builder ↔ Critic → **✓ CHECKPOINT 1** (structure). *shipped (CP1 approved 2026-07-02; §8 decisions frozen in `01-decisions.md`)*
-2. **`02-hifi-surfaces-and-launcher`** — hi-fi on-token pass of both hero surfaces + the hybrid launcher UI + re-skin Runs/Compare to the shell (prototype-fidelity data; not yet wired live). Builder ↔ Critic → **⏸ CHECKPOINT 2** (visual). *in-progress*
-3. **`03-productionize-and-wire`** — build the grounded intent-resolution backend + guardrails + cost; surface the cockpit's missing read-fields; productionize the surfaces into the real routes wired to the live REST/WS; full verify (typecheck, tests, 1280px screenshots of running/completed/empty, a11y light+dark). Builder ↔ Critic (may split Critic+Evaluator — high-stakes) → **⏸ CHECKPOINT 3** (ship gate). *planned*
+2. **`02-hifi-surfaces-and-launcher`** — hi-fi on-token pass of both hero surfaces + the hybrid launcher UI + re-skin Runs/Compare to the shell (prototype-fidelity data; not yet wired live). Builder ↔ Critic → **✓ CHECKPOINT 2** (visual). *shipped (CP2 approved 2026-07-02)*
+3. **`03-productionize-and-wire`** — build the grounded intent-resolution backend + guardrails + cost; RDKit server-SVG for 2D structures; surface the cockpit's missing read-fields; productionize the surfaces into the real routes wired to the live REST/WS; full verify (typecheck, tests, 1280px screenshots of running/completed/empty, a11y light+dark). Builder ↔ Critic (Critic run synchronously; may split Critic+Evaluator — high-stakes) → **⏸ CHECKPOINT 3** (ship gate). *in-progress* — may sub-split (03a backend · 03b frontend-productionize · 03c verify).
 
 *(Per project convention, milestone slices stay high-level; per-slice implementation detail lives in each slice's own session. Slice 03 is large and may sub-split when detailed.)*
 

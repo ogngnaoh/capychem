@@ -1,29 +1,37 @@
-// LOW-FI PROTOTYPE shared components — throwaway. Structural/neutral only:
-// existing tokens, coral restrained to primary action / live state / this-run.
+// HI-FI PROTOTYPE shared components — on-token (globals.css), coral restrained to
+// primary action / live state / this-run series. Structural/neutral everywhere else.
 
 import { LOOP_STEPS } from "./_mock";
 
-// A neutral placeholder for a 2D molecular structure. Low-fi recommendation is a
-// clean motif; slice 02/03 should render RDKit SVG server-side (see decisions).
-export function MoleculeTile({ size = 56 }: { size?: number }) {
+// Small uppercase eyebrow — encodes section context, set in the utility register.
+export function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+      {children}
+    </div>
+  );
+}
+
+// A neutral placeholder for a 2D molecular structure. Low-fi/hi-fi both use a clean
+// motif; slice 03 renders RDKit SVG server-side (see 01-decisions.md §5).
+export function MoleculeTile({ size = 52 }: { size?: number }) {
   return (
     <div
-      className="flex shrink-0 items-center justify-center rounded-md border border-dashed bg-muted/40"
+      className="flex shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-muted/50"
       style={{ width: size, height: size }}
       aria-hidden="true"
     >
       <svg
-        width={size * 0.5}
-        height={size * 0.5}
+        width={size * 0.46}
+        height={size * 0.46}
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.25"
+        strokeWidth="1.1"
         className="text-muted-foreground"
       >
-        {/* stylised hexagonal ring — reads as "structure", not a real molecule */}
         <polygon points="12,3 20,7.5 20,16.5 12,21 4,16.5 4,7.5" />
-        <circle cx="12" cy="12" r="3.5" />
+        <circle cx="12" cy="12" r="3.4" />
         <line x1="20" y1="7.5" x2="23" y2="6" />
         <line x1="4" y1="16.5" x2="1" y2="18" />
       </svg>
@@ -43,35 +51,39 @@ export function StatTile({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-lg bg-card px-3 py-2.5 ring-1 ring-foreground/10">
-      <div className="text-[0.7rem] tracking-wide text-muted-foreground uppercase">
+    <div className="rounded-xl bg-card px-3.5 py-3 ring-1 ring-foreground/10">
+      <div className="text-[0.68rem] font-medium tracking-[0.1em] text-muted-foreground uppercase">
         {label}
       </div>
       <div
-        className={`mt-0.5 text-xl font-semibold tabular-nums ${
-          accent ? "text-primary" : ""
+        className={`mt-1 text-2xl leading-none font-semibold tabular-nums ${
+          accent ? "text-primary" : "text-foreground"
         }`}
       >
         {value}
       </div>
-      {sub && <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>}
+      {sub && <div className="mt-1.5 text-xs text-muted-foreground">{sub}</div>}
     </div>
   );
 }
 
-// A small progress bar built from tokens (no new styling primitives).
+// A slim progress bar built from tokens.
 export function Meter({ value, max }: { value: number; max: number }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
-    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-      <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+      <div
+        className="h-full rounded-full bg-primary transition-[width]"
+        style={{ width: `${pct}%` }}
+      />
     </div>
   );
 }
 
-// propose -> score -> ANALYZE -> redesign -> stop. `analyze` is emphasised as the
-// differentiator. Pass `activeStep` on the cockpit for a live current-step pip;
-// omit it on the Overview for a static teaching diagram.
+// The loop as a left-to-right sequence of chips reading like a sentence:
+// propose → score → ANALYZE → redesign → stop. `analyze` is emphasised (coral) as
+// the differentiator. `activeStep` (cockpit only) marks the live step; omit it on
+// the Overview for a static teaching diagram.
 export function LoopDiagram({
   activeStep,
   compact = false,
@@ -80,54 +92,39 @@ export function LoopDiagram({
   compact?: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-stretch gap-1.5" role="list">
+    <ol className="flex flex-wrap items-center gap-x-1 gap-y-2">
       {LOOP_STEPS.map((step, i) => {
         const isAnalyze = step.key === "analyze";
         const isActive = activeStep === step.key;
         return (
-          <div key={step.key} className="flex items-stretch gap-1.5" role="listitem">
+          <li key={step.key} className="flex items-center gap-1">
             <div
               className={[
-                "flex flex-col justify-center rounded-lg border text-center transition-colors",
-                compact ? "px-2.5 py-1.5" : "px-3.5 py-3 min-w-24",
+                "inline-flex items-center gap-1.5 rounded-full border transition-colors",
+                compact ? "px-2.5 py-1 text-xs" : "px-3.5 py-1.5 text-sm",
                 isAnalyze
-                  ? "border-primary/60 bg-primary/10"
-                  : "border-border bg-card",
-                isActive ? "ring-2 ring-primary" : "",
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-border bg-card text-foreground",
+                isActive ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : "",
               ].join(" ")}
             >
-              <div
-                className={[
-                  compact ? "text-xs" : "text-sm",
-                  "font-medium",
-                  isAnalyze ? "text-primary" : "text-foreground",
-                ].join(" ")}
-              >
-                {step.label}
-              </div>
-              {isAnalyze && !compact && (
-                <div className="mt-0.5 text-[0.7rem] leading-tight text-primary/80">
-                  the differentiator
-                </div>
-              )}
               {isActive && (
-                <div className="mt-0.5 text-[0.7rem] text-muted-foreground">
-                  · current step
-                </div>
+                <span
+                  className="size-1.5 rounded-full bg-primary motion-safe:animate-pulse"
+                  aria-hidden="true"
+                />
               )}
+              <span className={isAnalyze ? "font-medium" : ""}>{step.label}</span>
             </div>
             {i < LOOP_STEPS.length - 1 && (
-              <div
-                className="flex items-center text-muted-foreground"
-                aria-hidden="true"
-              >
+              <span className="px-0.5 text-muted-foreground" aria-hidden="true">
                 →
-              </div>
+              </span>
             )}
-          </div>
+          </li>
         );
       })}
-    </div>
+    </ol>
   );
 }
 
@@ -135,18 +132,43 @@ export function LoopDiagram({
 export function InSilicoTag({ className = "" }: { className?: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[0.7rem] text-muted-foreground ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-0.5 text-[0.7rem] text-muted-foreground ${className}`}
     >
+      <span className="size-1 rounded-full bg-muted-foreground" aria-hidden="true" />
       in-silico · oracle score
     </span>
   );
 }
 
-// Thin ribbon marking these routes as disposable low-fi wireframes.
+// Status chip — never color-only (label carries meaning); coral reserved for the
+// live "running" state.
+export function StatusChip({ status }: { status: string }) {
+  const live = status === "running";
+  return (
+    <span
+      className={[
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
+        live
+          ? "bg-primary/12 text-primary ring-1 ring-primary/30"
+          : "bg-muted text-muted-foreground ring-1 ring-border",
+      ].join(" ")}
+    >
+      {live && (
+        <span
+          className="size-1.5 rounded-full bg-primary motion-safe:animate-pulse"
+          aria-hidden="true"
+        />
+      )}
+      {status}
+    </span>
+  );
+}
+
+// Thin ribbon marking these routes as disposable prototypes.
 export function ProtoRibbon() {
   return (
-    <div className="border-b border-dashed border-border bg-muted/40 px-6 py-1 text-center text-[0.7rem] tracking-wide text-muted-foreground uppercase">
-      Low-fi wireframe · disposable prototype · structure &amp; hierarchy only
+    <div className="border-b border-dashed border-border bg-muted/40 px-6 py-1 text-center text-[0.68rem] tracking-[0.14em] text-muted-foreground uppercase">
+      Prototype · hi-fi on-token · mock data
     </div>
   );
 }

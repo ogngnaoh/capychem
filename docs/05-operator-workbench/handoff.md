@@ -1,25 +1,28 @@
 # Handoff — Milestone 05 (Operator Workbench)
 
 ## Completed this session
-- **CP0 approved** (milestone shape) and **CP1 approved** (slice 01 low-fi structure).
-- **Slice 01 shipped:** low-fi wireframes of Overview + Workbench (running/completed) + hybrid launcher as throwaway `apps/web/app/proto/*` routes; §8 design questions resolved and **frozen in `01-decisions.md`**. Gate verified independently: 5/5 routes `scrollWidth=1280` (no h-scroll), typecheck clean (exit 0 after a round-2 fix of 4 `readonly`-array errors the Builder first mis-reported), honesty canon verbatim, boundary clean.
-- Resolved operator decisions: NL resolver = LLM-backed/grounded/guardrailed (slice 03); cockpit baseline = Graph-GA reference line + live delta.
+- **CP0/CP1/CP2 all approved.** Slices 01 (low-fi) + 02 (hi-fi) shipped.
+- **Slice 01:** low-fi wireframes; §8 decisions frozen in `01-decisions.md`.
+- **Slice 02:** hi-fi on-token pass of Overview + Workbench (running/completed) + Launcher + Runs/Compare re-skin + dark-mode toggle. Verified independently: typecheck 0, lint 0, Playwright 13/13 (1280px no-scroll light+dark), no hardcoded hex, honesty canon intact.
+- Operator set a standing goal: **drive the agent loop through revision rounds autonomously until the output is approved** (no per-checkpoint pause).
 
 ## Slice status across milestone
 - 01 low-fi-wireframes → **shipped** (CP1 ✓)
-- 02 hifi-surfaces-and-launcher → **in-progress** (Phase 2 starting)
-- 03 productionize-and-wire → planned
+- 02 hifi-surfaces-and-launcher → **shipped** (CP2 ✓)
+- 03 productionize-and-wire → **in-progress** (Phase 3 starting; may sub-split 03a/03b/03c)
 
 ## Current state
-- Branch `main`. Slice 01 committed (docs + proto routes + `e2e/proto-shot.spec.ts`). Web dev server on :3000 serves `/proto/*`.
-- Agent-team: Builder (`general-purpose`, reused for continuity) + a **fresh** Critic per round. Loop cap ~7.
+- Branch `main`. Slices 01–02 committed. Web dev server on :3000 serves `/proto/*` (hi-fi, light+dark).
+- Agent-team: Builder (`general-purpose`, reused) + Critic (`agent-team-reviewer`). NOTE: background reviewers only emit idle pings via mailbox — **run the Critic synchronously** (`run_in_background:false`) in slice 03 to get its report; gate evidence otherwise gathered by orchestrator directly.
 
 ## Next session start here
-1. Drive **slice 02 (hi-fi)** via the Builder: evolve the `/proto/*` routes to hi-fi on-token (warm cream + coral restrained, Source Serif 4 @400 / Inter / Geist Mono; charts on `chart-1` + `muted-foreground` vars, no hardcoded hex); both hero surfaces + launcher + re-skin proto Runs/Compare; wire a dark-mode toggle; light **and** dark legible. Fresh Critic reviews vs spec §7 + binding constraints (now including full WCAG-AA + dark). Fix carried nits (AUC y-axis ticks, card rhythm).
-2. Run to **⏸ Checkpoint 2 (visual)** for operator approval before productionizing (slice 03).
+Drive **slice 03 (productionize + backend)**, decomposed:
+1. **03a backend:** grounded LLM intent-resolution endpoint (+ guardrails + cost); **RDKit server-SVG** for 2D structures (`structure_svg` field or `GET /molecule/svg`); surface missing read-fields (valid-SMILES rate, per-task GA baseline, cost) on `RunSnapshot`/schemas + `api.ts`.
+2. **03b frontend:** productionize `/proto/*` into the real `/`, `/runs`, `/runs/[id]`, `/compare` wired to live REST/WS + new endpoints/fields; port proto components; update existing web tests; remove `/proto` scaffold once verified.
+3. **03c verify:** end-to-end against real data (~290 runs in Postgres), a11y light+dark, 1280px screenshots of running/completed/empty on real routes, typecheck api+web, tests green → ⏸ Checkpoint 3 (ship).
 
 ## Active concerns
-- Slice 03 (large, may sub-split): intent-resolution backend (LLM, grounded, guardrailed, cost-tracked) + **RDKit server-SVG** for 2D structures (`structure_svg` field or `GET /molecule/svg`) + surface missing read-fields (valid-SMILES rate, GA baseline, cost) + productionize `/proto/*` into real routes on live REST/WS + full a11y/verify.
-- Data gaps: no valid-SMILES rate / cost split / GA baseline in `RunSnapshot`; WS has no per-candidate streaming — cockpit stays generation-level; do not touch the loop.
-- Honest-figure canon: **21 of 21 comparable, 2 of 23 excluded-for-cause** — never "21/23". Source: `docs/04-compare-and-polish/g1-full23-10k-seed42.json`.
-- Builder is `general-purpose` (has Skill/Agent); boundary prose-enforced — Critic confirms only `proto/**` + the e2e spec touched.
+- Infra needed for 03: FastAPI :8000 + Postgres + (for intent resolution) an LLM path (Modal/DeepSeek) — probe availability; if the LLM path is unavailable in this env, ship a deterministic-fuzzy fallback behind the same grounded/guardrailed interface so the resolver still works, and leave the LLM upgrade seam.
+- Productionizing replaces the working `LiveRun`/`RunsBrowse`/`CompareView` + their `*.test.tsx` — update tests alongside.
+- Data gaps to fill in 03a: valid-SMILES rate (in `summary_json`), cost split (`RunCost`), GA baseline (from `g1-full23-10k-seed42.json`) — none currently on `RunSnapshot`.
+- Honest-figure canon: **21 of 21 comparable, 2 of 23 excluded-for-cause** — never "21/23".

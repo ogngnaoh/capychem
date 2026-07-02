@@ -1,6 +1,8 @@
 # Slice 05.02 — Hi-fi on-token surfaces + hybrid launcher + Runs/Compare re-skin
 
-**Status:** in-progress · **Phase:** 2 (of 3) · **Gate:** ⏸ CHECKPOINT 2 (visual)
+**Status:** shipped (CP2 approved 2026-07-02) · **Phase:** 2 (of 3) · **Gate:** ✓ CHECKPOINT 2 (visual)
+
+> Frozen. Hi-fi on-token pass of both hero surfaces + launcher + Runs/Compare re-skin + dark-mode toggle. Verified: typecheck 0, lint 0, Playwright 13/13 (1280px no-scroll light+dark), no hardcoded hex. Prototype routes under `apps/web/app/proto/*` — productionized into real routes in slice 03.
 
 ## Goal
 

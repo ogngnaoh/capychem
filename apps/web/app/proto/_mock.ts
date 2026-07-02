@@ -9,6 +9,8 @@
 
 import type {
   AnalyzerHypothesis,
+  AucOverlayPoint,
+  CompareRun,
   CurvePoint,
   RunListItem,
   RunSnapshot,
@@ -312,3 +314,137 @@ export const LOOP_STEPS = [
   { key: "redesign", label: "Redesign" },
   { key: "stop", label: "Stop" },
 ] as const;
+
+// ── Runs browse fixture ────────────────────────────────────────────────────
+// started_at held as a fixed "YYYY-MM-DD HH:MM" string (no Date math) so the
+// screenshot capture is deterministic.
+export const RUNS_LIST: RunListItem[] = [
+  {
+    run_id: 284,
+    task: "troglitazone_rediscovery",
+    mutation_strategy: "llm",
+    status: "running",
+    best_score: 0.7431,
+    oracle_calls: 4200,
+    budget: 10000,
+    started_at: "2026-07-02 09:48",
+  },
+  {
+    run_id: 281,
+    task: "troglitazone_rediscovery",
+    mutation_strategy: "llm",
+    status: "exhausted",
+    best_score: 0.8814,
+    oracle_calls: 10000,
+    budget: 10000,
+    started_at: "2026-07-01 22:14",
+  },
+  {
+    run_id: 277,
+    task: "jnk3",
+    mutation_strategy: "llm",
+    status: "exhausted",
+    best_score: 0.8812,
+    oracle_calls: 10000,
+    budget: 10000,
+    started_at: "2026-07-01 18:03",
+  },
+  {
+    run_id: 271,
+    task: "qed",
+    mutation_strategy: "graph_ga",
+    status: "plateaued",
+    best_score: 0.9377,
+    oracle_calls: 3400,
+    budget: 10000,
+    started_at: "2026-07-01 11:36",
+  },
+  {
+    run_id: 268,
+    task: "troglitazone_rediscovery",
+    mutation_strategy: "graph_ga",
+    status: "exhausted",
+    best_score: 0.7719,
+    oracle_calls: 10000,
+    budget: 10000,
+    started_at: "2026-06-30 20:52",
+  },
+  {
+    run_id: 264,
+    task: "sitagliptin_mpo",
+    mutation_strategy: "llm",
+    status: "stopped",
+    best_score: 0.5312,
+    oracle_calls: 2100,
+    budget: 10000,
+    started_at: "2026-06-30 15:20",
+  },
+  {
+    run_id: 259,
+    task: "gsk3b",
+    mutation_strategy: "llm",
+    status: "exhausted",
+    best_score: 0.8461,
+    oracle_calls: 10000,
+    budget: 10000,
+    started_at: "2026-06-29 13:11",
+  },
+  {
+    run_id: 251,
+    task: "deco_hop",
+    mutation_strategy: "graph_ga",
+    status: "errored",
+    best_score: null,
+    oracle_calls: 120,
+    budget: 10000,
+    started_at: "2026-06-28 08:05",
+  },
+];
+
+// ── Compare fixture ────────────────────────────────────────────────────────
+// Same task, two strategies: LLM (with analyzer) vs vanilla Graph-GA. Tells the
+// honest "the analyzer earns its keep" story — GA carries no hypotheses.
+const GA_TOP_K: TopMolecule[] = [
+  { smiles: "O=C(Nc1ccc(Cl)cc1)c1ccc2[nH]ncc2c1", score: 0.7719 },
+  { smiles: "Cc1ccc(Nc2ncnc3sccc23)cc1", score: 0.7514 },
+  { smiles: "COc1ccc(Nc2ncnc3cccc23)cc1", score: 0.7331 },
+  { smiles: "Clc1ccc(-c2nc3ccccc3o2)cc1", score: 0.7188 },
+  { smiles: "O=C(Nc1ccccc1)c1ccc2nc[nH]c2c1", score: 0.7042 },
+];
+
+export const COMPARE_A: CompareRun = {
+  run_id: 281,
+  task: "troglitazone_rediscovery",
+  status: "exhausted",
+  best_score: 0.8814,
+  oracle_calls: 10000,
+  budget: 10000,
+  cost_so_far_usd: 2.4137,
+  top_k: TOP_K.slice(0, 5),
+  hypotheses: HYPOTHESES_COMPLETED,
+};
+
+export const COMPARE_B: CompareRun = {
+  run_id: 268,
+  task: "troglitazone_rediscovery",
+  status: "exhausted",
+  best_score: 0.7719,
+  oracle_calls: 10000,
+  budget: 10000,
+  cost_so_far_usd: 0.4188,
+  top_k: GA_TOP_K,
+  hypotheses: [],
+};
+
+export const COMPARE_STRATEGY = { a: "LLM proposer", b: "Graph-GA" };
+
+export const COMPARE_OVERLAY: AucOverlayPoint[] = [
+  { oracle_calls: 100, a: 0.42, b: 0.4 },
+  { oracle_calls: 320, a: 0.58, b: 0.55 },
+  { oracle_calls: 800, a: 0.69, b: 0.63 },
+  { oracle_calls: 2000, a: 0.78, b: 0.69 },
+  { oracle_calls: 3600, a: 0.82, b: 0.73 },
+  { oracle_calls: 5000, a: 0.85, b: 0.755 },
+  { oracle_calls: 7200, a: 0.868, b: 0.765 },
+  { oracle_calls: 10000, a: 0.8814, b: 0.7719 },
+];
