@@ -8,6 +8,7 @@ from typing import Any
 from capychem import cost
 from capychem.api import config
 from capychem.api.compare import build_compare_payload
+from capychem.api.ga_baseline import graph_ga_baseline
 from capychem.api.runner import RunRegistry
 from capychem.api.schemas import (
     AnalyzerHypothesisOut,
@@ -16,7 +17,7 @@ from capychem.api.schemas import (
     RunListItem,
     RunSnapshot,
 )
-from capychem.db.models import AnalyzerHypothesis, Run
+from capychem.db.models import AnalyzerHypothesis, Run, RunCost
 from capychem.run import RunConfig
 from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy import select
@@ -166,6 +167,18 @@ async def _hypotheses_for(session: AsyncSession, run_id: int) -> list[AnalyzerHy
     ]
 
 
+async def _run_cost_breakdown(
+    session: AsyncSession, run_id: int
+) -> tuple[float | None, float | None]:
+    """(llm_cost_usd, oracle_cost_usd) from the run's RunCost row, or (None, None)
+    if it has none yet — the read counterpart to cost.record_oracle_cost, kept
+    local to the API layer (packages/core.cost only exposes the summed total)."""
+    row = await session.scalar(select(RunCost).where(RunCost.run_id == run_id))
+    if row is None:
+        return None, None
+    return row.llm_cost_usd, row.oracle_cost_usd
+
+
 async def _run_snapshot(
     session: AsyncSession, registry: RunRegistry, run_id: int
 ) -> RunSnapshot | None:
@@ -178,11 +191,23 @@ async def _run_snapshot(
     generation.complete). summary_json comes from build_summary: top_k is
     [{smiles, score}] and auc_curve is [{oracle_calls, top10_mean}] — both match
     the schema dicts. It reads RunCost so completed runs surface real cost
-    (FR-013), not the 0.0 default; the live snapshot already carries cost."""
+    (FR-013), not the 0.0 default; the live snapshot already carries cost.
+
+    graph_ga_baseline and the llm/oracle cost breakdown are read the same way for
+    both the live and DB paths (they don't come from the in-memory snapshot dict);
+    valid_smiles_rate only ever comes from a persisted summary_json, so it stays
+    null on the live path (matches RunSnapshot's default)."""
     hyps = await _hypotheses_for(session, run_id)
+    llm_cost_usd, oracle_cost_usd = await _run_cost_breakdown(session, run_id)
     live = registry.snapshot(run_id)
     if live is not None:
-        return RunSnapshot(**live, hypotheses=hyps)
+        return RunSnapshot(
+            **live,
+            hypotheses=hyps,
+            graph_ga_baseline=graph_ga_baseline(live["task"]),
+            llm_cost_usd=llm_cost_usd,
+            oracle_cost_usd=oracle_cost_usd,
+        )
     row = await session.get(Run, run_id)
     if row is None:
         return None
@@ -202,6 +227,10 @@ async def _run_snapshot(
         cost_so_far_usd=await cost.run_cost_total(session, run_id),
         hypotheses=hyps,
         trace_url=config.trace_url(summary.get("trace_id")),
+        valid_smiles_rate=(summary.get("valid_smiles") or {}).get("rate"),
+        graph_ga_baseline=graph_ga_baseline(row.task),
+        llm_cost_usd=llm_cost_usd,
+        oracle_cost_usd=oracle_cost_usd,
     )
 
 

@@ -7,6 +7,8 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from capychem.api.config import ALLOWED_ORIGINS
+from capychem.api.routes_catalog import router as catalog_router
+from capychem.api.routes_molecule import router as molecule_router
 from capychem.api.routes_runs import router as runs_router
 from capychem.api.runner import RunRegistry
 from capychem.api.ws_runs import router as ws_router
@@ -58,6 +60,8 @@ app.add_middleware(
 
 app.include_router(runs_router)
 app.include_router(ws_router)
+app.include_router(catalog_router)
+app.include_router(molecule_router)
 
 
 @app.get("/healthz")

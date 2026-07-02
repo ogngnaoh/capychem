@@ -21,6 +21,11 @@ export type RunSnapshot = {
   cost_so_far_usd?: number;
   hypotheses?: AnalyzerHypothesis[];
   trace_url?: string | null;
+  // Workbench read-fields (milestone 05 slice 03a), all nullable/additive.
+  valid_smiles_rate?: number | null;
+  graph_ga_baseline?: number | null;
+  llm_cost_usd?: number | null;
+  oracle_cost_usd?: number | null;
 };
 export type RunListItem = {
   run_id: number;
@@ -53,6 +58,27 @@ export type ComparePayload = {
   b: CompareRun;
   auc_overlay: AucOverlayPoint[];
 };
+export type CatalogTask = { name: string; description: string };
+export type CatalogGroup = { group: string; tasks: CatalogTask[] };
+
+export type Refusal = { field: string; reason: string };
+export type ResolvedPlan = {
+  task: string;
+  budget: number;
+  plateau_window: number;
+  mutation_strategy: string;
+  seed_smiles?: string | null;
+};
+export type IntentResolution = {
+  matched_task: string | null;
+  confidence: "high" | "medium" | "low" | null;
+  closest_task: string | null;
+  rationale: string;
+  resolved_plan: ResolvedPlan | null;
+  refusals: Refusal[];
+  cost_usd: number;
+};
+
 export type CreateRunBody = {
   task: string;
   budget: number;
@@ -117,4 +143,31 @@ export async function stopRun(id: number): Promise<void> {
 
 export function wsUrl(id: number): string {
   return `${API_URL.replace(/^http/, "ws")}/ws/runs/${id}`;
+}
+
+export async function getCatalog(): Promise<CatalogGroup[]> {
+  const r = await fetch(`${API_URL}/catalog`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+export async function resolveIntent(body: {
+  text: string;
+  budget?: number;
+  seed_smiles?: string;
+}): Promise<IntentResolution> {
+  const r = await fetch(`${API_URL}/intent/resolve`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+export function moleculeSvgUrl(smiles: string, w?: number, h?: number): string {
+  const q = new URLSearchParams({ smiles });
+  if (w) q.set("w", String(w));
+  if (h) q.set("h", String(h));
+  return `${API_URL}/molecule/svg?${q.toString()}`;
 }

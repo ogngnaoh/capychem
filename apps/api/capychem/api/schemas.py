@@ -24,9 +24,7 @@ class CreateRunRequest(BaseModel):
     @classmethod
     def _task_must_be_pmo(cls, v: str) -> str:
         if v not in PMO_TASKS:
-            raise ValueError(
-                f"Choose a PMO task from the 23-task surface; got {v!r}."
-            )
+            raise ValueError(f"Choose a PMO task from the 23-task surface; got {v!r}.")
         return v
 
 
@@ -65,6 +63,17 @@ class RunSnapshot(BaseModel):
     hypotheses: list[AnalyzerHypothesisOut] = []
     # Langfuse deep link (FR-014); None while a run is live or when unconfigured.
     trace_url: str | None = None
+    # Workbench read-fields (milestone 05 slice 03a), all nullable/additive:
+    # cumulative valid-SMILES rate from summary_json (None until the run has
+    # persisted at least one generation's validation_stats).
+    valid_smiles_rate: float | None = None
+    # This task's Graph-GA AUC top-10 from the G1 sweep report (None if the task
+    # isn't in that report); see capychem.api.ga_baseline.
+    graph_ga_baseline: float | None = None
+    # Cost breakdown alongside the existing cost_so_far_usd scalar; None if the
+    # run has no RunCost row yet.
+    llm_cost_usd: float | None = None
+    oracle_cost_usd: float | None = None
 
 
 class RunListItem(BaseModel):
@@ -126,3 +135,50 @@ class RunCompleteEvent(BaseModel):
     run_id: int
     status: str
     summary: dict[str, Any] | None
+
+
+# ── Catalog + grounded intent resolution (milestone 05 slice 03a) ───────────
+
+
+class CatalogTaskOut(BaseModel):
+    name: str
+    description: str
+
+
+class CatalogGroupOut(BaseModel):
+    group: str
+    tasks: list[CatalogTaskOut]
+
+
+class RefusalOut(BaseModel):
+    """One FR-015 guardrail refusal: which field, and why."""
+
+    field: str
+    reason: str
+
+
+class ResolvedPlan(BaseModel):
+    task: str
+    budget: int
+    plateau_window: int
+    mutation_strategy: str
+    seed_smiles: str | None = None
+
+
+class IntentResolveRequest(BaseModel):
+    text: str
+    budget: int | None = None
+    seed_smiles: str | None = None
+
+
+class IntentResolution(BaseModel):
+    """POST /intent/resolve response. Grounded to the 23-task PMO catalog only —
+    ``matched_task`` is never a name outside ``capychem.eval.tasks.PMO_TASKS``."""
+
+    matched_task: str | None
+    confidence: Literal["high", "medium", "low"] | None
+    closest_task: str | None
+    rationale: str
+    resolved_plan: ResolvedPlan | None
+    refusals: list[RefusalOut] = []
+    cost_usd: float = 0.0
