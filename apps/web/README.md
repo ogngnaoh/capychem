@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CapyChem web (`apps/web`)
 
-## Getting Started
+The operator workbench for CapyChem — a Next.js 16 (App Router) + React 19 +
+TypeScript app that drives the FastAPI backend over REST and a live WebSocket.
+It covers the four operator flows: **launch** a run, **watch** it live, **browse**
+finished runs, and **compare** two runs side by side.
 
-First, run the development server:
+> Every score shown here is an in-silico benchmark-oracle score. The UI makes no
+> claim of real-world drug-discovery efficacy — see the root [`README.md`](../../README.md).
+
+## Prerequisites
+
+- Node 22 LTS + [`pnpm`](https://pnpm.io/)
+- The CapyChem API running on `:8000` (see the root README quickstart). Without it,
+  the UI loads but every data fetch shows an "unavailable" state.
+
+## Develop
+
+From the repo root (pnpm workspaces):
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install                 # once, installs the whole workspace
+pnpm --filter web dev        # dev server → http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Point the app at the backend with `NEXT_PUBLIC_API_URL` (defaults to
+`http://localhost:8000`). The WebSocket connects to that same absolute origin —
+it is deliberately **not** proxied through Next.js middleware (App Router WS quirks).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | What it does |
+|---|---|
+| `pnpm --filter web dev` | Dev server with hot reload |
+| `pnpm --filter web build` | Production build |
+| `pnpm --filter web lint` | ESLint |
+| `pnpm --filter web typecheck` | `tsc --noEmit` |
+| `pnpm --filter web test` | Vitest component/logic tests |
+| `pnpm --filter web exec playwright test` | Playwright e2e (visual-regression shots; an axe-core a11y gate is being added in the accessibility slice) |
 
-## Learn More
+## Layout
 
-To learn more about Next.js, take a look at the following resources:
+| Path | What's there |
+|---|---|
+| `app/` | App Router routes: `/` (Overview), `/launch`, `/runs`, `/runs/[id]` (live), `/compare` |
+| `app/globals.css` | Design tokens — a warm cream + coral OKLCH system (Source Serif 4 headings, Inter body) |
+| `components/workbench/` | The persistent shell, cockpit, and shared presentational components |
+| `components/ui/` | shadcn/ui primitives |
+| `lib/api.ts` | Typed REST client + WebSocket URL helpers |
+| `e2e/` | Playwright specs (visual-regression shots today; an accessibility gate lands in the a11y slice) |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Accessibility
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The workbench is being brought to WCAG AA at the 1280px demo viewport. The
+remediation — sufficient text/focus contrast, an `aria-live` region announcing
+live-run progress, `role="alert"` on async errors, a skip-to-content link, per-route
+titles, and `aria-sort` on the runs table — plus an axe-core Playwright gate across
+all routes in light and dark, land in the milestone-06 accessibility slices
+(`06-03`, `06-04`). Once the gate is in, keep it green.

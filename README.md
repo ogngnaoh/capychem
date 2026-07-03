@@ -183,7 +183,9 @@ uv run capychem-eval --task=qed --budget=10000 --seed=42     # one PMO task
 ```
 
 Copy `.env.example` → `.env.local` and adjust. By default the proposer runs a deterministic network-free stub;
-set `CAPYCHEM_PROPOSER_BACKEND=direct` + `DEEPSEEK_API_KEY` to use the real DeepSeek model.
+set `CAPYCHEM_PROPOSER_BACKEND=direct` + `DEEPSEEK_API_KEY` to use the real DeepSeek model. There is **no auth
+or hosting** — this is a single-user tool you fork and run locally. For the full dev loop, the CI checks, and
+the project invariants, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Repository map
 

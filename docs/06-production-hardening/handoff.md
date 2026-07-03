@@ -7,8 +7,8 @@
 - Stood up `docs/06-production-hardening/` (this milestone + handoff); updated `docs/milestones.md` (06 ← active, 07 planned).
 
 ## Slice status across milestone
-- 06-01 repo-hygiene-and-docs → planned (start here)
-- 06-02 ci-pipeline → planned
+- 06-01 repo-hygiene-and-docs → shipped
+- 06-02 ci-pipeline → planned (start here)
 - 06-03 a11y-remediation → planned
 - 06-04 axe-ci-gate → planned
 - 06-05 alembic-baseline → planned
@@ -20,7 +20,7 @@
 - Key verified facts: harness JSON has no version field (`score.py:102`); cost gate flat `$50` at `cost.py:16`; no LICENSE/`.github`/Alembic; `ALLOWED_ORIGINS` hardcoded `config.py:15`; a11y failures confirmed (coral `--primary` 3.57/3.28:1, `ring-ring/50`, no `aria-live`); seed-SMILES bug sinks at `graph.py:48-50`.
 
 ## Next session start here
-Execute slice **06-01 repo-hygiene-and-docs**: write `LICENSE` (MIT — legacy GPL harness is subprocess-isolated, not linked), `CONTRIBUTING.md`, rewrite `apps/web/README.md`, complete `.env.example` (Modal OPTIONAL, Langfuse SDK keys, 5 `CAPYCHEM_*` vars, `ALLOWED_ORIGINS`), reframe root `README.md` preserving G1 honesty, make `ALLOWED_ORIGINS` env-driven in `config.py` (consumed unchanged by `main.py`+`ws_runs.py`), reconcile SPEC §8.3 to the flat cap + add `packages/core/tests/test_cost_gate.py`. Write the per-slice doc `docs/06-production-hardening/06-01-repo-hygiene-and-docs.md` with bite-sized TDD steps before touching code.
+Execute slice **06-02 ci-pipeline**: add `.github/workflows/ci.yml` with (a) a Python job — `uv sync` + `uv sync --project harness`, `ruff check`, `ruff format --check`, `mypy -p capychem -p capychem.api`, `pytest` against a Postgres service container (the API tests need real Postgres — see `test_cost_gate.py`/`test_cors_origins.py`); (b) a web job — `pnpm install`, `pnpm --filter web lint`/`typecheck`/`test`. Free stub/graph_ga path, no provider secrets. Add the CI badge to `README.md`. Do NOT add the axe job yet — it rides in 06-04 after a11y fixes land, so CI starts green. Verify each command locally before committing the workflow.
 
 ## Active concerns
 - **Mode-split coupling:** milestone 07's seed-import/objective/oracle features each set `mode=exploratory` and need the `Run.mode` column — so 07-01 (mode) must precede them and every schema change waits on 06-05 (Alembic). Do NOT ship seed-import in 06.

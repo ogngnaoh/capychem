@@ -11,8 +11,26 @@ import os
 
 # Origins allowed for CORS (HTTP) and for WebSocket handshakes. Note that
 # CORSMiddleware does NOT gate WebSocket connections; ws_runs.py enforces
-# this list itself on the WS handshake.
-ALLOWED_ORIGINS = ["http://localhost:3000"]
+# this list itself on the WS handshake — both read the single list below.
+#
+# Fork-and-run: a forker on a non-localhost origin sets ALLOWED_ORIGINS to a
+# comma-separated list (e.g. "https://app.example.com,https://staging.example.com")
+# instead of editing source. Empty/unset falls back to the local dev origin.
+_DEFAULT_ORIGINS = ["http://localhost:3000"]
+
+
+def parse_origins(raw: str | None) -> list[str]:
+    """Parse a comma-separated ALLOWED_ORIGINS env value into a clean list.
+
+    Blank/unset yields the local dev default; whitespace and empty entries are
+    dropped so "a.com, , b.com," parses to ["a.com", "b.com"].
+    """
+    if not raw or not raw.strip():
+        return list(_DEFAULT_ORIGINS)
+    return [o.strip() for o in raw.split(",") if o.strip()]
+
+
+ALLOWED_ORIGINS = parse_origins(os.environ.get("ALLOWED_ORIGINS"))
 
 # Langfuse deep-link (FR-014 / SPEC §6.3). LANGFUSE_HOST is where the self-hosted
 # UI lives; LANGFUSE_PROJECT_ID scopes the trace URL. The project id is not

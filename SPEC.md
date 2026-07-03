@@ -182,7 +182,7 @@ Keep working on assorted demos. No portfolio anchor, no closed-loop optimization
 - **Logs:** structured JSON from FastAPI and the Modal workers, keyed by `run_id` and `generation_index`. Stdout only in MVP; aggregation deferred (N10).
 - **Metrics:** per-run `llm_cost_usd`, `oracle_cost_usd`, `valid_smiles_rate`, `loop_step_success_rate`, `ws_broadcast_latency_ms_p95` — surfaced on the run-detail view and emitted as Langfuse events.
 - **Health:** `/healthz` on `apps/api` and the Modal worker; both check downstream connectivity (Postgres, LLM endpoint) shallowly.
-- **Cost-budget enforcement:** the API rejects new generations when `RunCost.total_usd` projects past 1.5× the user's configured budget, surfacing a cost-gate event.
+- **Cost-budget enforcement (as shipped):** a flat, absolute dollar cap — `cost_cap_usd()` in `packages/core/capychem/cost.py`, default `~$50`, overridable via `CAPYCHEM_COST_CAP_USD`. Each generation the runner upserts `RunCost.total_usd = oracle + llm` and, *after* the generation persists, terminates the run cleanly as `cost_capped` (with partial state saved) once `total_usd >= cost_cap_usd()`. It is a reactive absolute cap, **not** a forward projection and **not** a multiple of a per-run configured budget (an earlier draft described a "1.5× projected budget" check that was never built; the flat cap is the deliberate choice — see design-spec OD-3).
 
 ## 9. Rollout & migration
 
