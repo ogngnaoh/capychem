@@ -22,7 +22,7 @@
 
 ## Slices (execution order)
 1. `06-01-repo-hygiene-and-docs` — LICENSE, CONTRIBUTING, web README, .env.example, env-driven origins, cost-gate doc reconciliation. — shipped
-2. `06-02-ci-pipeline` — `.github/workflows/ci.yml` (backend + web, stub path) + README badge. — planned
+2. `06-02-ci-pipeline` — `.github/workflows/ci.yml` (backend + web, builds harness) + README badge. — shipped
 3. `06-03-a11y-remediation` — contrast/focus/aria-live/errors/skip-link/titles/aria-sort/alt. — planned
 4. `06-04-axe-ci-gate` — Playwright + axe-core across 5 routes, light+dark; add to CI. — planned
 5. `06-05-alembic-baseline` — initial revision = current schema; stamp/upgrade wiring; retire drop-recreate. — planned

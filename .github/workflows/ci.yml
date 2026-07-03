@@ -1,0 +1,101 @@
+name: CI
+
+# Runs the free, key-free quality gate on every push/PR: no DeepSeek/Modal secrets
+# required — the backend runs the stub proposer + graph_ga path. It DOES build the
+# isolated legacy harness (`uv sync --project harness`, Python 3.10 / PyTDC 0.3.6),
+# because the loop/API tests score real molecules (task=qed, RDKit-computed, no
+# download) through the subprocess oracle bridge — without the harness those 20 tests
+# fail rather than skip. The heavy ML-oracle download tests (jnk3, eval-real) are
+# self-gated by conftest.harness fixtures and are the only network-touching tests.
+# The axe-core accessibility gate is added in slice 06-04 (after the a11y remediation
+# in 06-03) so CI starts green.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: backend (ruff · mypy · pytest)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: capychem
+          POSTGRES_PASSWORD: capychem
+          POSTGRES_DB: capychem
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # Matches infra/compose.yml so the API tests reach the service container.
+      CAPYCHEM_DATABASE_URL: postgresql+asyncpg://capychem:capychem@localhost:5432/capychem
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync modern deps (core + api)
+        run: uv sync
+
+      - name: Build isolated harness env (Python 3.10 / PyTDC 0.3.6)
+        # Not a workspace member; its own lockfile + venv. Needed so the oracle
+        # subprocess bridge (packages/core/capychem/oracle.py) can score molecules.
+        run: uv sync --project harness
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      # Note: `ruff format --check .` is intentionally NOT enforced yet — the
+      # pre-existing tree predates format enforcement (~29 files would reformat).
+      # A repo-wide format baseline is a separate, deliberate pass; CI gates lint.
+
+      - name: mypy (strict)
+        run: uv run mypy -p capychem -p capychem.api
+
+      - name: pytest
+        # Harness built above → oracle-backed loop/API tests run (qed = RDKit, no
+        # download); the 3 fixture-gated ML-oracle tests fetch small models on demand.
+        run: uv run pytest -q
+
+  web:
+    name: web (lint · typecheck · test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.0
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: ESLint
+        run: pnpm --filter web lint
+
+      - name: Typecheck
+        run: pnpm --filter web typecheck
+
+      - name: Vitest
+        run: pnpm --filter web test

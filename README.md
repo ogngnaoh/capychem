@@ -1,5 +1,7 @@
 # CapyChem
 
+[![CI](https://github.com/ogngnaoh/capychem/actions/workflows/ci.yml/badge.svg)](https://github.com/ogngnaoh/capychem/actions/workflows/ci.yml)
+
 **A closed-loop agent for sample-efficient black-box optimization over chemical space.**
 
 CapyChem searches for high-scoring molecules against a fixed, expensive scoring budget by running a
