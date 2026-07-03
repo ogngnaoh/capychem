@@ -20,6 +20,7 @@ const TERMINAL = new Set([
   "errored",
   "cost_capped",
   "plateaued",
+  "paused", // recoverable pause on a sustained oracle fault — no more WS events coming
 ]);
 
 export function LiveRun({ runId }: { runId: number }) {

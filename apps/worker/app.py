@@ -20,6 +20,8 @@ same stdin/stdout JSON contract used locally, relocated into the container.
 
 from __future__ import annotations
 
+from typing import Any
+
 import modal
 
 # Pinned to the EXACT versions frozen in harness/uv.lock (the proven legacy env)
@@ -78,6 +80,66 @@ def score(smiles: list[str], task: str) -> list[dict]:
     raise RuntimeError(f"harness returned no JSON (exit {proc.returncode}): {proc.stderr[-500:]}")
 
 
+# Transient (retryable) HTTP statuses: over-balance, rate-limit, and 5xx. Mirrors
+# capychem.proposer._direct_propose's TransientProposerError classification.
+_TRANSIENT_HTTP_STATUSES = {402, 429}
+
+
+def _choice_to_row(resp_or_exc: Any) -> dict[str, Any]:
+    """Map one DeepSeek response (or a captured request exception) to a
+    {raw, tokens_in, tokens_out} row.
+
+    A transient failure — a requests exception (timeout/connection) or a
+    402/429/5xx status — degrades to an empty row instead of raising, so one
+    blip doesn't crash the whole propose batch (the empty raw string fails
+    RDKit validation upstream, and the loop's Graph-GA fallback fills the slot,
+    FR-005). A non-transient 4xx (bad model, bad request, auth) is a config
+    error and still propagates loudly.
+
+    Pure and Modal-free (no decorator, no container-only import) so it's
+    unit-testable outside the worker container."""
+    import requests
+
+    if isinstance(resp_or_exc, requests.exceptions.RequestException):
+        return {"raw": "", "tokens_in": 0, "tokens_out": 0}
+    resp = resp_or_exc
+    if resp.status_code >= 400:
+        if resp.status_code in _TRANSIENT_HTTP_STATUSES or resp.status_code >= 500:
+            return {"raw": "", "tokens_in": 0, "tokens_out": 0}
+        resp.raise_for_status()
+    body = resp.json()
+    usage = body.get("usage", {})
+    return {
+        "raw": body["choices"][0]["message"]["content"],
+        "tokens_in": usage.get("prompt_tokens", 0),
+        "tokens_out": usage.get("completion_tokens", 0),
+    }
+
+
+def _one_choice(
+    prompt: str, temperature: float, seed: int, model: str, api_key: str
+) -> dict[str, Any]:
+    """One DeepSeek request (n=1 — the API caps n at 1 per request)."""
+    import requests
+
+    try:
+        resp = requests.post(
+            "https://api.deepseek.com/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": temperature,
+                "seed": seed,
+                "n": 1,
+            },
+            timeout=240,
+        )
+    except requests.exceptions.RequestException as exc:
+        return _choice_to_row(exc)
+    return _choice_to_row(resp)
+
+
 @app.function(
     image=llm_image,
     timeout=300,
@@ -86,43 +148,25 @@ def score(smiles: list[str], task: str) -> list[dict]:
 def propose(prompt: str, n: int, temperature: float, seed: int, model: str) -> list[dict]:
     """Propose n candidate completions via DeepSeek's OpenAI-compatible API.
 
-    Returns [{raw, tokens_in, tokens_out}] — raw completion text + per-choice
-    token usage. SMILES cleaning and USD cost are computed modern-side in
-    capychem.proposer. The DEEPSEEK_API_KEY env var is injected by the Modal
-    secret; never hard-code or commit it."""
+    DeepSeek caps n=1 per request, so this fans out n single-choice requests
+    concurrently (ThreadPoolExecutor — this function is sync, unlike
+    capychem.proposer's asyncio fan-out), each with its own per-index seed
+    (seed+i) for distinct-yet-deterministic samples. Returns
+    [{raw, tokens_in, tokens_out}] in request order, one row per request
+    carrying that request's OWN token usage (no even-split across choices).
+    SMILES cleaning and USD cost are computed modern-side in capychem.proposer.
+    The DEEPSEEK_API_KEY env var is injected by the Modal secret; never
+    hard-code or commit it."""
+    import concurrent.futures
     import os
 
-    import requests
-
-    resp = requests.post(
-        "https://api.deepseek.com/chat/completions",
-        headers={"Authorization": f"Bearer {os.environ['DEEPSEEK_API_KEY']}"},
-        json={
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": temperature,
-            "seed": seed,
-            # LATENT BUG (deferred, untestable without Modal): DeepSeek caps n=1 per request
-            # (400 "Invalid n value"). Mirror capychem.proposer's fan-out fix before using this.
-            "n": n,
-        },
-        timeout=240,
-    )
-    resp.raise_for_status()
-    body = resp.json()
-    choices = body["choices"]
-    usage = body.get("usage", {})
-    # Usage is reported per request; attribute evenly across the n choices.
-    per_in = usage.get("prompt_tokens", 0) // max(len(choices), 1)
-    per_out = usage.get("completion_tokens", 0) // max(len(choices), 1)
-    return [
-        {
-            "raw": choice["message"]["content"],
-            "tokens_in": per_in,
-            "tokens_out": per_out,
-        }
-        for choice in choices
-    ]
+    api_key = os.environ["DEEPSEEK_API_KEY"]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(n, 1)) as pool:
+        futures = [
+            pool.submit(_one_choice, prompt, temperature, seed + i, model, api_key)
+            for i in range(n)
+        ]
+        return [f.result() for f in futures]
 
 
 @app.local_entrypoint()

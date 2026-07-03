@@ -25,6 +25,7 @@ from capychem.loop import trace
 from capychem.loop.graph import build_graph
 from capychem.loop.logic import build_summary
 from capychem.loop.state import LoopState
+from capychem.oracle import HarnessError
 from capychem.run import RunConfig, create_run, finalize_run
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -176,6 +177,7 @@ class RunRegistry:
             ),
         )
         errored = False
+        paused = False
         try:
             async for state in stream:
                 final_state = state
@@ -226,6 +228,17 @@ class RunRegistry:
                     if handle.cancel.is_set():
                         stopped = True
                         break
+        except HarnessError:
+            # A sustained harness-subprocess fault: the loop already retried
+            # transient blips on BOTH harness paths — scoring and Graph-GA
+            # offspring/fallback (packages/core/capychem/loop/graph.py
+            # _with_harness_retry) — so reaching here means the outage persisted
+            # past that retry budget. Pause the run in a recoverable state rather
+            # than losing work (PRD edge case 2), instead of falling through to the
+            # generic errored path below. Placed BEFORE the broad `except
+            # Exception` since HarnessError is a RuntimeError subclass.
+            paused = True
+            logger.warning("run %d paused by oracle fault", handle.run_id)
         except Exception:
             # NOT asyncio.CancelledError — that derives from BaseException in 3.12,
             # so shutdown cancellation propagates past this handler. Keep it that way.
@@ -238,7 +251,21 @@ class RunRegistry:
             # stop_check, which is the only happy-path caller of end_gen_span.
             trace.end_all_gen_spans(handle.run_id)
 
-        if errored:
+        if paused:
+            status = "paused"
+            summary = final_state.get("summary")
+            if summary is None and final_state:
+                # The fault interrupts a generation before its stop_check populates
+                # state["summary"], so build it here from the final state to keep
+                # the paused run's partial results durable/browseable (mirrors the
+                # cost_capped/stopped fallback below).
+                summary = build_summary(
+                    final_state.get("population", []),
+                    final_state.get("auc_curve", []),
+                    generations=last_curve_len,
+                    oracle_calls=final_state.get("calls_used", 0),
+                )
+        elif errored:
             status = "errored"
             summary = None
         elif cost_capped:

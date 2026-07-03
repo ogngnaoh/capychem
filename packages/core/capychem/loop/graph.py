@@ -8,6 +8,9 @@ oracle.py (subprocess); this module never imports harness code.
 
 from __future__ import annotations
 
+import asyncio
+import inspect
+from collections.abc import Callable
 from dataclasses import replace
 from typing import Any
 
@@ -22,11 +25,20 @@ from capychem.loop.logic import (
 )
 from capychem.loop.seeds import load_starting_pop as _load_starting_pop
 from capychem.loop.state import HypothesisRecord, LoopState, Scored
-from capychem.oracle import score_batch_async
+from capychem.oracle import HarnessError, score_batch_async
 from capychem.validate import validate_batch_with_stats
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+# Bounded retry for a transient harness-subprocess blip (a timeout, a flaky spawn).
+# Absorbs the blip without pausing the run; a sustained outage still exhausts the
+# retry budget and re-raises, which apps/api/capychem/api/runner.py `_drive` catches
+# to pause the run in a recoverable state (PRD edge case 2). Covers BOTH harness
+# subprocess paths — scoring (score_batch_async) AND Graph-GA offspring/fallback
+# (propose_offspring via strategy.ga_fill/fallback_fill) — all raise HarnessError.
+_HARNESS_RETRY_ATTEMPTS = 3
+_HARNESS_RETRY_BACKOFF_S = (0.5, 1.0)
 
 
 async def propose(state: LoopState) -> dict[str, Any]:
@@ -75,8 +87,10 @@ async def propose(state: LoopState) -> dict[str, Any]:
                 raw = [(r.smiles, None) for r in results]
                 proposer_label = "llm"
             else:
-                raw = strategy.ga_fill(
-                    pop, state["offspring"], mutation_rate=state["mutation_rate"], seed=seed
+                raw = await _with_harness_retry(
+                    lambda: strategy.ga_fill(
+                        pop, state["offspring"], mutation_rate=state["mutation_rate"], seed=seed
+                    )
                 )
                 proposer_label = "graph_ga"
         result: dict[str, Any] = {
@@ -121,16 +135,43 @@ async def fallback(state: LoopState) -> dict[str, Any]:
             return {"_fallback_validated": []}
         validated = state["validated"]
         pop = [(m.smiles, m.score) for m in state["population"]]
-        fillers = strategy.fallback_fill(
-            validated,
-            pop,
-            target=state["offspring"],
-            mutation_rate=state["mutation_rate"],
-            seed=state["seed"] + state["gen_index"],
+        fillers = await _with_harness_retry(
+            lambda: strategy.fallback_fill(
+                validated,
+                pop,
+                target=state["offspring"],
+                mutation_rate=state["mutation_rate"],
+                seed=state["seed"] + state["gen_index"],
+            )
         )
         if not fillers:
             return {"_fallback_validated": []}
         return {"_fallback_validated": fillers, "_proposer": "mixed"}
+
+
+async def _with_harness_retry(call: Callable[[], Any]) -> Any:
+    """Run a harness-subprocess call, retrying a transient HarnessError up to
+    _HARNESS_RETRY_ATTEMPTS times with a short backoff between attempts, then
+    re-raising the last HarnessError once the budget is exhausted (a sustained
+    outage still surfaces, so the caller doesn't spin without progress).
+
+    ``call`` is a zero-arg thunk. It may be synchronous (strategy.ga_fill /
+    fallback_fill run the Graph-GA subprocess inline) or return an awaitable
+    (score_batch_async); either way the HarnessError is caught and retried. The
+    inline backoff is async so it never blocks the event loop."""
+    last_exc: HarnessError | None = None
+    for attempt in range(_HARNESS_RETRY_ATTEMPTS):
+        try:
+            result = call()
+            if inspect.isawaitable(result):
+                result = await result
+            return result
+        except HarnessError as exc:
+            last_exc = exc
+            if attempt < _HARNESS_RETRY_ATTEMPTS - 1:
+                await asyncio.sleep(_HARNESS_RETRY_BACKOFF_S[attempt])
+    assert last_exc is not None
+    raise last_exc
 
 
 async def score(state: LoopState) -> dict[str, Any]:
@@ -149,7 +190,9 @@ async def score(state: LoopState) -> dict[str, Any]:
         batch = unseen[:room]
         if not batch:
             return {"_scored": [], "calls_used": len(buffer), "mol_buffer": buffer}
-        results = await score_batch_async([c.smiles for c in batch], task=state["task"])
+        results = await _with_harness_retry(
+            lambda: score_batch_async([c.smiles for c in batch], task=state["task"])
+        )
         scored = [
             (c, r.score, r.cost_usd)
             for c, r in zip(batch, results, strict=True)
