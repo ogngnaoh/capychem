@@ -6,6 +6,7 @@
 // WS carries no per-candidate stream). Presentational: LiveRun owns the data-flow.
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -47,8 +48,63 @@ export function Cockpit({
       ? `LLM $${snap.llm_cost_usd.toFixed(2)} · oracle $${snap.oracle_cost_usd.toFixed(2)}`
       : "compute equiv.";
 
+  // Screen-reader announcements for meaningful milestones only — a generation
+  // completing, a status change, or a new analyzer hypothesis. The WS carries no
+  // per-candidate/oracle-tick stream into this snapshot, so there is nothing to
+  // over-announce; we still guard with a prev-value comparison so re-renders that
+  // don't change generation/status/hypothesis never re-fire the same announcement.
+  const hypothesisKey = current ? current.after_generation_index : null;
+  const hypothesisText = current ? current.text : null;
+  const [announcement, setAnnouncement] = useState("");
+  const prevRef = useRef<{
+    generation: number;
+    status: string;
+    hypothesisKey: number | null;
+  } | null>(null);
+
+  useEffect(() => {
+    const prev = prevRef.current;
+    if (prev) {
+      const parts: string[] = [];
+      if (snap.generation_index !== prev.generation) {
+        const score = snap.best_score != null ? snap.best_score.toFixed(4) : "unavailable";
+        parts.push(
+          `Generation ${snap.generation_index} complete, best score ${score}, oracle calls used ${snap.oracle_calls_used.toLocaleString()} of ${snap.budget.toLocaleString()}.`,
+        );
+      }
+      if (hypothesisKey !== null && hypothesisKey !== prev.hypothesisKey && hypothesisText) {
+        parts.push(`New hypothesis: ${hypothesisText}`);
+      }
+      if (snap.status !== prev.status) {
+        parts.push(`Run status changed to ${snap.status}.`);
+      }
+      // Synchronizes the sr-only live region to the WS-driven snapshot deltas —
+      // there is no render-time source of "what changed since last commit" here.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (parts.length > 0) setAnnouncement(parts.join(" "));
+    }
+    prevRef.current = {
+      generation: snap.generation_index,
+      status: snap.status,
+      hypothesisKey,
+    };
+  }, [
+    snap.generation_index,
+    snap.status,
+    snap.best_score,
+    snap.oracle_calls_used,
+    snap.budget,
+    hypothesisKey,
+    hypothesisText,
+  ]);
+
   return (
     <div className="flex flex-col gap-5">
+      {/* Live milestones only (generation complete, status change, new hypothesis) —
+          never per-candidate/oracle ticks, which this snapshot doesn't carry. */}
+      <div aria-live="polite" role="status" className="sr-only">
+        {announcement}
+      </div>
       {/* Header */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -78,7 +134,11 @@ export function Cockpit({
             )}
           </div>
         </div>
-        {stopErr && <span className="text-xs text-destructive">{stopErr}</span>}
+        {stopErr && (
+          <span role="alert" className="text-xs text-destructive">
+            {stopErr}
+          </span>
+        )}
         {notice && (
           <div className="rounded-lg border border-chart-4/40 bg-chart-4/10 px-4 py-3 text-sm text-foreground">
             {notice}
@@ -129,7 +189,7 @@ export function Cockpit({
           <div className="flex items-center justify-between px-4 pb-1">
             <div className="flex items-center gap-2">
               <h2 className="font-heading text-base font-normal">Analyzer reasoning</h2>
-              <span className="rounded-full bg-primary/12 px-2 py-0.5 text-[0.68rem] font-medium text-primary ring-1 ring-primary/30">
+              <span className="rounded-full bg-primary/12 px-2 py-0.5 text-[0.68rem] font-medium text-foreground ring-1 ring-primary/30">
                 the differentiator
               </span>
             </div>
@@ -159,7 +219,11 @@ export function Cockpit({
 
           <div className="mt-4 flex min-h-0 flex-1 flex-col px-4 pb-4">
             <Eyebrow>Earlier hypotheses</Eyebrow>
-            <ol className="mt-2.5 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+            <ol
+              className="mt-2.5 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1"
+              tabIndex={0}
+              aria-label="Earlier hypotheses"
+            >
               {prior.length === 0 && (
                 <li className="text-xs text-muted-foreground">
                   Prior hypotheses stack here as generations complete.
@@ -217,7 +281,7 @@ export function Cockpit({
                 key={m.smiles}
                 className="flex items-start gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10"
               >
-                <MoleculeTile smiles={m.smiles} />
+                <MoleculeTile smiles={m.smiles} rank={i + 1} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xs tabular-nums text-muted-foreground">#{i + 1}</span>

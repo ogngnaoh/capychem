@@ -71,7 +71,7 @@ export function LiveRun({ runId }: { runId: number }) {
 
   if (loadErr) {
     return (
-      <p className="text-destructive">
+      <p role="alert" className="text-destructive">
         Failed to load run {runId}: {loadErr}
       </p>
     );

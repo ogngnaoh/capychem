@@ -45,7 +45,7 @@ export function AucPanel({
             className={[
               "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
               beating
-                ? "bg-primary/12 text-primary ring-1 ring-primary/30"
+                ? "bg-primary/12 text-foreground ring-1 ring-primary/30"
                 : "bg-muted text-muted-foreground ring-1 ring-border",
             ].join(" ")}
           >

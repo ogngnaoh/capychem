@@ -29,6 +29,7 @@ function strategyFor(runs: RunListItem[], id: number): string | undefined {
 export function CompareView({ a, b }: { a: number; b: number }) {
   const [payload, setPayload] = useState<ComparePayload | null>(null);
   const [runs, setRuns] = useState<RunListItem[]>([]);
+  const [runsError, setRunsError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const valid = Number.isFinite(a) && Number.isFinite(b);
 
@@ -36,7 +37,7 @@ export function CompareView({ a, b }: { a: number; b: number }) {
     let closed = false;
     listRuns({ sort: "started_at", order: "desc" })
       .then((r) => !closed && setRuns(r))
-      .catch(() => {});
+      .catch(() => !closed && setRunsError("Couldn't load runs."));
     return () => {
       closed = true;
     };
@@ -86,9 +87,16 @@ export function CompareView({ a, b }: { a: number; b: number }) {
         <RunSelect swatch="bg-chart-1" label="Run A" self={a} other={b} runs={runs} slot="a" />
         <RunSelect swatch="bg-chart-2" label="Run B" self={b} other={a} runs={runs} slot="b" />
       </div>
+      {runsError && (
+        <p role="alert" className="text-sm text-destructive">
+          {runsError}
+        </p>
+      )}
 
       {error ? (
-        <p className="text-sm text-destructive">Failed to load comparison: {error}</p>
+        <p role="alert" className="text-sm text-destructive">
+          Failed to load comparison: {error}
+        </p>
       ) : !payload ? (
         <p className="text-sm text-muted-foreground">Loading comparison…</p>
       ) : (
@@ -221,7 +229,7 @@ function RunColumn({
                   key={m.smiles}
                   className="flex items-start gap-3 rounded-lg border border-border p-2.5"
                 >
-                  <MoleculeTile smiles={m.smiles} size={40} />
+                  <MoleculeTile smiles={m.smiles} size={40} rank={i + 1} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-xs tabular-nums text-muted-foreground">#{i + 1}</span>
@@ -246,8 +254,8 @@ function RunColumn({
 function Stat({ k, v }: { k: string; v: string }) {
   return (
     <div className="bg-card px-3 py-2.5">
-      <div className="text-sm font-semibold tabular-nums">{v}</div>
-      <div className="mt-0.5 text-[0.68rem] text-muted-foreground">{k}</div>
+      <dd className="text-sm font-semibold tabular-nums">{v}</dd>
+      <dt className="mt-0.5 text-[0.68rem] text-muted-foreground">{k}</dt>
     </div>
   );
 }

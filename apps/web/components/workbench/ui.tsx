@@ -23,9 +23,20 @@ export function Eyebrow({ children }: { children: React.ReactNode }) {
 }
 
 // A framed 2D molecular structure. With a `smiles`, renders the server-side RDKit
-// SVG (GET /molecule/svg); without one, a neutral placeholder motif.
-export function MoleculeTile({ smiles, size = 52 }: { smiles?: string; size?: number }) {
+// SVG (GET /molecule/svg); without one, a neutral placeholder motif. `rank` (the
+// tile's position in a top-K list, 1-based) drives a concise alt label — the raw
+// SMILES is never read out character-by-character by a screen reader.
+export function MoleculeTile({
+  smiles,
+  size = 52,
+  rank,
+}: {
+  smiles?: string;
+  size?: number;
+  rank?: number;
+}) {
   if (smiles) {
+    const alt = rank != null ? `2D structure of molecule #${rank}` : "2D molecular structure";
     return (
       <div
         className="flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-card"
@@ -34,7 +45,7 @@ export function MoleculeTile({ smiles, size = 52 }: { smiles?: string; size?: nu
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={moleculeSvgUrl(smiles, size * 2, size * 2)}
-          alt={`2D structure of ${smiles}`}
+          alt={alt}
           width={size}
           height={size}
           loading="lazy"
@@ -131,7 +142,7 @@ export function LoopDiagram({
                 "inline-flex items-center gap-1.5 rounded-full border transition-colors",
                 compact ? "px-2.5 py-1 text-xs" : "px-3.5 py-1.5 text-sm",
                 isAnalyze
-                  ? "border-primary/40 bg-primary/10 text-primary"
+                  ? "border-primary/40 bg-primary/10 text-foreground"
                   : "border-border bg-card text-foreground",
                 isActive ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : "",
               ].join(" ")}
@@ -177,7 +188,7 @@ export function StatusChip({ status }: { status: string }) {
       className={[
         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
         live
-          ? "bg-primary/12 text-primary ring-1 ring-primary/30"
+          ? "bg-primary/12 text-foreground ring-1 ring-primary/30"
           : "bg-muted text-muted-foreground ring-1 ring-border",
       ].join(" ")}
     >

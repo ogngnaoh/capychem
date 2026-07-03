@@ -42,6 +42,7 @@ const DEFAULT_PLAN: Plan = {
 export function Launcher() {
   const router = useRouter();
   const [catalog, setCatalog] = useState<CatalogGroup[]>([]);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   const [intentText, setIntentText] = useState("");
   const [resolving, setResolving] = useState(false);
   const [resolution, setResolution] = useState<IntentResolution | null>(null);
@@ -53,7 +54,7 @@ export function Launcher() {
     let closed = false;
     getCatalog()
       .then((g) => !closed && setCatalog(g))
-      .catch(() => {});
+      .catch(() => !closed && setCatalogError("Couldn't load the task catalog."));
     return () => {
       closed = true;
     };
@@ -215,42 +216,48 @@ export function Launcher() {
                 {taskCount}{" "}PMO tasks · scores 0–1, higher is better (in-silico)
               </span>
             </div>
-            {catalog.map((g) => (
-              <div key={g.group} className="flex flex-col gap-2.5">
-                <h3 className="text-sm font-medium">{g.group}</h3>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {g.tasks.map((t) => {
-                    const selected = t.name === plan.task;
-                    return (
-                      <button
-                        key={t.name}
-                        type="button"
-                        onClick={() => pickTask(t.name)}
-                        aria-pressed={selected}
-                        className={[
-                          "rounded-xl p-3 text-left ring-1 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                          selected
-                            ? "bg-primary/[0.06] ring-primary/40"
-                            : "bg-card ring-foreground/10 hover:bg-muted/60",
-                        ].join(" ")}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-mono text-xs text-foreground">{t.name}</span>
-                          {selected && (
-                            <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-[0.62rem] font-medium text-primary ring-1 ring-primary/30">
-                              selected
-                            </span>
-                          )}
-                        </div>
-                        <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                          {t.description}
-                        </div>
-                      </button>
-                    );
-                  })}
+            {catalogError ? (
+              <p role="alert" className="text-sm text-destructive">
+                {catalogError}
+              </p>
+            ) : (
+              catalog.map((g) => (
+                <div key={g.group} className="flex flex-col gap-2.5">
+                  <h3 className="text-sm font-medium">{g.group}</h3>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {g.tasks.map((t) => {
+                      const selected = t.name === plan.task;
+                      return (
+                        <button
+                          key={t.name}
+                          type="button"
+                          onClick={() => pickTask(t.name)}
+                          aria-pressed={selected}
+                          className={[
+                            "rounded-xl p-3 text-left ring-1 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                            selected
+                              ? "bg-primary/[0.06] ring-primary/40"
+                              : "bg-card ring-foreground/10 hover:bg-muted/60",
+                          ].join(" ")}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono text-xs text-foreground">{t.name}</span>
+                            {selected && (
+                              <span className="rounded-full bg-primary/12 px-1.5 py-0.5 text-[0.62rem] font-medium text-foreground ring-1 ring-primary/30">
+                                selected
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                            {t.description}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 

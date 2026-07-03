@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { CompareView } from "./CompareView";
+
+export const metadata: Metadata = { title: "Compare runs — CapyChem" };
 
 export default async function ComparePage({
   searchParams,

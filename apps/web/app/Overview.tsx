@@ -13,16 +13,18 @@ import { Eyebrow, InSilicoTag, LoopDiagram, StatusChip } from "@/components/work
 
 export function Overview() {
   const [catalog, setCatalog] = useState<CatalogGroup[]>([]);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   const [recent, setRecent] = useState<RunListItem[]>([]);
+  const [recentError, setRecentError] = useState<string | null>(null);
 
   useEffect(() => {
     let closed = false;
     getCatalog()
       .then((g) => !closed && setCatalog(g))
-      .catch(() => {});
+      .catch(() => !closed && setCatalogError("Couldn't load the task catalog."));
     listRuns({ sort: "started_at", order: "desc" })
       .then((r) => !closed && setRecent(r.slice(0, 4)))
-      .catch(() => {});
+      .catch(() => !closed && setRecentError("Couldn't load runs."));
     return () => {
       closed = true;
     };
@@ -78,7 +80,7 @@ export function Overview() {
               Each generation, the agent{" "}
               <strong className="font-medium text-foreground">proposes</strong> candidates,{" "}
               <strong className="font-medium text-foreground">scores</strong> them against the
-              oracle, <strong className="font-medium text-primary">analyzes</strong> what moved
+              oracle, <strong className="font-medium text-foreground">analyzes</strong> what moved
               the score into a written hypothesis, then{" "}
               <strong className="font-medium text-foreground">redesigns</strong> the next batch
               conditioned on it —{" "}
@@ -123,7 +125,14 @@ export function Overview() {
                 All runs →
               </Link>
             </div>
-            {recent.length === 0 ? (
+            {recentError ? (
+              <p
+                role="alert"
+                className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-destructive"
+              >
+                {recentError}
+              </p>
+            ) : recent.length === 0 ? (
               <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
                 No runs yet.{" "}
                 <Link
@@ -173,30 +182,36 @@ export function Overview() {
             See all {taskCount || 23} objectives →
           </Link>
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {catalog.map((g) => (
-            <Card key={g.group}>
-              <CardContent className="flex flex-col gap-2 py-4">
-                <div className="text-sm font-medium">{g.group}</div>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  {g.tasks.slice(0, 3).map((t) => (
-                    <span
-                      key={t.name}
-                      className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[0.7rem] text-foreground"
-                    >
-                      {t.name}
-                    </span>
-                  ))}
-                  {g.tasks.length > 3 && (
-                    <span className="self-center text-[0.7rem] text-muted-foreground">
-                      +{g.tasks.length - 3} more
-                    </span>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {catalogError ? (
+          <p role="alert" className="text-sm text-destructive">
+            {catalogError}
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {catalog.map((g) => (
+              <Card key={g.group}>
+                <CardContent className="flex flex-col gap-2 py-4">
+                  <div className="text-sm font-medium">{g.group}</div>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {g.tasks.slice(0, 3).map((t) => (
+                      <span
+                        key={t.name}
+                        className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[0.7rem] text-foreground"
+                      >
+                        {t.name}
+                      </span>
+                    ))}
+                    {g.tasks.length > 3 && (
+                      <span className="self-center text-[0.7rem] text-muted-foreground">
+                        +{g.tasks.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
@@ -205,8 +220,8 @@ export function Overview() {
 function Figure({ k, v }: { k: string; v: string }) {
   return (
     <div className="bg-card px-3 py-2.5">
-      <div className="text-lg font-semibold tabular-nums">{v}</div>
-      <div className="mt-0.5 text-[0.7rem] text-muted-foreground">{k}</div>
+      <dd className="text-lg font-semibold tabular-nums">{v}</dd>
+      <dt className="mt-0.5 text-[0.7rem] text-muted-foreground">{k}</dt>
     </div>
   );
 }

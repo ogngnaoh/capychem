@@ -83,6 +83,8 @@ export function RunsBrowse() {
   }
 
   const arrow = (key: SortKey) => (key === sort ? (order === "desc" ? " ↓" : " ↑") : "");
+  const ariaSort = (key: SortKey): "ascending" | "descending" | "none" =>
+    key === sort ? (order === "asc" ? "ascending" : "descending") : "none";
   const filters = ["all", ...statuses];
 
   return (
@@ -136,7 +138,11 @@ export function RunsBrowse() {
         </button>
       </div>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
 
       <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
         <Table>
@@ -149,6 +155,7 @@ export function RunsBrowse() {
               {SORTABLE.map((c) => (
                 <TableHead
                   key={c.key}
+                  aria-sort={ariaSort(c.key)}
                   className={[c.align === "right" ? "text-right" : "", c.key === "started_at" ? "pr-4" : ""].join(" ")}
                 >
                   <button

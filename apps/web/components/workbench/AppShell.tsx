@@ -57,6 +57,7 @@ function ThemeToggle() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [workbenchHref, setWorkbenchHref] = useState("/runs");
+  const [workbenchError, setWorkbenchError] = useState<string | null>(null);
 
   useEffect(() => {
     let closed = false;
@@ -65,7 +66,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         if (!closed && runs.length > 0) setWorkbenchHref(`/runs/${runs[0].run_id}`);
       })
       .catch(() => {
-        /* fall back to /runs */
+        // Fall back to /runs (workbenchHref default); still surface the failure.
+        if (!closed) setWorkbenchError("Couldn't load runs — Workbench points to the runs list.");
       });
     return () => {
       closed = true;
@@ -82,6 +84,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-20 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:ring-2 focus:ring-ring"
+      >
+        Skip to content
+      </a>
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-8 px-6">
           <Link href="/" className="font-heading text-lg font-normal tracking-tight">
@@ -109,7 +117,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
           <div className="ml-auto flex items-center gap-3">
             <span className="hidden text-xs text-muted-foreground md:inline">
-              in-silico benchmark demonstrator
+              {workbenchError ?? "in-silico benchmark demonstrator"}
             </span>
             <ThemeToggle />
             <Link
@@ -121,7 +129,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">{children}</main>
+      <main id="main-content" className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
+        {children}
+      </main>
     </div>
   );
 }
