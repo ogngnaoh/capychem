@@ -9,9 +9,9 @@
 ## Slice status across milestone
 - 06-01 repo-hygiene-and-docs → shipped
 - 06-02 ci-pipeline → shipped
-- 06-03 a11y-remediation → planned (start here)
-- 06-04 axe-ci-gate → planned
-- 06-05 alembic-baseline → planned
+- 06-03 a11y-remediation → shipped
+- 06-04 axe-ci-gate → shipped
+- 06-05 alembic-baseline → planned (start here)
 - 06-06 reliability-patches → planned
 
 ## Current state
@@ -20,7 +20,7 @@
 - Key verified facts: harness JSON has no version field (`score.py:102`); cost gate flat `$50` at `cost.py:16`; no LICENSE/`.github`/Alembic; `ALLOWED_ORIGINS` hardcoded `config.py:15`; a11y failures confirmed (coral `--primary` 3.57/3.28:1, `ring-ring/50`, no `aria-live`); seed-SMILES bug sinks at `graph.py:48-50`.
 
 ## Next session start here
-Execute slice **06-03 a11y-remediation** (WCAG AA at 1280px). Verified failures to fix (with anchors): (1) primary-button contrast — `globals.css:58` light coral `--primary` oklch(.635 .112 46)=3.57:1, `:93` dark=3.28:1; darken toward the existing `active:bg-[#a9583e]` (≈5.06:1), keep hue 46, re-check live/analyze/chart usages. (2) focus ring — `button.tsx:7` `ring-ring/50`≈1.7:1 → full-opacity ring token ≥3:1. (3) no `aria-live` anywhere → visually-hidden polite region in `Cockpit.tsx`/`LiveRun.tsx` announcing generation-complete/status/hypothesis (NOT every candidate tick); `role="alert"` on error `<p>`s (LiveRun:72-77, RunsBrowse:139, CompareView:91). (4) swallowed fetches → inline error/empty state (Overview:22/25, Launcher:56, CompareView:39, AppShell:67). (5) skip-to-content + `id` on `<main>` (AppShell); per-route `metadata` titles (5 page.tsx); `aria-sort` (RunsBrowse:149-163); concise `MoleculeTile` alt (ui.tsx:39, drop raw SMILES). Then 06-04 wires the axe-core gate. Consider running the a11y (frontend) and 06-05/06-06 (backend) work as parallel worktree Builders since their file sets are disjoint.
+Execute slice **06-05 alembic-baseline** (enabling gate for milestone 07 — must precede any new schema column). Steps: add `alembic` to `packages/core/pyproject.toml`; `alembic.ini` + `packages/core/capychem/db/migrations/` (env.py wired to `Base.metadata` + `CAPYCHEM_DATABASE_URL`); autogenerate an initial revision that EXACTLY reproduces today's `create_all` schema (6 models, verify autogenerate diff vs metadata is empty); wire startup to `alembic upgrade head` (keep `create_all` only for ephemeral test DBs in `db/session.py`); on an existing dev DB born from `create_all` (no `alembic_version`), `alembic stamp head` must baseline it so a subsequent `upgrade head` is a no-op (does NOT re-create existing tables). Retire the "drop/recreate, Alembic deferred" note in `db/models.py:4-6` + `db/session.py:3-6`; document `alembic upgrade head` in CONTRIBUTING/README. Then **06-06 reliability-patches** (recoverable pause on HarnessError, oracle-fault tolerance, in-process durable resume via a new `resume.py` rebuilding mol_buffer/gen_index/population/auc_curve from rows, startup sweep → paused, Modal propose n>1 + transient parity). 06-05 and 06-06 touch disjoint files (db/migrations vs runner/graph/worker) and could run as parallel worktree Builders.
 
 ## Active concerns
 - **Mode-split coupling:** milestone 07's seed-import/objective/oracle features each set `mode=exploratory` and need the `Run.mode` column — so 07-01 (mode) must precede them and every schema change waits on 06-05 (Alembic). Do NOT ship seed-import in 06.

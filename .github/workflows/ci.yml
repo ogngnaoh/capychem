@@ -7,8 +7,8 @@ name: CI
 # download) through the subprocess oracle bridge — without the harness those 20 tests
 # fail rather than skip. The heavy ML-oracle download tests (jnk3, eval-real) are
 # self-gated by conftest.harness fixtures and are the only network-touching tests.
-# The axe-core accessibility gate is added in slice 06-04 (after the a11y remediation
-# in 06-03) so CI starts green.
+# The web job also runs the axe-core accessibility gate (e2e/a11y.spec.ts) across
+# every route in light + dark, failing on serious/critical WCAG violations.
 
 on:
   push:
@@ -99,3 +99,11 @@ jobs:
 
       - name: Vitest
         run: pnpm --filter web test
+
+      - name: Install Playwright browser (chromium)
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      - name: Accessibility gate (axe-core, all routes, light + dark)
+        # Playwright's webServer starts `pnpm dev`; the FastAPI origin is route-mocked
+        # in the spec, so no backend is needed. Fails on serious/critical WCAG violations.
+        run: pnpm --filter web exec playwright test e2e/a11y.spec.ts
