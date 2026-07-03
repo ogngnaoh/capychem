@@ -141,6 +141,11 @@ export async function stopRun(id: number): Promise<void> {
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
 }
 
+export async function resumeRun(id: number): Promise<void> {
+  const r = await fetch(`${API_URL}/runs/${id}/resume`, { method: "POST" });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+}
+
 export function wsUrl(id: number): string {
   return `${API_URL.replace(/^http/, "ws")}/ws/runs/${id}`;
 }

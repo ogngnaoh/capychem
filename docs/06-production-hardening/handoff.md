@@ -7,8 +7,9 @@
   - 06-02 GitHub Actions CI, backend + web, key-free path (`5cc7acd`)
   - 06-03 WCAG-AA a11y remediation (`ef6c171`) + 06-04 axe-core CI gate, 10/10 green (`02a1ade`)
   - 06-05 Alembic baseline replaces drop-recreate (`8039544`)
-  - 06-06 recoverable pause + transient retry (score + Graph-GA) + Modal n>1 fix (commit pending)
-- Verification highlights: pytest 294 green (harness present), axe 10/10, mypy 47 clean, ruff clean, web 30 vitest green; a Critic finding on 06-06 (propose_offspring lacked retry) was fixed.
+  - 06-06 recoverable pause + transient retry (score + Graph-GA) + Modal n>1 fix (`79e3217`)
+  - 06-07 in-process durable resume — reconstruct-from-rows, resume endpoint + web control, sweep → paused, `Run.max_generations` migration (commit pending)
+- Verification highlights: pytest green (302+ with harness), axe 10/10, mypy 49 clean, ruff clean, web 30 vitest green. Adversarial Critics fixed a 06-06 finding (propose_offspring lacked retry) and TWO 06-07 findings (resume of an already-terminal run drove an extra generation; concurrent-resume duplicated Generation.index) — all with regression tests.
 
 ## Slice status across milestone
 - 06-01 repo-hygiene-and-docs → shipped
@@ -17,7 +18,8 @@
 - 06-04 axe-ci-gate → shipped
 - 06-05 alembic-baseline → shipped
 - 06-06 reliability-patches → shipped
-- 06-07 durable-resume → planned (start here — last slice of milestone 06)
+- 06-07 durable-resume → shipped
+- **Milestone 06 COMPLETE — all 7 slices shipped.**
 
 ## Current state
 - Branch: `main` (clean except the untracked design spec + this session's new docs). No feature code changed yet.
@@ -25,7 +27,7 @@
 - Key verified facts: harness JSON has no version field (`score.py:102`); cost gate flat `$50` at `cost.py:16`; no LICENSE/`.github`/Alembic; `ALLOWED_ORIGINS` hardcoded `config.py:15`; a11y failures confirmed (coral `--primary` 3.57/3.28:1, `ring-ring/50`, no `aria-live`); seed-SMILES bug sinks at `graph.py:48-50`.
 
 ## Next session start here
-Execute slice **06-07 durable-resume** (last slice of milestone 06). Build in-process durable resume so a `paused` run (from an oracle fault or a crash) can continue where it left off. Steps: new `packages/core/capychem/resume.py` `reconstruct_state(session, run_id) -> dict` rebuilding the initial `LoopState` seed from persisted rows — `mol_buffer` = set of distinct scored `Candidate.smiles`; `calls_used` = its length; `gen_index` = `max(Generation.index)+1`; `population` = top `pop_size` by `(-score, smiles)` (matches `logic._sort_key`); effective hypothesis = last `AnalyzerHypothesis`; `auc_curve` **recomputed by replaying generations in call order** (it is NOT persisted mid-run — recompute, don't reset, or FR-003 plateau mis-fires after restart). Add a resume entry to `RunRegistry` that seeds `_drive`'s initial state from `reconstruct_state` instead of the hardcoded zeroed dict (`runner.py:144-162`); a `POST /runs/{id}/resume` endpoint + a web "Resume" control on a paused run; flip the startup sweep (`main.py:39`) from orphan `running → stopped` to `running → paused` (resumable) and optionally auto-resume. Test: a run paused by a HarnessError, then resumed, reaches the SAME terminal state a fault-free run would (budget accounting identical, G6-safe). After 06-07, milestone 06 is complete → advance `docs/milestones.md` (06 shipped, 07-objective-ownership ← active) and begin milestone 07 (mode split first).
+**Milestone 06 is complete.** Begin **milestone 07 objective-ownership** (Phase 1 Tier 1 — the "make-it-yours + trust" capability). Stand up `docs/07-objective-ownership/` (milestone.md + handoff.md). Start with **07-01 run-mode-split** — the load-bearing benchmark/exploratory invariant that every other 07 feature depends on: add `Run.mode` (`benchmark`|`exploratory`, default benchmark) + `objective_json`/`constraints_json` columns via an Alembic revision (chain from `f4251d568ae6`); enforce in the API (refuse to tag a run `benchmark` if any exploratory feature is present) and eval ingestion (only `benchmark` feeds `top_auc`/baselines); add a `figure_canon` single-source module (states "21 comparable, 2 excluded", never "21/23"); a prominent mode badge on every run surface. Then per the plan: 07-02 seed-SMILES plumbing (FR-001, custom seed ⇒ exploratory), 07-03 pluggable ScoringOracle + presets, 07-04 objective composition + constraints, 07-05 quality/trust layer, 07-06 provenance manifest (OD-5), 07-07 export, 07-08 objective-authoring UI. Plan: `docs/superpowers/plans/2026-07-03-capychem-production-v1.md` (milestone-07 tasks). Alembic is live — all new columns go through migrations chained from the current head.
 
 ## Active concerns
 - **Mode-split coupling:** milestone 07's seed-import/objective/oracle features each set `mode=exploratory` and need the `Run.mode` column — so 07-01 (mode) must precede them and every schema change waits on 06-05 (Alembic). Do NOT ship seed-import in 06.

@@ -7,7 +7,7 @@
 // in Cockpit; this component owns the socket, the Stop action, and the plateau notice.
 
 import { useEffect, useRef, useState } from "react";
-import { getRun, stopRun, wsUrl, type RunSnapshot } from "@/lib/api";
+import { getRun, resumeRun, stopRun, wsUrl, type RunSnapshot } from "@/lib/api";
 import { applyEvent, type RunEvent } from "@/lib/runEvents";
 import { plateauNotice } from "@/lib/plateau";
 import { Cockpit } from "./Cockpit";
@@ -28,6 +28,10 @@ export function LiveRun({ runId }: { runId: number }) {
   const [conn, setConn] = useState<"connecting" | "live" | "done">("connecting");
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [stopErr, setStopErr] = useState<string | null>(null);
+  const [resumeErr, setResumeErr] = useState<string | null>(null);
+  // Bumped after a successful resume to re-run the fetch+subscribe effect below
+  // (the effect only re-fires on its dep list; runId doesn't change on resume).
+  const [reloadKey, setReloadKey] = useState(0);
   const snapRef = useRef<RunSnapshot | null>(null);
 
   useEffect(() => {
@@ -68,7 +72,7 @@ export function LiveRun({ runId }: { runId: number }) {
       closed = true;
       ws?.close();
     };
-  }, [runId]);
+  }, [runId, reloadKey]);
 
   if (loadErr) {
     return (
@@ -90,6 +94,13 @@ export function LiveRun({ runId }: { runId: number }) {
     );
   }
 
+  function onResume() {
+    setResumeErr(null);
+    resumeRun(runId)
+      .then(() => setReloadKey((k) => k + 1)) // re-fetch + re-open the WS
+      .catch((e: unknown) => setResumeErr(String(e instanceof Error ? e.message : e)));
+  }
+
   return (
     <Cockpit
       snap={snap}
@@ -97,6 +108,8 @@ export function LiveRun({ runId }: { runId: number }) {
       conn={conn}
       onStop={onStop}
       stopErr={stopErr}
+      onResume={onResume}
+      resumeErr={resumeErr}
       notice={notice}
     />
   );

@@ -27,6 +27,8 @@ export function Cockpit({
   conn,
   onStop,
   stopErr,
+  onResume,
+  resumeErr,
   notice,
 }: {
   snap: RunSnapshot;
@@ -34,6 +36,8 @@ export function Cockpit({
   conn: "connecting" | "live" | "done";
   onStop: () => void;
   stopErr: string | null;
+  onResume: () => void;
+  resumeErr: string | null;
   notice: string | null;
 }) {
   const validRate = snap.valid_smiles_rate ?? null;
@@ -127,6 +131,10 @@ export function Cockpit({
               <Button size="sm" variant="destructive" onClick={onStop}>
                 Stop
               </Button>
+            ) : snap.status === "paused" ? (
+              <Button size="sm" variant="outline" onClick={onResume}>
+                Resume run
+              </Button>
             ) : (
               <Button size="sm" variant="outline" disabled title="Lands in a later slice">
                 Spawn follow-up run
@@ -137,6 +145,11 @@ export function Cockpit({
         {stopErr && (
           <span role="alert" className="text-xs text-destructive">
             {stopErr}
+          </span>
+        )}
+        {resumeErr && (
+          <span role="alert" className="text-xs text-destructive">
+            {resumeErr}
           </span>
         )}
         {notice && (

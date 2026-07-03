@@ -277,6 +277,31 @@ async def compare_runs_endpoint(request: Request, a: int, b: int) -> ComparePayl
     return build_compare_payload(snap_a, snap_b)
 
 
+@router.post("/runs/{run_id}/resume")
+async def resume_run_endpoint(run_id: int, request: Request) -> dict[str, Any]:
+    """Continue a paused run from its persisted progress (06-07). 404 if the run
+    is unknown, 409 if it isn't paused (nothing to resume — the caller should
+    check status first, e.g. via GET /runs/{id})."""
+    sm = sessionmaker_of(request)
+    async with sm() as session:
+        row = await session.get(Run, run_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    if row.status != "paused":
+        raise HTTPException(
+            status_code=409, detail=f"Run {run_id} is not paused (status={row.status!r})"
+        )
+    try:
+        status = await registry_of(request).resume_run(run_id)
+    except ValueError as exc:
+        # A concurrent resume already claimed this run (TOCTOU past the check above),
+        # or its status changed. Refuse rather than spawn a second driver.
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    # `status` is "running" for a normal resume, or a terminal reason when the run
+    # had already finished before it was interrupted (finalized without driving).
+    return {"run_id": run_id, "status": status}
+
+
 @router.post("/runs/{run_id}/stop")
 async def stop_run_endpoint(run_id: int, request: Request) -> dict[str, Any]:
     ok = await registry_of(request).stop_run(run_id)

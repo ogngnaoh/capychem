@@ -33,6 +33,7 @@ async def create_run(session: AsyncSession, config: RunConfig) -> int:
         budget=config.budget,
         mutation_strategy=config.mutation_strategy,
         plateau_window=config.plateau_window,
+        max_generations=config.max_generations,
         pop_size=config.pop_size,
         offspring=config.offspring,
         mutation_rate=config.mutation_rate,

@@ -29,6 +29,7 @@ class Run(Base):
     budget: Mapped[int]
     mutation_strategy: Mapped[str] = mapped_column(String(32), default="graph_ga")
     plateau_window: Mapped[int]
+    max_generations: Mapped[int] = mapped_column(default=100)  # resume needs it (06-07)
     pop_size: Mapped[int]
     offspring: Mapped[int]
     mutation_rate: Mapped[float]

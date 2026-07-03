@@ -21,11 +21,13 @@ from capychem.api.schemas import (
     RunCompleteEvent,
     TopMolecule,
 )
+from capychem.db.models import Run
 from capychem.loop import trace
 from capychem.loop.graph import build_graph
-from capychem.loop.logic import build_summary
+from capychem.loop.logic import build_summary, stop_reason
 from capychem.loop.state import LoopState
 from capychem.oracle import HarnessError
+from capychem.resume import reconstruct_state
 from capychem.run import RunConfig, create_run, finalize_run
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -79,6 +81,9 @@ class RunRegistry:
     def __init__(self, sessionmaker: async_sessionmaker[AsyncSession]) -> None:
         self._sm = sessionmaker
         self._runs: dict[int, RunHandle] = {}
+        # run_ids with a resume in flight — guards the check-then-flip against a
+        # concurrent double-resume (added synchronously before any await).
+        self._resuming: set[int] = set()
 
     async def start_run(self, config: RunConfig) -> int:
         async with self._sm() as session:
@@ -87,6 +92,88 @@ class RunRegistry:
         self._runs[run_id] = handle
         handle.task = asyncio.create_task(self._drive(handle))
         return run_id
+
+    async def resume_run(self, run_id: int) -> str:
+        """Continue a paused run (06-07) from its persisted progress — the SAME
+        run_id, no new Run row. Reconstructs the LoopState progress fields via
+        reconstruct_state (mirrors exactly how the live persist node built them),
+        flips the row back to "running", then drives it: a reconstructed
+        gen_index > 0 takes the graph's propose-from-population branch, so the
+        gen-0 special case is bypassed automatically."""
+        # Guard against a concurrent double-resume (double-click / client retry):
+        # a live task for this run, or another resume already in flight. Both checks
+        # + the add() run synchronously here, before the first await, so a second
+        # concurrent call sees the reservation and is refused rather than spawning a
+        # second _drive that would write duplicate Generation.index rows.
+        live = self._runs.get(run_id)
+        live_task_running = live is not None and live.task is not None and not live.task.done()
+        if run_id in self._resuming or live_task_running:
+            raise ValueError(f"Run {run_id} is already running or resuming")
+        self._resuming.add(run_id)
+        try:
+            async with self._sm() as session:
+                row = await session.get(Run, run_id)
+                if row is None or row.status != "paused":
+                    raise ValueError(f"Run {run_id} is not resumable")
+                progress = await reconstruct_state(session, run_id)
+                cfg = RunConfig(
+                    task=row.task,
+                    budget=row.budget,
+                    seed=row.seed,
+                    pop_size=row.pop_size,
+                    offspring=row.offspring,
+                    mutation_rate=row.mutation_rate,
+                    plateau_window=row.plateau_window,
+                    max_generations=row.max_generations,
+                    mutation_strategy=row.mutation_strategy,
+                )
+                # Already-terminal guard: a run swept to "paused" after a crash in
+                # the window between its last generation's persist and finalize may
+                # have ALREADY satisfied a stop condition. Finalize it with that
+                # reason instead of driving a spurious extra generation past
+                # max_generations / budget / plateau (G6). made_progress=True
+                # suppresses the per-generation no_progress signal, which cannot be
+                # evaluated from persisted rows.
+                terminal_reason = stop_reason(
+                    calls_used=progress["calls_used"],
+                    budget=cfg.budget,
+                    gen_index=progress["gen_index"],
+                    max_generations=cfg.max_generations,
+                    made_progress=True,
+                    top10_history=[v for _, v in progress["auc_curve"]],
+                    plateau_window=cfg.plateau_window,
+                )
+                if terminal_reason is not None:
+                    summary = build_summary(
+                        progress["population"],
+                        progress["auc_curve"],
+                        generations=len(progress["auc_curve"]),
+                        oracle_calls=progress["calls_used"],
+                    )
+                    await finalize_run(
+                        session, run_id, {"stop_reason": terminal_reason, "summary": summary}
+                    )
+                else:
+                    row.status = "running"
+                    await session.commit()
+            if terminal_reason is not None:
+                # Finalized above without driving. Register a handle carrying the
+                # terminal event so the client's post-resume WS subscribe replays
+                # run.complete; a GET reads the finalized DB row (snapshot stays None).
+                handle = RunHandle(run_id=run_id, config=cfg)
+                handle.terminal_event = RunCompleteEvent(
+                    run_id=run_id, status=terminal_reason, summary=summary
+                ).model_dump()
+                self._runs[run_id] = handle
+                handle.broadcast(handle.terminal_event)
+                return terminal_reason
+            handle = RunHandle(run_id=run_id, config=cfg)
+            self._runs[run_id] = handle
+            handle.task = asyncio.create_task(self._drive(handle, progress=progress))
+            return "running"
+        finally:
+            # Registered above: subsequent resumes now hit the live-task check.
+            self._resuming.discard(run_id)
 
     def subscribe(self, run_id: int) -> asyncio.Queue[dict[str, Any]]:
         """Subscribe to a run's event stream.
@@ -138,10 +225,22 @@ class RunRegistry:
             t.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
 
-    async def _drive(self, handle: RunHandle) -> None:
+    async def _drive(self, handle: RunHandle, progress: dict[str, Any] | None = None) -> None:
         cfg = handle.config
         run_trace_id = trace.trace_run(handle.run_id, cfg.task)  # None when Langfuse is off
         graph = build_graph(self._sm)
+        # A resume (06-07) seeds the PROGRESS fields from reconstruct_state instead
+        # of the fresh-run zeros; a resumed gen_index > 0 takes the graph's
+        # propose-from-population branch, bypassing the gen-0 special case.
+        prog = progress or {
+            "calls_used": 0,
+            "gen_index": 0,
+            "population": [],
+            "mol_buffer": set(),
+            "auc_curve": [],
+            "analyzer_hypothesis": None,
+            "llm_cost_usd": 0.0,
+        }
         initial: LoopState = {
             "run_id": handle.run_id,
             "task": cfg.task,
@@ -153,19 +252,30 @@ class RunRegistry:
             "plateau_window": cfg.plateau_window,
             "max_generations": cfg.max_generations,
             "mutation_strategy": cfg.mutation_strategy,
-            "calls_used": 0,
-            "gen_index": 0,
-            "population": [],
+            "calls_used": prog["calls_used"],
+            "gen_index": prog["gen_index"],
+            "population": prog["population"],
+            "mol_buffer": prog["mol_buffer"],
             "run_trace_id": run_trace_id,
             "gen_span_id": None,
-            "auc_curve": [],
+            "auc_curve": prog["auc_curve"],
+            "analyzer_hypothesis": prog["analyzer_hypothesis"],
+            "llm_cost_usd": prog["llm_cost_usd"],
             "done": False,
         }
         # Each generation is 7 node-steps (analyze added in milestone 03); allow headroom.
         recursion_limit = cfg.max_generations * 7 + 10
-        last_curve_len = 0
+        # A resumed run's curve already has entries -- only NEW ones (from
+        # generations completed THIS drive) should broadcast.
+        last_curve_len = len(initial["auc_curve"])
         last_hyp_len = 0
-        final_state: dict[str, Any] = {}
+        # Seeded with the reconstructed progress on a resume (not on a fresh run,
+        # where {} preserves the existing zero-generation-fault behavior below):
+        # if the resumed drive re-faults before yielding even one new state, the
+        # summary fallback below still reflects the reconstructed population
+        # instead of erasing it (PRD edge case 2 — a paused run's partial results
+        # stay durable/browseable; a re-pause must not regress that guarantee).
+        final_state: dict[str, Any] = dict(prog) if progress is not None else {}
         stopped = False
         cost_capped = False
         # astream is an async generator at runtime; its declared AsyncIterator type

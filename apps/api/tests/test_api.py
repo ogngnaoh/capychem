@@ -5,7 +5,7 @@ slow (~10-60 s per run) by design; httpx's ASGI WebSocket transport drives both
 HTTP and WS against the in-process app.
 
 Shared-DB caveat: each test's lifespan sweep marks stranded `running` rows
-`stopped` in the shared dev DB — don't run the suite while a dev server has an
+`paused` in the shared dev DB — don't run the suite while a dev server has an
 active run.
 """
 

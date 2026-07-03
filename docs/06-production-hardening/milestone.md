@@ -27,7 +27,9 @@
 4. `06-04-axe-ci-gate` — Playwright + axe-core across 5 routes, light+dark (10/10 green); added to CI. — shipped
 5. `06-05-alembic-baseline` — initial revision = current schema; adopt-or-upgrade startup wiring; retire drop-recreate. — shipped
 6. `06-06-reliability-patches` — recoverable pause on HarnessError + transient retry (score + Graph-GA) + Modal n>1 fix. — shipped
-7. `06-07-durable-resume` — reconstruct loop state from persisted rows + resume action + startup sweep → paused (split out of 06-06 for sizing). — planned
+7. `06-07-durable-resume` — reconstruct loop state from persisted rows + resume action + startup sweep → paused (split out of 06-06 for sizing). — shipped
+
+**Milestone 06 complete (2026-07-03): all 7 slices shipped.** The workbench is production-grade — honest fork-and-run docs, CI-gated (backend + web + axe), WCAG-AA accessible, Alembic-migrated, and fault-tolerant (recoverable pause + durable resume). Next: milestone 07 objective-ownership.
 
 ## Integration notes
 - **Ordering:** 06-01→06-04 touch no schema and reopen nothing → ship first. 06-05 (Alembic) is the enabling gate that unblocks every milestone-07 column. 06-06 needs no new column (`paused` fits `String(16)`; resume reconstructs from existing rows) so it can land independently of Alembic.

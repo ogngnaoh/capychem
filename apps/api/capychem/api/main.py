@@ -35,13 +35,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.sessionmaker = make_sessionmaker(engine)
     app.state.registry = RunRegistry(app.state.sessionmaker)
     # Sweep rows stranded `running` by a previous process: a crash/restart skips
-    # finalize_run, so without this those rows claim "running" forever.
+    # finalize_run, so without this those rows claim "running" forever. Landed as
+    # "paused" (06-07), not "stopped" — a crashed run is resumable, its persisted
+    # generations replay via reconstruct_state. No auto-resume here: an operator
+    # must explicitly POST /runs/{id}/resume.
     async with app.state.sessionmaker() as session:
         res = await session.execute(
-            update(Run).where(Run.status == "running").values(status="stopped")
+            update(Run).where(Run.status == "running").values(status="paused")
         )
         await session.commit()
-        logger.info("swept %d stranded running row(s)", res.rowcount)
+        logger.info("paused %d stranded running row(s)", res.rowcount)
     try:
         yield
     finally:
