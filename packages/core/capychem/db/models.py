@@ -1,9 +1,11 @@
 """Async SQLAlchemy 2.0 models for CapyChem run state (SPEC §6.2).
 
 Six entities: Run, Generation, Candidate, OracleCall, RunCost, AnalyzerHypothesis
-(added milestone-03 slice 01). Schema is bootstrapped via metadata.create_all
-(db/session.py); after an additive change recreate the dev DB (drop/recreate) —
-Alembic is deferred until a persisted DB must be migrated without data loss.
+(added milestone-03 slice 01). Schema changes go through Alembic migrations
+(packages/core/capychem/db/migrations/) — after changing a model, generate a
+revision with `uv run alembic revision --autogenerate -m <message>` and apply it
+with `uv run alembic upgrade head`. metadata.create_all (db/session.py) remains
+for test bootstrap only.
 """
 
 from __future__ import annotations

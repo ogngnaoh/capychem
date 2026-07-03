@@ -25,7 +25,7 @@
 2. `06-02-ci-pipeline` — `.github/workflows/ci.yml` (backend + web, builds harness) + README badge. — shipped
 3. `06-03-a11y-remediation` — contrast/focus/aria-live/errors/skip-link/titles/aria-sort/alt + dl/scrollable/coral-demotion. — shipped
 4. `06-04-axe-ci-gate` — Playwright + axe-core across 5 routes, light+dark (10/10 green); added to CI. — shipped
-5. `06-05-alembic-baseline` — initial revision = current schema; stamp/upgrade wiring; retire drop-recreate. — planned
+5. `06-05-alembic-baseline` — initial revision = current schema; adopt-or-upgrade startup wiring; retire drop-recreate. — shipped
 6. `06-06-reliability-patches` — pause + durable resume + oracle-fault tolerance + Modal n>1. — planned
 
 ## Integration notes

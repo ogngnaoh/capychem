@@ -23,7 +23,7 @@ cp .env.example .env.local
 docker compose -f infra/compose.yml up -d            # Postgres
 docker compose -f infra/langfuse-compose.yml up -d   # Langfuse (optional)
 
-# Schema (once Alembic lands; until then init runs on API startup)
+# Schema (also applied automatically on API startup, apps/api/capychem/api/main.py)
 uv run alembic upgrade head
 
 # Run the stack

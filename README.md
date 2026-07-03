@@ -176,6 +176,9 @@ pnpm install                  # web
 docker compose -f infra/compose.yml up -d
 docker compose -f infra/langfuse-compose.yml up -d
 
+# 2b. Schema — Alembic migrations (also run automatically on API startup)
+uv run alembic upgrade head
+
 # 3. Run the stack
 uv run uvicorn capychem.api.main:app --reload        # API  → :8000
 pnpm --filter web dev                                 # web  → :3000

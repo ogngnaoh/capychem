@@ -11,8 +11,8 @@
 - 06-02 ci-pipeline → shipped
 - 06-03 a11y-remediation → shipped
 - 06-04 axe-ci-gate → shipped
-- 06-05 alembic-baseline → planned (start here)
-- 06-06 reliability-patches → planned
+- 06-05 alembic-baseline → shipped
+- 06-06 reliability-patches → planned (start here — last slice of milestone 06)
 
 ## Current state
 - Branch: `main` (clean except the untracked design spec + this session's new docs). No feature code changed yet.

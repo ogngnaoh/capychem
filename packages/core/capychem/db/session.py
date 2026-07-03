@@ -1,9 +1,10 @@
-"""Async engine, sessionmaker, and first-connect schema bootstrap.
+"""Async engine, sessionmaker, and the test-only create_all bootstrap.
 
-metadata.create_all bootstraps the schema; it creates missing tables but does NOT
-ALTER existing ones, so after an additive change (e.g. milestone-03's
-Generation.analyzer_hypothesis_id column) recreate the dev DB (drop/recreate).
-Reads CAPYCHEM_DATABASE_URL (asyncpg driver). Alembic is deferred.
+Reads CAPYCHEM_DATABASE_URL (asyncpg driver). Real schema changes go through
+Alembic migrations (see capychem.db.migrate.run_migrations, used by the API
+lifespan) — `uv run alembic upgrade head`. init_schema's metadata.create_all
+below is kept only for test setup: it creates missing tables but does NOT
+ALTER existing ones, so it must not be relied on outside a fresh test DB.
 """
 
 from __future__ import annotations
