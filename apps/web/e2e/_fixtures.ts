@@ -282,12 +282,15 @@ export const COMPARE_PAYLOAD = {
     top_k: TOP_K.slice(0, 4),
     hypotheses: HYPS,
   },
-  // b is exploratory and deliberately NOT run 268 (a benchmark row in RUNS_LIST) — a
-  // run_id must never appear with two different mode badges across the demo surfaces.
+  // b is run 268 — the same benchmark Graph-GA row that appears in RUNS_LIST (same mode
+  // badge everywhere, resolving the "no run_id with two mode badges" rule). Both runs are
+  // benchmark + same task, so Verdict draws the honest head-to-head: 281 (with an analyzer
+  // step) leads the GA control by 0.1095. The GA column shows "no analyzer step" because a
+  // Graph-GA run carries no hypotheses.
   b: {
-    run_id: 269,
+    run_id: 268,
     task: "troglitazone_rediscovery",
-    mode: "exploratory",
+    mode: "benchmark",
     status: "exhausted",
     best_score: 0.7719,
     oracle_calls: 10000,
