@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Any
 
 from capychem.loop.state import AnalyzerSummary, Hypothesis, Scored
+from capychem.oracle.protocol import Direction
 
 VALID_SMILES_THRESHOLD = 0.80
 PLATEAU_MIN_IMPROVEMENT = 1e-9
@@ -26,17 +27,25 @@ def trim_to_budget[T](items: list[T], *, budget: int, calls_used: int) -> list[T
     return items[:remaining]
 
 
-def _sort_key(m: Scored) -> tuple[float, str]:
-    # Descending score; ascending canonical SMILES as a deterministic tiebreak (G6).
-    return (-m.score, m.smiles)
+def _sort_key(m: Scored, direction: Direction = "maximize") -> tuple[float, str]:
+    # Best-first: negate for maximize (higher wins), keep sign for minimize (lower
+    # wins). Ascending canonical SMILES as a deterministic tiebreak (G6). Default
+    # maximize == the pre-07-03 behavior (every benchmark PMO oracle is maximize).
+    primary = -m.score if direction == "maximize" else m.score
+    return (primary, m.smiles)
 
 
 def merge_and_truncate(
-    population: list[Scored], batch: list[Scored], *, pop_size: int
+    population: list[Scored],
+    batch: list[Scored],
+    *,
+    pop_size: int,
+    direction: Direction = "maximize",
 ) -> list[Scored]:
     """Merge offspring + survivors and keep the top ``pop_size`` by score, with a
-    deterministic canonical-SMILES tiebreak."""
-    merged = sorted([*population, *batch], key=_sort_key)
+    deterministic canonical-SMILES tiebreak. ``direction`` ranks a minimize oracle
+    correctly (lowest = best) without inverting the benchmark maximize path."""
+    merged = sorted([*population, *batch], key=lambda m: _sort_key(m, direction))
     return merged[:pop_size]
 
 
@@ -86,6 +95,7 @@ def build_summary(
     oracle_calls: int,
     validation_stats: dict[str, int] | None = None,
     top_k: int = 10,
+    direction: Direction = "maximize",
 ) -> dict[str, Any]:
     """Build the (un-authoritative) summary_json. The auc_curve here is the
     running top-10-mean; the canonical AUC lives in packages/core/eval (later
@@ -94,7 +104,7 @@ def build_summary(
     When ``validation_stats`` (cumulative {"proposed","valid"}) is supplied, a
     stable ``valid_smiles`` block is added. This is the field milestone 02's
     >80% gate reads; keep its shape stable."""
-    top = sorted(population, key=_sort_key)[:top_k]
+    top = sorted(population, key=lambda m: _sort_key(m, direction))[:top_k]
     summary: dict[str, Any] = {
         "top_k": [{"smiles": m.smiles, "score": m.score} for m in top],
         "auc_curve": [{"oracle_calls": c, "top10_mean": v} for c, v in auc_curve],
@@ -120,11 +130,12 @@ def build_analyzer_summary(
     prior: Hypothesis | None,
     *,
     k: int = 10,
+    direction: Direction = "maximize",
 ) -> AnalyzerSummary:
     """Compact, deterministic analyzer input: the top-k and bottom-k survivors by
     score, the last 3 top-10-mean values (the recent trajectory), and the prior
     hypothesis. Pure — no I/O — so it reproduces in both loop paths (G6)."""
-    ranked = sorted(population, key=_sort_key)
+    ranked = sorted(population, key=lambda m: _sort_key(m, direction))
     top = [(m.smiles, m.score) for m in ranked[:k]]
     bottom = [(m.smiles, m.score) for m in ranked[-k:]] if len(ranked) > k else []
     return AnalyzerSummary(

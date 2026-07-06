@@ -18,8 +18,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-# packages/core/capychem/oracle.py -> repo root is parents[3].
-_REPO_ROOT = Path(__file__).resolve().parents[3]
+# packages/core/capychem/oracle/__init__.py -> repo root is parents[4].
+_REPO_ROOT = Path(__file__).resolve().parents[4]
 _DEFAULT_HARNESS_PYTHON = _REPO_ROOT / "harness" / ".venv" / "bin" / "python"
 _SCORER = _REPO_ROOT / "harness" / "capychem_harness" / "score.py"
 _PROPOSER = _REPO_ROOT / "harness" / "capychem_harness" / "propose.py"

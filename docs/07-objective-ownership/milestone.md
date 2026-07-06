@@ -21,7 +21,7 @@ This is Phase-1 Tier 1 ("make-it-yours + trust") from `docs/superpowers/plans/20
 ## Slices (execution order; see the plan for per-slice files + acceptance)
 1. `07-01-run-mode-split` — `Run.mode`/`objective_json`/`constraints_json` (Alembic), API enforcement (`_gated_baseline`), `figure_canon` module, mode badge everywhere. **Must precede every feature below.** — shipped ✓ (eval ingestion needs no gate: `eval/*` runs its own loops, never ingests DB runs)
 2. `07-02-seed-smiles-plumbing` — FR-001 6-layer fix + gen-0 branch + RDKit validation at `/runs`; custom seed ⇒ exploratory. — shipped ✓ (Alembic head `b4ea6a051441`; gen-0 tops up operator seeds from the shipped pool to `pop_size`)
-3. `07-03-pluggable-oracle` — `ScoringOracle` protocol + registry; PmoOracle (parity test) + RDKit-descriptor + ADMET-AI presets; direction metadata. — planned
+3. `07-03-pluggable-oracle` — `ScoringOracle` protocol + registry; PmoOracle (parity test) + RDKit-descriptor + ADMET-AI presets; direction metadata. — shipped ✓ (`oracle/` package; direction threaded through sort/summary/AUC, default maximize byte-identical; loop/route consumption deferred to 07-04)
 4. `07-04-objective-composition` — components/transforms/aggregator → [0,1]; SMARTS + property-band constraints; constraint-starvation signal; `POST /objective/validate`. — planned
 5. `07-05-quality-trust-layer` — per-candidate quality report + diversity/novelty + canary + shared trust-gate module (de-dup `_PARSE_RATE_FLOOR`). — planned
 6. `07-06-provenance-manifest` — OD-5: harness emits PyTDC version; persist model id/pin/git SHA; `GET /runs/{id}/manifest`. — planned

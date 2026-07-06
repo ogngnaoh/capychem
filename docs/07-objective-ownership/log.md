@@ -2,6 +2,49 @@
 
 Append-only. Dated rationale/findings a diff can't show. Git records what shipped.
 
+## 2026-07-06 — Slice 07-03 pluggable ScoringOracle shipped
+
+The pluggable scoring seam + presets + direction, proven at parity. Findings:
+
+- **`oracle.py` → `oracle/__init__.py` verbatim, NOT a re-exporting shim.** The
+  refactor trap: `test_oracle_backend` does `from capychem import oracle` then
+  `monkeypatch.setattr(oracle, "score_smiles", …)` and relies on `score_batch_async`
+  reading `score_smiles` from the *same* namespace. A `bridge.py` + re-export `__init__`
+  would break that (the patch would hit the package attr, not the bridge global). Moving
+  the file verbatim into `__init__.py` keeps one namespace — zero test/import changes. The
+  new submodules (`protocol`/`registry`/`pmo`/`descriptors`/`admet`) are imported by full
+  path and are NOT imported from `__init__`, so there's no partial-init cycle. Gotcha: the
+  `_REPO_ROOT = parents[3]` path calc became `parents[4]` (file moved one level deeper).
+
+- **The protocol uses read-only `@property` members, not bare attributes.** A frozen
+  `DescriptorOracle` (value object) has read-only fields; a `Protocol` with `name: str`
+  (read-write) rejects them (`Callable[[], DescriptorOracle]` not assignable to
+  `Callable[..., ScoringOracle]`), while a plain-attribute class like `PmoOracle` passes.
+  Read-only property members are satisfied by BOTH a mutable attribute and a frozen field —
+  the correct permissive contract.
+
+- **`direction` normalizes at the objective (07-04), not the loop.** Threaded
+  `direction="maximize"` into `_sort_key`/`merge_and_truncate`/`build_summary`/
+  `build_analyzer_summary`/`top_auc` (default byte-identical) so a *bare* single minimize
+  oracle ranks right, but the real design keeps the loop/AUC always-maximize by having
+  07-04's transforms flip a minimize oracle into maximize-in-[0,1]. The threaded params are
+  the fallback for a standalone exploratory oracle run.
+
+- **Scoping: 07-03 is the library, 07-04 is the wiring.** The loop/route consuming a
+  `ScoringOracle` needs the score+valid+cost contract that only exists once the objective
+  boundary is defined (OD-2 per-candidate budget). Rewiring in 07-03 would be a throwaway
+  PMO-specific method. "Routes through PmoOracle" is satisfied by the parity test
+  (`PmoOracle(task).score == [r.score for r in score_smiles(...)]`); eval/runner.py (the
+  authoritative G1 path) is untouched.
+
+- **SA-score is RDKit Contrib, not an installable package** — `sys.path.append(
+  RDConfig.RDContribDir/SA_Score)` then `import sascorer` (+ `# type: ignore[import-not-found]`).
+  ADMET-AI is import-guarded (module imports clean without `admet_ai`; model lazy-loaded;
+  registered only when available).
+
+- Gate: mypy (58 files) · ruff · **346** backend (+10 oracle tests; all eval/benchmark tests
+  byte-identical under the maximize default). No schema change; web untouched.
+
 ## 2026-07-06 — Slice 07-02 seed-SMILES plumbing shipped
 
 FR-001: an operator's bring-your-own compounds now reach the gen-0 population. Findings:

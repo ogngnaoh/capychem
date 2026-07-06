@@ -23,8 +23,9 @@ out/
 .modal/
 .modal_cache/
 
-# PyTDC oracle model cache (downloaded to CWD on first ML-oracle run)
-oracle/
+# PyTDC oracle model cache (downloaded to CWD/repo-root on first ML-oracle run).
+# Root-anchored so it does NOT swallow the packages/core/capychem/oracle/ source package.
+/oracle/
 
 # Env / secrets
 .env
