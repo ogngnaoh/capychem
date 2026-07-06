@@ -2,7 +2,7 @@
 
 // Compare two runs — ported from app/proto/compare, wired to GET /compare (a, b from the
 // URL). Two-row selector (populated from GET /runs) → overlaid AUC (A = chart-1 coral,
-// B = chart-2 blue) + per-run stats + side-by-side top-K molecule tiles. Honest framing:
+// B = foreground, dashed) + per-run stats + side-by-side top-K molecule tiles. Honest framing:
 // a Graph-GA run carries no analyzer hypotheses ("no analyzer step"). Every score in-silico.
 
 import Link from "next/link";
@@ -19,6 +19,7 @@ import {
 import { CompareChart } from "@/components/workbench/charts";
 import { ModeBadge } from "@/components/ModeBadge";
 import { Eyebrow, MoleculeTile } from "@/components/workbench/ui";
+import { QualityBadges } from "@/components/workbench/quality";
 
 const strategyLabel = (s: string) => (s === "llm" ? "LLM proposer" : "Graph-GA");
 
@@ -86,7 +87,7 @@ export function CompareView({ a, b }: { a: number; b: number }) {
       {/* Two-row selector */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <RunSelect swatch="bg-chart-1" label="Run A" self={a} other={b} runs={runs} slot="a" />
-        <RunSelect swatch="bg-chart-2" label="Run B" self={b} other={a} runs={runs} slot="b" />
+        <RunSelect swatch="bg-foreground" label="Run B" self={b} other={a} runs={runs} slot="b" />
       </div>
       {runsError && (
         <p role="alert" className="text-sm text-destructive">
@@ -102,6 +103,10 @@ export function CompareView({ a, b }: { a: number; b: number }) {
         <p className="text-sm text-muted-foreground">Loading comparison…</p>
       ) : (
         <>
+          {/* Honest verdict — only declare a winner when the two runs are directly
+              comparable (same objective, both benchmark). Otherwise say so. */}
+          <Verdict a={payload.a} b={payload.b} />
+
           {/* Overlaid AUC */}
           <Card>
             <CardContent className="flex flex-col gap-1 py-4">
@@ -124,10 +129,52 @@ export function CompareView({ a, b }: { a: number; b: number }) {
           {/* Per-run stats */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <RunColumn run={payload.a} swatch="bg-chart-1" strategy={strategyFor(runs, payload.a.run_id)} />
-            <RunColumn run={payload.b} swatch="bg-chart-2" strategy={strategyFor(runs, payload.b.run_id)} />
+            <RunColumn run={payload.b} swatch="bg-foreground" strategy={strategyFor(runs, payload.b.run_id)} />
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// Honest head-to-head readout. Two runs are only directly comparable when they optimize
+// the SAME objective and are BOTH benchmark runs — an exploratory run scores a different
+// (composed) objective, so a best-score delta across modes would be meaningless.
+function Verdict({ a, b }: { a: CompareRun; b: CompareRun }) {
+  const comparable =
+    a.task === b.task && a.mode === "benchmark" && b.mode === "benchmark";
+  if (!comparable) {
+    return (
+      <div className="rounded-xl border border-chart-4/40 bg-chart-4/10 px-4 py-3 text-sm text-foreground">
+        {a.task !== b.task
+          ? "These runs optimize different objectives — the curves are shown side by side, but a best-score delta isn't directly comparable."
+          : "One run is exploratory (a composed objective) — it isn't benchmark-comparable, so no head-to-head verdict is drawn."}
+      </div>
+    );
+  }
+  if (a.best_score == null || b.best_score == null) {
+    return (
+      <div className="rounded-xl bg-card px-4 py-3 text-sm text-muted-foreground ring-1 ring-foreground/10">
+        A run hasn&apos;t scored a molecule yet — no verdict.
+      </div>
+    );
+  }
+  const delta = a.best_score - b.best_score;
+  const leader = delta === 0 ? null : delta > 0 ? a : b;
+  const mag = Math.abs(delta).toFixed(4);
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-card px-4 py-3 text-sm ring-1 ring-foreground/10">
+      {leader === null ? (
+        <span className="font-medium text-foreground">Both runs tied on best score.</span>
+      ) : (
+        <span className="text-foreground">
+          <span className="font-medium">Run {leader.run_id}</span> leads by{" "}
+          <span className="font-semibold tabular-nums">+{mag}</span> best score
+        </span>
+      )}
+      <span className="text-xs text-muted-foreground">
+        same objective ({a.task}) · both benchmark · in-silico
+      </span>
     </div>
   );
 }
@@ -242,6 +289,11 @@ function RunColumn({
                     <div className="mt-1 font-mono text-[0.7rem] leading-relaxed break-all text-muted-foreground">
                       {m.smiles}
                     </div>
+                    {m.quality != null && (
+                      <div className="mt-1.5">
+                        <QualityBadges quality={m.quality} />
+                      </div>
+                    )}
                   </div>
                 </li>
               ))}

@@ -57,7 +57,8 @@ describe("Overview", () => {
 
   it("lists recent runs from listRuns() and the catalog peek from getCatalog()", async () => {
     render(<Overview />);
-    await waitFor(() => expect(screen.getByText("troglitazone_rediscovery")).toBeInTheDocument());
+    // The task now appears in both the hero latest-run peek and the recent-runs list.
+    await waitFor(() => expect(screen.getAllByText("troglitazone_rediscovery").length).toBeGreaterThan(0));
     // catalog peek group + a task chip
     expect(screen.getByText("Drug-likeness")).toBeInTheDocument();
     expect(screen.getByText("qed")).toBeInTheDocument();
@@ -67,7 +68,8 @@ describe("Overview", () => {
 
   it("badges each recent run's mode", async () => {
     render(<Overview />);
-    await waitFor(() => expect(screen.getByText("troglitazone_rediscovery")).toBeInTheDocument());
-    expect(screen.getByText(/^Benchmark$/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText("troglitazone_rediscovery").length).toBeGreaterThan(0));
+    // Benchmark badge renders in both the hero peek and the recent-runs row.
+    expect(screen.getAllByText(/^Benchmark$/).length).toBeGreaterThan(0);
   });
 });

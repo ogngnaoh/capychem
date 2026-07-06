@@ -21,6 +21,10 @@ import {
   StatTile,
   StatusChip,
 } from "@/components/workbench/ui";
+import { PopulationHealth, QualityBadges } from "@/components/workbench/quality";
+import { Downloads } from "@/components/workbench/Downloads";
+
+type ConnState = "connecting" | "live" | "reconnecting" | "lost" | "done";
 
 export function Cockpit({
   snap,
@@ -30,15 +34,17 @@ export function Cockpit({
   stopErr,
   onResume,
   resumeErr,
+  onRetry,
   notice,
 }: {
   snap: RunSnapshot;
   running: boolean;
-  conn: "connecting" | "live" | "done";
+  conn: ConnState;
   onStop: () => void;
   stopErr: string | null;
   onResume: () => void;
   resumeErr: string | null;
+  onRetry: () => void;
   notice: string | null;
 }) {
   const validRate = snap.valid_smiles_rate ?? null;
@@ -52,6 +58,13 @@ export function Cockpit({
     snap.llm_cost_usd != null && snap.oracle_cost_usd != null
       ? `LLM $${snap.llm_cost_usd.toFixed(2)} · oracle $${snap.oracle_cost_usd.toFixed(2)}`
       : "compute equiv.";
+
+  // Cold start (Modal ~30s): the socket is opening, or open but no generation has landed
+  // yet. Show a "waking the model" affordance instead of an empty cockpit.
+  const noEventsYet = snap.generation_index === 0 && snap.top_k.length === 0;
+  const coldStart = running && (conn === "connecting" || (conn === "live" && noEventsYet));
+  // Downloads/manifest are written at finalize; a live run has neither.
+  const finalized = !running;
 
   // Screen-reader announcements for meaningful milestones only — a generation
   // completing, a status change, or a new analyzer hypothesis. The WS carries no
@@ -117,7 +130,7 @@ export function Cockpit({
           <span className="font-mono text-sm text-muted-foreground">{snap.task}</span>
           <StatusChip status={snap.status} />
           <ModeBadge mode={snap.mode} />
-          <span className="text-xs text-muted-foreground">{conn}</span>
+          <ConnIndicator conn={conn} />
           <div className="ml-auto flex items-center gap-3">
             {snap.trace_url && (
               <a
@@ -159,6 +172,42 @@ export function Cockpit({
             {notice}
           </div>
         )}
+        {coldStart && (
+          <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/[0.06] px-4 py-3 text-sm text-foreground">
+            <span
+              className="size-1.5 rounded-full bg-primary motion-safe:animate-pulse"
+              aria-hidden="true"
+            />
+            Waking the model (~30s)… the first generation lands once the proposer warms up on
+            Modal.
+          </div>
+        )}
+        {conn === "reconnecting" && (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-lg border border-chart-4/40 bg-chart-4/10 px-4 py-3 text-sm text-foreground"
+          >
+            <span
+              className="size-1.5 rounded-full bg-chart-4 motion-safe:animate-pulse"
+              aria-hidden="true"
+            />
+            Connection lost — reconnecting…
+          </div>
+        )}
+        {conn === "lost" && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-foreground"
+          >
+            <span>
+              Connection lost. The run may still be progressing on the server — reconnect to
+              catch up.
+            </span>
+            <Button size="sm" variant="outline" onClick={onRetry}>
+              Retry connection
+            </Button>
+          </div>
+        )}
         {/* Live loop-step indicator (cockpit only) */}
         <LoopDiagram activeStep={running ? "analyze" : "stop"} compact />
       </div>
@@ -197,6 +246,9 @@ export function Cockpit({
         />
       </div>
 
+      {/* Run-level trust: internal diversity + novelty vs the seed (null-safe while live) */}
+      <PopulationHealth diversity={snap.diversity} novelty={snap.novelty} live={running} />
+
       {/* Reasoning (hero) + AUC (co-primary) */}
       <section className="grid gap-4 lg:h-[430px] lg:grid-cols-[1.5fr_1fr]">
         {/* Analyzer reasoning — prime real estate */}
@@ -210,6 +262,14 @@ export function Cockpit({
             </div>
             <span className="text-xs text-muted-foreground">per generation</span>
           </div>
+
+          {snap.mode === "exploratory" && (
+            <p className="mx-4 mb-1 rounded-lg border border-chart-4/40 bg-chart-4/10 px-3 py-2 text-xs leading-relaxed text-foreground">
+              Composed objective — the analyzer steers the single composite score. Per-term
+              deltas aren&apos;t emitted, so the focus/avoid below reflect the whole objective
+              (its terms appear under Reproducibility below after the run finalizes).
+            </p>
+          )}
 
           {current ? (
             <div className="mx-4 rounded-lg border border-primary/40 bg-primary/[0.06] p-3.5">
@@ -264,11 +324,13 @@ export function Cockpit({
           </div>
         </Card>
 
-        {/* AUC vs Graph-GA */}
+        {/* AUC vs Graph-GA (benchmark) — exploratory runs have no GA control to beat */}
         <Card className="flex h-full flex-col">
           <div className="px-4 pb-2">
             <h2 className="font-heading text-base font-normal">
-              Sample efficiency vs Graph-GA
+              {snap.mode === "exploratory"
+                ? "Sample efficiency"
+                : "Sample efficiency vs Graph-GA"}
             </h2>
           </div>
           <div className="min-h-0 flex-1 px-4 pb-4">
@@ -305,12 +367,18 @@ export function Cockpit({
                   <div className="mt-1.5 font-mono text-xs leading-relaxed break-all text-muted-foreground">
                     {m.smiles}
                   </div>
+                  <div className="mt-2">
+                    <QualityBadges quality={m.quality} />
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </section>
+
+      {/* Reproducibility manifest + lineage exports (07-06/07-07) */}
+      <Downloads runId={snap.run_id} finalized={finalized} />
 
       <p className="text-xs text-muted-foreground">
         Every score above is an in-silico oracle / benchmark score.{" "}
@@ -319,5 +387,36 @@ export function Cockpit({
         </Link>
       </p>
     </div>
+  );
+}
+
+// Socket state, always label-carried (never color-only). Coral only for the live state.
+function ConnIndicator({ conn }: { conn: ConnState }) {
+  const map: Record<ConnState, { label: string; live?: boolean; warn?: boolean }> = {
+    connecting: { label: "connecting…" },
+    live: { label: "live", live: true },
+    reconnecting: { label: "reconnecting…", warn: true },
+    lost: { label: "connection lost", warn: true },
+    done: { label: "closed" },
+  };
+  const s = map[conn];
+  return (
+    <span
+      className={[
+        "inline-flex items-center gap-1.5 text-xs",
+        s.warn ? "text-foreground" : "text-muted-foreground",
+      ].join(" ")}
+    >
+      {s.live && (
+        <span
+          className="size-1.5 rounded-full bg-primary motion-safe:animate-pulse"
+          aria-hidden="true"
+        />
+      )}
+      {s.warn && (
+        <span className="size-1.5 rounded-full bg-chart-4" aria-hidden="true" />
+      )}
+      {s.label}
+    </span>
   );
 }

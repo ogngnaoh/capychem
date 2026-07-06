@@ -101,6 +101,29 @@ export type IntentResolution = {
   cost_usd: number;
 };
 
+// Composed multi-term objective (07-04). Mirrors packages/core ObjectiveSpec.to_json:
+// each term = an oracle + positive weight + a [0,1] transform + oracle_kwargs (pmo
+// needs {task}). A non-null objective_json marks the run exploratory server-side.
+export type ObjectiveTermJson = {
+  oracle: string;
+  weight: number;
+  transform: Record<string, unknown>;
+  oracle_kwargs: Record<string, unknown>;
+};
+export type ObjectiveJson = { terms: ObjectiveTermJson[]; aggregator: string };
+// Hard constraints (07-04b), all optional. Present ⇒ exploratory.
+export type ConstraintsJson = {
+  catalogs?: string[];
+  smarts_exclude?: string[];
+  smarts_include?: string[];
+};
+export type ObjectiveValidateResult = { smiles: string; score: number | null };
+export type ObjectiveValidateResponse = {
+  aggregator: string;
+  n_terms: number;
+  results: ObjectiveValidateResult[];
+};
+
 export type CreateRunBody = {
   task: string;
   budget: number;
@@ -114,6 +137,10 @@ export type CreateRunBody = {
   // Operator bring-your-own starting compounds (07-02, FR-001). A non-empty list
   // marks the run exploratory server-side. Distinct from the integer RNG `seed`.
   seed_smiles?: string[];
+  // Composed objective + hard constraints (07-04/07-04b). Either present ⇒ the
+  // server derives mode=exploratory (never client-set).
+  objective_json?: ObjectiveJson;
+  constraints_json?: ConstraintsJson;
 };
 
 export async function createRun(
@@ -126,10 +153,16 @@ export async function createRun(
   });
   if (!r.ok) {
     const detail = (await r.json().catch(() => ({}))).detail;
+    // Pydantic v2 prefixes field-validator failures with "Value error, " — noise on an
+    // operator surface. Strip it; the named-SMILES remainder that parseRejectedSeeds
+    // reads ("…did not parse: […]") is untouched.
+    const strip = (m: string) => m.replace(/^Value error, /, "");
     throw new Error(
       Array.isArray(detail)
-        ? detail.map((e: { msg?: string }) => e.msg ?? JSON.stringify(e)).join("; ")
-        : (detail ?? `HTTP ${r.status}`),
+        ? detail.map((e: { msg?: string }) => strip(e.msg ?? JSON.stringify(e))).join("; ")
+        : typeof detail === "string"
+          ? strip(detail)
+          : (detail ?? `HTTP ${r.status}`),
     );
   }
   return r.json();
@@ -139,6 +172,45 @@ export async function getRun(id: number): Promise<RunSnapshot> {
   const r = await fetch(`${API_URL}/runs/${id}`);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
+}
+
+// Live preview of a composed objective (07-04). POST /objective/validate scores each
+// probe SMILES to a single composite [0,1] (null = the objective couldn't score it).
+// A malformed spec is a 422 — surfaced to the builder as an error.
+export async function validateObjective(
+  spec: ObjectiveJson,
+  smiles: string[],
+): Promise<ObjectiveValidateResponse> {
+  const r = await fetch(`${API_URL}/objective/validate`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ spec, smiles }),
+  });
+  if (!r.ok) {
+    const detail = (await r.json().catch(() => ({}))).detail;
+    throw new Error(typeof detail === "string" ? detail : `HTTP ${r.status}`);
+  }
+  return r.json();
+}
+
+// Reproducibility manifest (07-06, OD-5): git SHA + model id + PyTDC pin + full launch
+// config + trace URL. Empty object while a run is still live (written at finalize).
+export async function getManifest(id: number): Promise<Record<string, unknown>> {
+  const r = await fetch(`${API_URL}/runs/${id}/manifest`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+// Download URLs (07-06/07-07) — used as anchor hrefs so the browser streams the file
+// body directly (manifest JSON + per-candidate lineage CSV/SDF).
+export function manifestUrl(id: number): string {
+  return `${API_URL}/runs/${id}/manifest`;
+}
+export function exportCsvUrl(id: number): string {
+  return `${API_URL}/runs/${id}/export.csv`;
+}
+export function exportSdfUrl(id: number): string {
+  return `${API_URL}/runs/${id}/export.sdf`;
 }
 
 export async function listRuns(

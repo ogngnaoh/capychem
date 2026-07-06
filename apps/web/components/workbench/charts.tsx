@@ -2,7 +2,7 @@
 
 // Shared workbench charts — on-token via CSS vars (no hardcoded hex). This-run =
 // chart-1 (coral); Graph-GA baseline = muted-foreground dashed reference line;
-// Compare B = chart-2 (blue). Ported from the CP2-approved hi-fi prototype
+// Compare B = foreground (dashed). Ported from the CP2-approved hi-fi prototype
 // (app/proto/_chart.tsx); AucPanel's baseline is now nullable (the run snapshot's
 // graph_ga_baseline may be absent).
 
@@ -31,16 +31,21 @@ export function AucPanel({
   baseline: number | null;
   running: boolean;
 }) {
-  const latest = curve.length ? curve[curve.length - 1].top10_mean : 0;
+  // Only compute a signed baseline delta once the run has scored at least one
+  // generation. With an empty curve there is no "latest" to compare, so showing a
+  // signed "behind/beating baseline by X" would be a fabricated comparison (the
+  // cold-start / reconnect window) — gate the chip on real data instead.
+  const hasCurve = curve.length > 0;
   const hasBaseline = baseline !== null;
-  const delta = hasBaseline ? latest - baseline : 0;
+  const latest = hasCurve ? curve[curve.length - 1].top10_mean : 0;
+  const delta = latest - (baseline ?? 0);
   const beating = delta >= 0;
   const deltaLabel = `${beating ? "+" : "−"}${Math.abs(delta).toFixed(3)}`;
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-baseline justify-between gap-2">
-        {hasBaseline ? (
+        {hasBaseline && hasCurve ? (
           <span
             className={[
               "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
@@ -50,6 +55,10 @@ export function AucPanel({
             ].join(" ")}
           >
             {beating ? "Beating baseline" : "Behind baseline"} by {deltaLabel}
+          </span>
+        ) : hasBaseline ? (
+          <span className="text-xs text-muted-foreground">
+            awaiting the first generation
           </span>
         ) : (
           <span className="text-xs text-muted-foreground">
@@ -123,7 +132,8 @@ export function AucPanel({
   );
 }
 
-// Compare overlay: A = chart-1 (coral), B = chart-2 (blue).
+// Compare overlay: A = chart-1 (coral, the reference series), B = foreground (a strong
+// warm neutral). Coral stays reserved for the primary/reference run per the token rules.
 export function CompareChart({
   overlay,
   labelA,
@@ -170,8 +180,9 @@ export function CompareChart({
             <Line
               type="monotone"
               dataKey="b"
-              stroke="var(--color-chart-2)"
+              stroke="var(--color-foreground)"
               strokeWidth={2}
+              strokeDasharray="5 4"
               dot={false}
               isAnimationActive={false}
               connectNulls
@@ -185,7 +196,7 @@ export function CompareChart({
           {labelA}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-0.5 w-4 rounded bg-chart-2" />
+          <span className="inline-block h-0 w-4 border-t-2 border-dashed border-foreground" />
           {labelB}
         </span>
         <span className="ml-auto">top-10 mean vs oracle calls · in-silico</span>

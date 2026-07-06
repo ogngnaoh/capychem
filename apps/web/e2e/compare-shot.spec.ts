@@ -19,7 +19,7 @@ for (const s of SHOTS) {
     await page.setViewportSize({ width: 1280, height: 800 });
     if (s.dark) await forceDark(page);
     await mockApi(page);
-    await page.goto("/compare?a=281&b=268", { waitUntil: "networkidle" });
+    await page.goto("/compare?a=281&b=269", { waitUntil: "networkidle" });
     await page.getByText("Two runs, side by side").waitFor({ timeout: 15_000 });
     await page.getByText("no analyzer step").waitFor({ timeout: 5_000 });
     await page.waitForTimeout(500);

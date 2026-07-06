@@ -22,8 +22,11 @@ import { Eyebrow, StatusChip } from "@/components/workbench/ui";
 type SortKey = "started_at" | "best_score" | "oracle_calls" | "status";
 type Order = "asc" | "desc";
 
-function formatRelativeTime(iso: string): string {
-  const t = new Date(iso).getTime();
+// `started_at` arrives as a timezone-NAIVE UTC ISO string (the API serializes UTC
+// datetimes without an offset), which `new Date()` would read as LOCAL time. Pin
+// bare strings to UTC before parsing; explicit Z/offset strings pass through.
+export function formatRelativeTime(iso: string): string {
+  const t = new Date(/[zZ]$|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : `${iso}Z`).getTime();
   if (!Number.isFinite(t)) return iso;
   const secs = Math.round((Date.now() - t) / 1000);
   if (secs < 60) return "just now";
@@ -140,11 +143,13 @@ export function RunsBrowse() {
       </div>
 
       {error ? (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
-
+        <div
+          role="alert"
+          className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-6 text-center text-sm text-destructive"
+        >
+          Couldn&apos;t load runs: {error}
+        </div>
+      ) : (
       <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
         <Table>
           <TableHeader>
@@ -152,6 +157,7 @@ export function RunsBrowse() {
               <TableHead className="w-8 pl-4" />
               <TableHead>Run</TableHead>
               <TableHead>Objective</TableHead>
+              <TableHead>Mode</TableHead>
               <TableHead>Strategy</TableHead>
               {SORTABLE.map((c) => (
                 <TableHead
@@ -162,7 +168,7 @@ export function RunsBrowse() {
                   <button
                     type="button"
                     onClick={() => toggleSort(c.key)}
-                    className="cursor-pointer font-medium text-muted-foreground hover:text-foreground"
+                    className="cursor-pointer font-medium text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded"
                   >
                     {c.label}
                     {arrow(c.key)}
@@ -174,8 +180,16 @@ export function RunsBrowse() {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
-                  No {status || "matching"} runs yet. Start one from the launcher.
+                <TableCell colSpan={9} className="py-12 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No {status && status !== "all" ? `${status} ` : ""}runs yet.
+                  </p>
+                  <Link
+                    href="/launch"
+                    className="mt-2 inline-block text-sm text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
+                  >
+                    Start a run →
+                  </Link>
                 </TableCell>
               </TableRow>
             ) : (
@@ -207,14 +221,14 @@ export function RunsBrowse() {
                         {r.run_id}
                       </Link>
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
+                    <TableCell className="max-w-[16ch] truncate font-mono text-xs text-muted-foreground">
                       {r.task}
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      <span className="flex items-center gap-2">
-                        {strategyLabel(r.mutation_strategy)}
-                        <ModeBadge mode={r.mode} />
-                      </span>
+                    <TableCell>
+                      <ModeBadge mode={r.mode} compact />
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {strategyLabel(r.mutation_strategy)}
                     </TableCell>
                     <TableCell>
                       <StatusChip status={r.status} />
@@ -225,7 +239,7 @@ export function RunsBrowse() {
                     <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
                       {r.oracle_calls.toLocaleString()} / {r.budget.toLocaleString()}
                     </TableCell>
-                    <TableCell className="pr-4 text-right text-xs text-muted-foreground">
+                    <TableCell className="pr-4 text-right text-xs whitespace-nowrap text-muted-foreground">
                       {formatRelativeTime(r.started_at)}
                     </TableCell>
                   </TableRow>
@@ -235,6 +249,7 @@ export function RunsBrowse() {
           </TableBody>
         </Table>
       </div>
+      )}
     </div>
   );
 }

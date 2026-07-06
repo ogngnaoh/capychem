@@ -1,55 +1,42 @@
-# Handoff — milestone 07 objective-ownership
+# Handoff — milestone 07 objective-ownership → **COMPLETE (2026-07-06)**
 
-## Next session start here (07-08 UI — the milestone closer)
-Milestone 07's **backend is 100% complete**, including 07-08's backend wiring (novelty
-threading + quality/diversity/novelty on the run snapshot). The ONLY remaining work is the
-**visual UI for 07-08**, to be built in this fresh, screenshot-iterated session. Branch off
-`main` (branch-first), invoke the **frontend-design** skill, and build against the shipped
-Anthropic warm-token system (cream+coral, Source Serif 4 / Inter). Iterate with `/run` +
-screenshots. Deliverables (all in `apps/web`; the backend APIs already exist):
+## Next session start here (milestone boundary — start milestone 08 FRESH)
+Milestone 07 is **fully shipped** (all 8 slices; backend + UI). Per the milestone-boundary
+convention, do NOT continue milestone 08 in this session's thread — **start milestone 08 in a
+fresh session.** First action there:
+1. Read `docs/milestones.md`, then decide/synthesize milestone 08's scope from the plan
+   `docs/superpowers/plans/2026-07-03-capychem-production-v1.md` (the reliable+versatile
+   pivot — pick the next phase/tier after 07's "make-it-yours + trust"). Candidates parked in
+   the plan: Modal load-bearing program (eval-sweep/ADMET/durable-loop, GATE A), expensive
+   top-K rescore-report (docking, Phase-2), or further trust/observability depth.
+2. Synthesize `docs/08-<name>/milestone.md` + `handoff.md` only when that work starts — do not
+   pre-create.
 
-1. **Objective builder** — pick oracles (`GET /catalog` + the descriptor presets
-   qed/sa_score/mw/clogp/tpsa) + weights + transforms (`identity`/`sigmoid`/`reverse_sigmoid`/
-   `double_sigmoid`/`value_map`) + SMARTS-exclude/include + property-band constraints; live
-   preview via `POST /objective/validate`; **collapses to the single-task pick in benchmark
-   mode**. Sends `objective_json`/`constraints_json` in the `createRun` body (both already
-   accepted + validated server-side; a non-null one ⇒ `exploratory`).
-2. **Seed-import** — paste/upload SMILES (SDF/CSV parse), RDKit-validated at `/runs`; show
-   accepted/rejected. (07-02 shipped the single space/comma field; this is the rich version.)
-3. **Quality + diversity display** — badges on top-K tiles from `RunSnapshot.top_k[].quality`
-   (SA/QED/Lipinski/Veber/PAINS/Brenk); `RunSnapshot.diversity`/`novelty` in the run summary.
-4. **Manifest + export downloads** on run-detail — `GET /runs/{id}/manifest`, `/export.csv`,
-   `/export.sdf` (all live).
-5. **Cockpit** — analyzer per-component reasoning (which objective term moved) + WS
-   reconnect-with-backoff + "connection lost" state + cold-start "waking the model ~30s" copy.
-6. **Tests** — vitest for the objective builder + import + quality display; **extend the axe
-   gate** (`apps/web/e2e/a11y.spec.ts`) to the new surfaces; keep WCAG-AA green.
-
-**Honesty on every new surface:** mode badge; exploratory = "not benchmark-comparable";
-figure-canon never "21/23".
-
-## When 07-08 UI ships → MILESTONE 07 IS COMPLETE
-In the ship commit: flip 07-08 → shipped in `milestone.md`; **flip `docs/milestones.md`**
-(mark 07-objective-ownership shipped, next milestone `← active` or note "milestone 07
-complete"); append a dated line to `log.md`; overwrite this handoff for the next milestone.
-Per the milestone-boundary convention, the NEXT milestone starts in another fresh session.
+## What shipped this session (07-08 UI + full-workbench redesign)
+Built via a `meta-plugin:agent-team` Builder↔Critic loop on **fable-5** (3 build rounds / 2
+critic passes; orchestrator ran the Playwright `-shot` harness as the pixel oracle and
+re-verified every gate). All under `apps/web` — no backend change (every API already existed).
+- Objective builder · rich seed-import · quality/diversity/novelty display · manifest + CSV/SDF
+  downloads · cockpit reconnect-with-backoff + cold-start · redesigned Overview/Runs/Compare/Shell.
+- New `--primary-hover` token (darken-on-hover) for WCAG-AA compliance.
+- See `log.md` (2026-07-06 entry) for the four Critic-caught fixes (false gen-0 baseline delta,
+  silent reconnect data-loss, unwired server-rejected-SMILES, hover-contrast AA miss).
 
 ## Current state
-- **Milestone 07 backend COMPLETE** (01 mode-split · 02 seed · 03 pluggable-oracle · 04
-  objective · 04b constraints · 05 quality+trust · 06 manifest · 07 export · **08 backend
-  wiring**). Alembic head **`38f369ef45a6`**.
-- 07-08 backend wiring shipped this session: gen-0 `seed_pop` stashed at persist + threaded
-  through `stop_check`/runner fallbacks → `summary_json.novelty`; `build_summary` attaches
-  `molecule_quality` to each `top_k` entry; `RunSnapshot.diversity`/`novelty` +
-  `TopMolecule.quality` (runner overlays them onto the live snapshot at finalize since the
-  handle is never evicted); `api.ts` types added.
-- Gate all green: mypy (66) · ruff · **396** backend · web typecheck/ESLint · 40 vitest ·
-  migration drift. `main` ahead of `origin/main` (unpushed) + m07-02..07 + the 07-08-wiring commit.
+- **Milestone 07 COMPLETE** (01 mode-split · 02 seed · 03 pluggable-oracle · 04 objective ·
+  04b constraints · 05 quality+trust · 06 manifest · 07 export · 08 authoring-UI). Alembic head
+  **`38f369ef45a6`**.
+- Gates green at ship: web typecheck + ESLint · **80 vitest** · `build` ✓ · **24 shots** @1280px
+  (light+dark, no h-scroll) · **axe 16/16** WCAG-AA. Backend gates unchanged from 07-08-wiring
+  (mypy 66 · ruff · 396 backend · migration drift).
+- The 07-08 UI work landed on branch `m07-08-workbench-ui` and was merged to `main` in the ship
+  commit (UI + these doc flips together).
 
-## Active concerns
-- **UI-only remains** — no backend changes needed for 07-08 (all APIs exist). If a surface
-  needs a field the snapshot lacks, prefer adding it to `RunSnapshot` over new endpoints.
-- **Live vs. finalized snapshot:** quality/diversity/novelty are null WHILE a run is live
-  (populated at finalize); the UI must handle nulls (show "computing…"/hide badges live).
-- **Novelty is best-effort:** null on a resumed run (seed set not reconstructable). Tolerate null.
-- Keep axe AA green (extend the gate); test basenames unique across the two roots.
+## Active concerns / carry-forward
+- **Reconnect residual:** the cockpit re-fetches on reconnect, closing the gap to a sub-second
+  fetch→subscribe window; a true zero-gap fix needs **server-side WS event replay** (backend).
+  Consider it if milestone 08 touches reliability/observability.
+- The screenshot harness (`e2e/*-shot.spec.ts` + `_fixtures.ts`) mocks the whole API — no
+  Postgres/Modal needed; it's the frontend iteration oracle. Extend fixtures when adding surfaces.
+- Honesty invariants intact on every surface (mode badge, exploratory="not benchmark-comparable",
+  figure-canon never "21/23", in-silico framing). Keep them on any new surface.
