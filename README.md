@@ -164,33 +164,46 @@ A few decisions worth calling out:
 
 ## Quickstart
 
-Prerequisites: Python 3.12 + [`uv`](https://docs.astral.sh/uv/), Node 22 + `pnpm`, Docker.
+Prerequisites: Python 3.12 + [`uv`](https://docs.astral.sh/uv/), Node 22 + `pnpm` 11.5.0, Docker. The harness's
+Python 3.10 (PyTDC 0.3.6) is fetched automatically by `uv` — you don't install it.
+
+```bash
+git clone <repo> && cd CapyChem
+make setup     # deps (modern + harness) · .env.local · local Postgres
+make dev       # API on :8000 + web on :3000
+```
+
+`make setup` is the whole cold start. The explicit steps it runs, if you'd rather do them by hand:
 
 ```bash
 # 1. Install deps
 uv sync                       # modern Python (core + api)
-uv sync --project harness     # isolated legacy harness env (PyTDC 0.3.6, Python 3.10)
+uv sync --project harness     # isolated legacy harness env (PyTDC 0.3.6, Python 3.10 — uv auto-fetches it)
 pnpm install                  # web
 
-# 2. Local infra (Postgres + Langfuse)
+# 2. Local infra — Postgres (required); Langfuse (optional, tracing only)
 docker compose -f infra/compose.yml up -d
-docker compose -f infra/langfuse-compose.yml up -d
+docker compose -f infra/langfuse-compose.yml up -d   # optional — the app runs fully without it
 
-# 2b. Schema — Alembic migrations (also run automatically on API startup)
+# 2b. Schema — migrations run automatically on API startup, so this is redundant if you
+#     start the API; run it only to prepare the schema first (e.g. for the DB-backed tests).
 uv run alembic upgrade head
 
 # 3. Run the stack
 uv run uvicorn capychem.api.main:app --reload        # API  → :8000
 pnpm --filter web dev                                 # web  → :3000
 
-# 4. Or run the benchmark from the CLI
+# 4. Or run the benchmark from the CLI (needs no database)
 uv run capychem-eval --task=qed --budget=10000 --seed=42     # one PMO task
 ```
 
-Copy `.env.example` → `.env.local` and adjust. By default the proposer runs a deterministic network-free stub;
-set `CAPYCHEM_PROPOSER_BACKEND=direct` + `DEEPSEEK_API_KEY` to use the real DeepSeek model. There is **no auth
-or hosting** — this is a single-user tool you fork and run locally. For the full dev loop, the CI checks, and
-the project invariants, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Copy `.env.example` → `.env.local` and adjust (`make setup` does this for you). By default the proposer runs a
+deterministic network-free stub; set `CAPYCHEM_PROPOSER_BACKEND=direct` + `DEEPSEEK_API_KEY` to use the real
+DeepSeek model. There is **no auth or hosting** — this is a single-user tool you fork and run locally.
+
+> Running the test suite? `uv run pytest` ("Test all") needs a running Postgres **and** the harness venv —
+> some API tests error rather than skip without them. For the full dev loop, the CI checks, and the project
+> invariants, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Repository map
 
