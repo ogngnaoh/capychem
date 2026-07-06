@@ -35,6 +35,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -57,6 +58,9 @@
   --popover-foreground: oklch(0.112 0.004 83);
   --primary: oklch(0.555 0.112 46);
   --primary-foreground: oklch(1 0 0);
+  /* Hover DARKENS the coral (never lighten toward cream): white text stays WCAG-AA
+     in every state — 6.01:1 here vs 4.96:1 at rest. */
+  --primary-hover: oklch(0.51 0.112 46);
   --secondary: oklch(0.956 0.009 83);
   --secondary-foreground: oklch(0.112 0.004 83);
   --muted: oklch(0.934 0.012 83);
@@ -92,6 +96,9 @@
   --popover-foreground: oklch(0.977 0.005 83);
   --primary: oklch(0.565 0.120 46);
   --primary-foreground: oklch(1 0 0);
+  /* Matches the old primary/90-over-near-black hover feel as a solid; white text
+     5.54:1 vs 4.78:1 at rest. */
+  --primary-hover: oklch(0.53 0.120 46);
   --secondary: oklch(0.175 0.006 83);
   --secondary-foreground: oklch(0.977 0.005 83);
   --muted: oklch(0.175 0.006 83);

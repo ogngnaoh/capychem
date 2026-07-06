@@ -92,7 +92,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </a>
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-8 px-6">
-          <Link href="/" className="font-heading text-lg font-normal tracking-tight">
+          <Link
+            href="/"
+            className="flex items-center gap-2 font-heading text-lg font-normal tracking-tight focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              className="text-primary"
+              aria-hidden="true"
+            >
+              <polygon points="12,3 20,7.5 20,16.5 12,21 4,16.5 4,7.5" />
+              <circle cx="12" cy="12" r="3.2" />
+            </svg>
             CapyChem
           </Link>
           <nav className="flex items-center gap-0.5" aria-label="Primary">
@@ -122,7 +138,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <ThemeToggle />
             <Link
               href="/launch"
-              className="rounded-lg bg-primary px-3.5 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="rounded-lg bg-primary px-3.5 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               Start a run
             </Link>
@@ -132,6 +148,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main id="main-content" className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
         {children}
       </main>
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-5 text-xs text-muted-foreground">
+          <span>
+            CapyChem — sample-efficient molecular optimization on PMO oracles. Every score
+            is an in-silico oracle score, never a real-world efficacy claim.
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-1 rounded-full bg-muted-foreground" aria-hidden="true" />
+            in-silico benchmark demonstrator
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }

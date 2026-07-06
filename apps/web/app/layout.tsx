@@ -38,6 +38,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      // The no-flash theme script toggles `.dark` on <html> before hydration; scope the
+      // resulting attribute-only mismatch warning to this element (not its descendants).
+      suppressHydrationWarning
       className={`${inter.variable} ${sourceSerif.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">

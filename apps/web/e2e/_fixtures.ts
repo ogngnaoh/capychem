@@ -85,6 +85,20 @@ const TOP_K = [
   { smiles: "COc1ccc2nc(N)sc2c1C(=O)Nc1ccccc1", score: 0.8098 },
 ];
 
+// Per-candidate quality reports (07-05/07-08), populated at finalize — honest in-silico
+// values (N6). One row trips Veber + a Brenk alarm and one trips Lipinski + PAINS so the
+// warn chips render; `quality` stays null on live snapshots (QualityBadges → "computing…").
+const QUALITY = [
+  { valid: true, qed: 0.62, sa_score: 2.91, mw: 495.6, logp: 3.1, hbd: 3, hba: 6, rotatable_bonds: 11, tpsa: 121.4, lipinski_pass: true, veber_pass: true, pains: false, brenk: false },
+  { valid: true, qed: 0.71, sa_score: 2.38, mw: 271.2, logp: 2.7, hbd: 2, hba: 4, rotatable_bonds: 3, tpsa: 66.2, lipinski_pass: true, veber_pass: true, pains: false, brenk: false },
+  { valid: true, qed: 0.68, sa_score: 2.55, mw: 268.3, logp: 2.4, hbd: 2, hba: 5, rotatable_bonds: 4, tpsa: 63.1, lipinski_pass: true, veber_pass: true, pains: false, brenk: false },
+  { valid: true, qed: 0.54, sa_score: 3.12, mw: 318.8, logp: 4.2, hbd: 1, hba: 3, rotatable_bonds: 3, tpsa: 51.0, lipinski_pass: true, veber_pass: false, pains: false, brenk: true },
+  { valid: true, qed: 0.60, sa_score: 2.73, mw: 254.2, logp: 1.9, hbd: 2, hba: 5, rotatable_bonds: 3, tpsa: 68.9, lipinski_pass: true, veber_pass: true, pains: false, brenk: false },
+  { valid: true, qed: 0.49, sa_score: 3.41, mw: 341.4, logp: 2.2, hbd: 2, hba: 6, rotatable_bonds: 5, tpsa: 89.3, lipinski_pass: false, veber_pass: true, pains: true, brenk: false },
+];
+
+const TOP_K_SCORED = TOP_K.map((m, i) => ({ ...m, quality: QUALITY[i] }));
+
 const HYPS = [
   {
     after_generation_index: 1,
@@ -113,7 +127,7 @@ export const SNAPSHOT_COMPLETED = {
   generation_index: 23,
   oracle_calls_used: 10000,
   best_score: 0.8814,
-  top_k: TOP_K,
+  top_k: TOP_K_SCORED,
   auc_curve: [
     { oracle_calls: 100, top10_mean: 0.42 },
     { oracle_calls: 800, top10_mean: 0.69 },
@@ -129,6 +143,103 @@ export const SNAPSHOT_COMPLETED = {
   graph_ga_baseline: 0.7712,
   llm_cost_usd: 1.8342,
   oracle_cost_usd: 0.5795,
+  diversity: 0.58,
+  novelty: 0.41,
+};
+
+// A completed exploratory run (composed objective + a seed) — exercises the mode badge,
+// the analyzer "composed objective" note, and the objective-composition legend built from
+// the manifest. Never carries a Graph-GA baseline (07-01 G1-contamination guard).
+export const SNAPSHOT_EXPLORATORY = {
+  ...SNAPSHOT_COMPLETED,
+  run_id: 271,
+  task: "qed",
+  mode: "exploratory",
+  status: "stopped",
+  graph_ga_baseline: null,
+  diversity: 0.66,
+  novelty: 0.52,
+};
+
+// A fresh live run on Modal cold start: gen 0, nothing scored yet → the cockpit shows the
+// "waking the model (~30s)…" affordance instead of an empty shell.
+export const SNAPSHOT_COLD = {
+  run_id: 284,
+  task: "jnk3",
+  mode: "benchmark",
+  status: "running",
+  budget: 10000,
+  plateau_window: 5,
+  generation_index: 0,
+  oracle_calls_used: 0,
+  best_score: null as number | null,
+  top_k: [] as { smiles: string; score: number }[],
+  auc_curve: [] as { oracle_calls: number; top10_mean: number }[],
+  cost_so_far_usd: 0,
+  hypotheses: [] as unknown[],
+  trace_url: null as string | null,
+  valid_smiles_rate: null as number | null,
+  graph_ga_baseline: 0.5723,
+  llm_cost_usd: null as number | null,
+  oracle_cost_usd: null as number | null,
+  diversity: null as number | null,
+  novelty: null as number | null,
+};
+
+// POST /objective/validate preview (07-04): one composite [0,1] per probe; null = the
+// objective couldn't score it.
+export const VALIDATE_RESPONSE = {
+  aggregator: "weighted_sum",
+  n_terms: 2,
+  results: [
+    { smiles: "CCO", score: 0.34 },
+    { smiles: "c1ccccc1", score: 0.47 },
+    { smiles: "CC(=O)Oc1ccccc1C(=O)O", score: 0.62 },
+    { smiles: "O=C(O)c1ccccc1O", score: 0.55 },
+  ],
+};
+
+// GET /runs/{id}/manifest (07-06): benchmark run — no composed objective.
+export const MANIFEST = {
+  git_sha: "6dc34c9",
+  model_id: "deepseek-v4-pro",
+  pytdc_version: "0.3.6",
+  trace_url: "http://localhost:3001/project/p/traces/281",
+  config: {
+    task: "troglitazone_rediscovery",
+    budget: 10000,
+    seed: 42,
+    mutation_strategy: "llm",
+    mode: "benchmark",
+    seed_source: "default",
+    objective_json: null,
+    constraints_json: null,
+  },
+};
+
+// GET /runs/{id}/manifest for the exploratory run — carries the composed objective so the
+// downloads panel renders the term legend.
+export const MANIFEST_EXPLORATORY = {
+  git_sha: "6dc34c9",
+  model_id: "deepseek-v4-pro",
+  pytdc_version: "0.3.6",
+  trace_url: null,
+  config: {
+    task: "qed",
+    budget: 10000,
+    seed: 42,
+    mutation_strategy: "llm",
+    mode: "exploratory",
+    seed_source: "custom",
+    objective_json: {
+      terms: [
+        { oracle: "qed", weight: 2, transform: { kind: "identity" }, oracle_kwargs: {} },
+        { oracle: "sa_score", weight: 1, transform: { kind: "reverse_sigmoid", low: 2, high: 5, k: 10 }, oracle_kwargs: {} },
+      ],
+      aggregator: "weighted_sum",
+    },
+    constraints_json: { catalogs: ["PAINS"] },
+  },
 };
 
 export const SNAPSHOT_RUNNING = {
@@ -171,8 +282,10 @@ export const COMPARE_PAYLOAD = {
     top_k: TOP_K.slice(0, 4),
     hypotheses: HYPS,
   },
+  // b is exploratory and deliberately NOT run 268 (a benchmark row in RUNS_LIST) — a
+  // run_id must never appear with two different mode badges across the demo surfaces.
   b: {
-    run_id: 268,
+    run_id: 269,
     task: "troglitazone_rediscovery",
     mode: "exploratory",
     status: "exhausted",
@@ -229,6 +342,11 @@ type MockOpts = {
   snapshot?: unknown;
   compare?: unknown;
   resolution?: unknown;
+  validate?: unknown;
+  manifest?: unknown;
+  // When set, POST /runs 422s naming these SMILES (A3 seed-rejected path) exactly as the
+  // RDKit gate in apps/api schemas.py does, so the launcher can mark the offending tokens.
+  createReject?: string[];
 };
 
 export async function mockApi(page: Page, opts: MockOpts = {}) {
@@ -239,10 +357,31 @@ export async function mockApi(page: Page, opts: MockOpts = {}) {
       await route.fulfill({ status: 200, contentType: "image/svg+xml", body: MOLECULE_SVG });
       return;
     }
+    // Lineage exports (07-07) stream file bodies; the page uses plain anchors, but a
+    // stray fetch shouldn't 404 in the harness.
+    if (/^\/runs\/\d+\/export\.(csv|sdf)$/.test(p)) {
+      await route.fulfill({ status: 200, contentType: "text/plain", body: "candidate_id\n1\n" });
+      return;
+    }
+    if (p === "/runs" && req.method() === "POST" && opts.createReject?.length) {
+      const named = opts.createReject.map((s) => `'${s}'`).join(", ");
+      await route.fulfill({
+        status: 422,
+        contentType: "application/json",
+        body: JSON.stringify({
+          detail: [
+            { msg: `Value error, Validate seed SMILES via RDKit; these did not parse: [${named}]` },
+          ],
+        }),
+      });
+      return;
+    }
     let body: unknown = {};
     if (p === "/catalog") body = CATALOG;
     else if (p === "/intent/resolve") body = opts.resolution ?? RESOLUTION_MATCH;
+    else if (p === "/objective/validate") body = opts.validate ?? VALIDATE_RESPONSE;
     else if (p === "/compare") body = opts.compare ?? COMPARE_PAYLOAD;
+    else if (/^\/runs\/\d+\/manifest$/.test(p)) body = opts.manifest ?? MANIFEST;
     else if (/^\/runs\/\d+$/.test(p)) body = opts.snapshot ?? SNAPSHOT_COMPLETED;
     else if (p === "/runs" && req.method() === "POST") body = { run_id: 999 };
     else if (p === "/runs") body = opts.runs ?? RUNS_LIST;
@@ -289,6 +428,47 @@ export async function stubWebSocket(page: Page) {
           removeEventListener() {},
         };
         setTimeout(() => ws.onopen?.(new Event("open")), 0);
+        return ws;
+      }
+      return new Native(url, protocols);
+    }
+    Fake.CONNECTING = 0;
+    Fake.OPEN = 1;
+    Fake.CLOSING = 2;
+    Fake.CLOSED = 3;
+    Fake.prototype = Native.prototype;
+    // @ts-expect-error override the global for the capture only
+    window.WebSocket = Fake;
+  });
+}
+
+// Like stubWebSocket, but the run socket OPENS then DROPS after a beat — driving the
+// cockpit into the "connection lost — reconnecting…" state deterministically for a shot
+// (the app then schedules a backoff reconnect; capture within that window).
+export async function stubWebSocketDrop(page: Page) {
+  await page.addInitScript(() => {
+    const Native = window.WebSocket;
+    function Fake(this: unknown, url: string, protocols?: string | string[]) {
+      if (typeof url === "string" && url.includes("/ws/runs/")) {
+        const ws = {
+          readyState: 1,
+          onopen: null as null | ((ev: Event) => void),
+          onmessage: null as null | ((ev: MessageEvent) => void),
+          onclose: null as null | ((ev: Event) => void),
+          onerror: null,
+          send() {},
+          close() {
+            (this as { readyState: number }).readyState = 3;
+          },
+          addEventListener() {},
+          removeEventListener() {},
+        };
+        setTimeout(() => ws.onopen?.(new Event("open")), 0);
+        // Drop once, ~120ms in — the app flips to "reconnecting" and schedules a retry.
+        setTimeout(() => {
+          (ws as { readyState: number }).readyState = 3;
+          ws.onclose?.(new Event("close"));
+        }, 120);
         return ws;
       }
       return new Native(url, protocols);

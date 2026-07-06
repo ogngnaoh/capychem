@@ -8,7 +8,7 @@ vi.mock("@/lib/api", () => ({ listRuns: (...a: unknown[]) => listRuns(...a) }));
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
-import { RunsBrowse } from "./RunsBrowse";
+import { formatRelativeTime, RunsBrowse } from "./RunsBrowse";
 
 const ROWS: RunListItem[] = [
   {
@@ -34,6 +34,25 @@ const ROWS: RunListItem[] = [
     started_at: "2026-06-30T10:00:00Z",
   },
 ];
+
+describe("formatRelativeTime", () => {
+  it("pins timezone-naive ISO strings (the API's UTC serialization) to UTC", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-30T14:00:00Z"));
+    try {
+      // A bare string must read as UTC — identical to the same instant with an
+      // explicit Z — in every browser timezone, not as local time.
+      expect(formatRelativeTime("2026-06-30T12:00:00")).toBe("2h ago");
+      expect(formatRelativeTime("2026-06-30T12:00:00")).toBe(
+        formatRelativeTime("2026-06-30T12:00:00Z"),
+      );
+      // An explicit offset is respected, never double-shifted.
+      expect(formatRelativeTime("2026-06-30T09:00:00-04:00")).toBe("1h ago");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
 
 describe("RunsBrowse", () => {
   beforeEach(() => {
@@ -75,11 +94,15 @@ describe("RunsBrowse", () => {
     );
   });
 
-  it("badges each row's mode; exploratory reads not benchmark-comparable", async () => {
+  it("badges each row's mode; exploratory keeps not-benchmark-comparable in its title", async () => {
     render(<RunsBrowse />);
     await waitFor(() => screen.getByText("jnk3"));
     expect(screen.getByText(/^Benchmark$/)).toBeInTheDocument(); // run 1
-    expect(screen.getByText(/not benchmark-comparable/i)).toBeInTheDocument(); // run 2
+    // The dense table uses the compact badge ("Exploratory"); the full honesty clause
+    // stays in its title tooltip so the claim never disappears.
+    const exploratory = screen.getByText(/^Exploratory$/); // run 2
+    expect(exploratory).toBeInTheDocument();
+    expect(exploratory).toHaveAttribute("title", expect.stringMatching(/not benchmark-comparable/i));
   });
 
   it("navigates to the run detail when a row is clicked", async () => {

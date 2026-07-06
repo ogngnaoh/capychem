@@ -22,6 +22,15 @@ import {
   type Refusal,
 } from "@/lib/api";
 import { Eyebrow, InSilicoTag } from "@/components/workbench/ui";
+import { ModeBadge } from "@/components/ModeBadge";
+import { SeedImport } from "@/components/workbench/SeedImport";
+import { ObjectiveBuilder, type ObjectiveDraft } from "@/components/workbench/ObjectiveBuilder";
+import { TRANSFORM_KINDS } from "@/components/workbench/objectiveSpec";
+import { parseSeeds } from "@/components/workbench/seedParse";
+
+const TRANSFORM_LABEL: Record<string, string> = Object.fromEntries(
+  TRANSFORM_KINDS.map((t) => [t.kind, t.label]),
+);
 
 type Plan = {
   task: string | null;
@@ -39,14 +48,21 @@ const DEFAULT_PLAN: Plan = {
   seed_smiles: "",
 };
 
-// Split the free-text seed field into individual SMILES on whitespace, commas, or
-// newlines (07-02). RDKit validates each authoritatively at the /runs boundary.
-function parseSeeds(text: string): string[] {
-  return text
-    .split(/[\s,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+// Seed parsing (07-02) lives in components/workbench/seedParse (shared with SeedImport);
+// RDKit validates each authoritatively at the /runs boundary.
+
+// The /runs 422 for a bad seed reads "…did not parse: ['SMILES', …]" (the RDKit gate in
+// apps/api schemas.py names the offenders). Pull those tokens out so SeedImport can mark
+// exactly which pasted rows the server rejected — never guess.
+export function parseRejectedSeeds(message: string): string[] {
+  // Greedy to the last `]` so SMILES that themselves contain brackets (e.g. `[nH]`,
+  // `[O-]`) aren't truncated; then pull the quoted tokens the Python list repr names.
+  const m = message.match(/did not parse:\s*\[(.*)\]/);
+  if (!m) return [];
+  return (m[1].match(/'([^']*)'|"([^"]*)"/g) ?? []).map((t) => t.slice(1, -1));
 }
+
+type BuilderMode = "benchmark" | "custom";
 
 export function Launcher() {
   const router = useRouter();
@@ -58,6 +74,12 @@ export function Launcher() {
   const [plan, setPlan] = useState<Plan>(DEFAULT_PLAN);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // SMILES the server rejected at launch (RDKit 422) — surfaced per-token in SeedImport.
+  const [rejectedSeeds, setRejectedSeeds] = useState<string[]>([]);
+  // Composed-objective mode (07-04): switching to "custom" opens the builder and makes
+  // the run exploratory. `draft` is the latest payload the builder emits.
+  const [builderMode, setBuilderMode] = useState<BuilderMode>("benchmark");
+  const [draft, setDraft] = useState<ObjectiveDraft | null>(null);
 
   useEffect(() => {
     let closed = false;
@@ -136,6 +158,7 @@ export function Launcher() {
     if (!canStart || !plan.task) return;
     setStarting(true);
     setError(null);
+    setRejectedSeeds([]);
     try {
       const seeds = parseSeeds(plan.seed_smiles);
       const { run_id } = await createRun({
@@ -154,7 +177,45 @@ export function Launcher() {
       });
       router.push(`/runs/${run_id}`);
     } catch (e) {
-      setError(String(e instanceof Error ? e.message : e));
+      const msg = String(e instanceof Error ? e.message : e);
+      setError(msg);
+      setRejectedSeeds(parseRejectedSeeds(msg));
+      setStarting(false);
+    }
+  }
+
+  // Launch a composed exploratory objective (07-04/07-04b). The run carries a valid PMO
+  // `task` column (representative), but scoring routes through objective_json server-side;
+  // objective_json / constraints_json / a custom seed each force exploratory.
+  const budgetOk = Number.isFinite(plan.budget) && plan.budget > 0;
+  const canStartCustom = !!draft && draft.blocker === null && budgetOk && !starting;
+
+  async function startCustom() {
+    if (!draft || draft.blocker !== null || !budgetOk || starting) return;
+    setStarting(true);
+    setError(null);
+    setRejectedSeeds([]);
+    try {
+      const seeds = parseSeeds(plan.seed_smiles);
+      const { run_id } = await createRun({
+        task: draft.representativeTask,
+        budget: plan.budget,
+        seed: 42,
+        pop_size: 100,
+        offspring: 32,
+        mutation_rate: 0.01,
+        plateau_window: plan.plateau_window,
+        max_generations: 100,
+        mutation_strategy: plan.mutation_strategy,
+        seed_smiles: seeds.length ? seeds : undefined,
+        objective_json: draft.objectiveJson,
+        constraints_json: draft.constraintsJson,
+      });
+      router.push(`/runs/${run_id}`);
+    } catch (e) {
+      const msg = String(e instanceof Error ? e.message : e);
+      setError(msg);
+      setRejectedSeeds(parseRejectedSeeds(msg));
       setStarting(false);
     }
   }
@@ -167,11 +228,44 @@ export function Launcher() {
           What do you want to optimize?
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Describe an objective in plain language, or pick one from the catalog. Every
-          objective maps to a standardized in-silico PMO oracle.
+          Pick a benchmark objective, or compose a custom multi-term objective. Every score
+          is a standardized in-silico oracle score.
         </p>
       </div>
 
+      {/* Mode toggle: a single benchmark task, or a composed custom objective */}
+      <div
+        role="group"
+        aria-label="Objective mode"
+        className="inline-flex w-fit gap-1 rounded-xl bg-muted/60 p-1"
+      >
+        {(
+          [
+            ["benchmark", "Benchmark objective"],
+            ["custom", "Compose custom objective"],
+          ] as const
+        ).map(([m, label]) => {
+          const active = builderMode === m;
+          return (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setBuilderMode(m)}
+              aria-pressed={active}
+              className={[
+                "rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                active
+                  ? "bg-background text-foreground ring-1 ring-foreground/10"
+                  : "text-muted-foreground hover:text-foreground",
+              ].join(" ")}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {builderMode === "benchmark" ? (
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.5fr_1fr]">
         {/* LEFT: intent + possibility space */}
         <div className="flex flex-col gap-6">
@@ -196,7 +290,7 @@ export function Launcher() {
                   type="button"
                   onClick={resolve}
                   disabled={resolving || !intentText.trim()}
-                  className="rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  className="rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   {resolving ? "Resolving…" : "Resolve"}
                 </button>
@@ -290,6 +384,7 @@ export function Launcher() {
               starting={starting}
               onStart={start}
               blurb={findBlurb(catalog, plan.task)}
+              rejectedSeeds={rejectedSeeds}
             />
           ) : (
             <EmptyMirror />
@@ -298,7 +393,221 @@ export function Launcher() {
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
       </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.5fr_1fr]">
+          {/* LEFT: the composer */}
+          <div className="flex flex-col gap-6">
+            <Card>
+              <CardContent className="flex flex-col gap-5 py-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-heading text-lg font-normal tracking-tight">
+                    Compose an objective
+                  </h2>
+                  <InSilicoTag />
+                </div>
+                <ObjectiveBuilder catalog={catalog} onChange={setDraft} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex flex-col gap-2.5 py-4">
+                <span className="text-sm font-medium">Seed molecules (optional)</span>
+                <SeedImport
+                  value={plan.seed_smiles}
+                  onChange={(t) => setPlan((p) => ({ ...p, seed_smiles: t }))}
+                  rejected={rejectedSeeds}
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* RIGHT: exploratory launch mirror + live objective-shape summary */}
+          <div className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
+            <CustomMirror
+              plan={plan}
+              setPlan={setPlan}
+              draft={draft}
+              canStart={canStartCustom}
+              starting={starting}
+              onStart={startCustom}
+            />
+            <ObjectiveSummary draft={draft} />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+function CustomMirror({
+  plan,
+  setPlan,
+  draft,
+  canStart,
+  starting,
+  onStart,
+}: {
+  plan: Plan;
+  setPlan: React.Dispatch<React.SetStateAction<Plan>>;
+  draft: ObjectiveDraft | null;
+  canStart: boolean;
+  starting: boolean;
+  onStart: () => void;
+}) {
+  const nTerms = draft?.objectiveJson.terms.length ?? 0;
+  const nConstraints = draft?.constraintsJson
+    ? (draft.constraintsJson.catalogs?.length ?? 0) +
+      (draft.constraintsJson.smarts_exclude?.length ?? 0) +
+      (draft.constraintsJson.smarts_include?.length ?? 0)
+    : 0;
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-3.5 py-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-heading text-base font-normal">Exploratory run</h2>
+          <ModeBadge mode="exploratory" compact />
+        </div>
+        <p className="rounded-lg border border-chart-4/40 bg-chart-4/10 px-3 py-2 text-xs leading-relaxed text-foreground">
+          A custom objective makes this run <span className="font-medium">exploratory</span> —
+          not benchmark-comparable. It won&apos;t appear against the committed Graph-GA control.
+        </p>
+
+        <div className="rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-xs text-muted-foreground">
+          <div className="font-medium text-foreground">
+            {nTerms} term{nTerms === 1 ? "" : "s"}
+            {draft ? ` · ${draft.objectiveJson.aggregator.replace("_", " ")}` : ""}
+            {nConstraints > 0 ? ` · ${nConstraints} constraint${nConstraints === 1 ? "" : "s"}` : ""}
+          </div>
+          {parseSeeds(plan.seed_smiles).length > 0 && (
+            <div className="mt-1">
+              {parseSeeds(plan.seed_smiles).length} seed compound
+              {parseSeeds(plan.seed_smiles).length === 1 ? "" : "s"}
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Oracle-call budget">
+            <input
+              type="number"
+              min={1}
+              aria-label="Oracle-call budget"
+              value={plan.budget}
+              onChange={(e) => setPlan((p) => ({ ...p, budget: Number(e.target.value) }))}
+              className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm tabular-nums"
+            />
+          </Field>
+          <Field label="Plateau window">
+            <input
+              type="number"
+              min={1}
+              aria-label="Plateau window"
+              value={plan.plateau_window}
+              onChange={(e) =>
+                setPlan((p) => ({ ...p, plateau_window: Number(e.target.value) }))
+              }
+              className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm tabular-nums"
+            />
+          </Field>
+        </div>
+
+        <Field label="Strategy">
+          <select
+            aria-label="Strategy"
+            value={plan.mutation_strategy}
+            onChange={(e) => setPlan((p) => ({ ...p, mutation_strategy: e.target.value }))}
+            className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm"
+          >
+            <option value="llm">LLM proposer (+ Graph-GA fallback)</option>
+            <option value="graph_ga">Graph-GA baseline</option>
+          </select>
+        </Field>
+
+        {draft?.blocker && (
+          <p role="alert" className="text-xs text-destructive">
+            {draft.blocker}
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={onStart}
+          disabled={!canStart}
+          className="mt-0.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          {starting ? "Starting…" : "Start exploratory run"}
+        </button>
+        <p className="text-[0.7rem] leading-relaxed text-muted-foreground">
+          Every score is an in-silico oracle score, never a real-world efficacy claim.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Live objective-shape readout for the custom launcher's right column — a term legend
+// (oracle · transform) with a relative-weight mini-viz, derived from the real draft the
+// builder emits. Neutral fill (coral is reserved for the primary action).
+function ObjectiveSummary({ draft }: { draft: ObjectiveDraft | null }) {
+  const terms = draft?.objectiveJson.terms ?? [];
+  if (terms.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="font-heading text-base font-normal">Objective shape</h2>
+          </div>
+          <p className="rounded-lg border border-dashed border-border px-3 py-5 text-center text-xs text-muted-foreground">
+            Add an objective term on the left to see its shape here.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+  const maxWeight = Math.max(...terms.map((t) => (t.weight > 0 ? t.weight : 0.001)));
+  const aggregator = draft!.objectiveJson.aggregator.replace("_", " ");
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-3 py-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-heading text-base font-normal">Objective shape</h2>
+          <span className="text-xs text-muted-foreground">{aggregator}</span>
+        </div>
+        <ul className="flex flex-col gap-2.5">
+          {terms.map((t, i) => {
+            const kind = String((t.transform as { kind?: string }).kind ?? "identity");
+            const task = (t.oracle_kwargs as { task?: string }).task;
+            const pct = Math.round((t.weight / maxWeight) * 100);
+            return (
+              <li key={`${t.oracle}-${i}`} className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="font-mono text-foreground">
+                    {t.oracle}
+                    {task ? `:${task}` : ""}
+                  </span>
+                  <span className="truncate text-muted-foreground">
+                    {TRANSFORM_LABEL[kind] ?? kind}
+                  </span>
+                  <span className="ml-auto shrink-0 tabular-nums text-muted-foreground">
+                    ×{t.weight}
+                  </span>
+                </div>
+                <span className="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <span
+                    className="block h-full rounded-full bg-muted-foreground/45"
+                    style={{ width: `${pct}%` }}
+                  />
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="text-[0.7rem] leading-relaxed text-muted-foreground">
+          Each term maps to 0–1, then combines by {aggregator}. Bars show weight relative to
+          the heaviest term. Constraints are hard filters, not scored.
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -317,6 +626,7 @@ function ResolvedMirror({
   starting,
   onStart,
   blurb,
+  rejectedSeeds,
 }: {
   plan: Plan;
   setPlan: React.Dispatch<React.SetStateAction<Plan>>;
@@ -324,13 +634,18 @@ function ResolvedMirror({
   starting: boolean;
   onStart: () => void;
   blurb?: string;
+  rejectedSeeds: string[];
 }) {
+  const hasSeeds = parseSeeds(plan.seed_smiles).length > 0;
   return (
     <Card>
       <CardContent className="flex flex-col gap-3.5 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h2 className="font-heading text-base font-normal">Resolved plan</h2>
-          <InSilicoTag />
+          <div className="flex items-center gap-2">
+            {hasSeeds && <ModeBadge mode="exploratory" compact />}
+            <InSilicoTag />
+          </div>
         </div>
 
         <Field label="Objective">
@@ -386,19 +701,12 @@ function ResolvedMirror({
           </select>
         </Field>
 
-        <Field label="Seed molecules (SMILES, optional)">
-          <input
-            aria-label="Seed molecules"
+        <Field label="Seed molecules (optional)">
+          <SeedImport
             value={plan.seed_smiles}
-            onChange={(e) => setPlan((p) => ({ ...p, seed_smiles: e.target.value }))}
-            placeholder="default population — or paste SMILES (space/comma separated)"
-            className="h-8 w-full rounded-lg border border-input bg-background px-2.5 font-mono text-xs"
+            onChange={(t) => setPlan((p) => ({ ...p, seed_smiles: t }))}
+            rejected={rejectedSeeds}
           />
-          <p className="text-[0.7rem] leading-relaxed text-muted-foreground">
-            RDKit-validated at launch. A custom list starts gen 0 from your compounds
-            and marks the run <span className="font-medium">exploratory</span> (not
-            benchmark-comparable); empty uses the standard population.
-          </p>
         </Field>
 
         <div className="rounded-lg border border-border bg-muted/40 px-3 py-2.5">
@@ -416,7 +724,7 @@ function ResolvedMirror({
           type="button"
           onClick={onStart}
           disabled={!canStart}
-          className="mt-0.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="mt-0.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           {starting ? "Starting…" : "Start run"}
         </button>

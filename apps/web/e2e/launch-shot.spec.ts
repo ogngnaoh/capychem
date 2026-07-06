@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { forceDark, mockApi, RESOLUTION_NOMATCH, stabilizeForShot } from "./_fixtures";
+import type { Page } from "@playwright/test";
 
 // Capture harness for the REAL hybrid launcher (/launch) at 1280px. Covers the base
 // state (catalog + empty mirror), dark, a resolved plan (task picked from the catalog →
@@ -59,7 +60,24 @@ test("capture launch-refusal (grounded no-match, FR-015) at 1280px", async ({ pa
   await page.screenshot({ path: `${SHOT_DIR}/launch-refusal.png`, fullPage: true });
 });
 
-async function assertNoScroll(page: import("@playwright/test").Page, name: string) {
+test("capture launch-seed-rejected (server 422 marks bad SMILES, A3) at 1280px", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockApi(page, { createReject: ["BADSEED"] });
+  await page.goto("/launch", { waitUntil: "networkidle" });
+  await page.getByText("Objective catalog").waitFor({ timeout: 15_000 });
+  await page.getByRole("button", { name: /troglitazone_rediscovery/ }).first().click();
+  await page.getByText("Resolved plan").waitFor({ timeout: 5_000 });
+  await page.getByLabel("Seed molecules").fill("CCO\nBADSEED\nc1ccccc1");
+  await page.getByText(/3 SMILES parsed/).waitFor({ timeout: 5_000 });
+  await page.getByRole("button", { name: /^Start run$/ }).click();
+  // The server names the bad seed; SeedImport marks exactly that token as rejected.
+  await page.getByText("rejected").waitFor({ timeout: 5_000 });
+  await assertNoScroll(page, "launch-seed-rejected");
+  await stabilizeForShot(page);
+  await page.screenshot({ path: `${SHOT_DIR}/launch-seed-rejected.png`, fullPage: true });
+});
+
+async function assertNoScroll(page: Page, name: string) {
   const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   console.log(`[shot] ${name}: scrollWidth=${scrollWidth} (<= 1280)`);
   expect(scrollWidth, `${name} must not scroll horizontally`).toBeLessThanOrEqual(1280);
