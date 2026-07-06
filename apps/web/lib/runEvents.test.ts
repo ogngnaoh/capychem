@@ -3,7 +3,7 @@ import { applyEvent } from "./runEvents";
 import type { RunSnapshot } from "./api";
 
 const base: RunSnapshot = {
-  run_id: 1, task: "qed", status: "running", budget: 100, plateau_window: 5,
+  run_id: 1, task: "qed", mode: "benchmark", status: "running", budget: 100, plateau_window: 5,
   generation_index: 0, oracle_calls_used: 0, best_score: null,
   top_k: [], auc_curve: [],
 };

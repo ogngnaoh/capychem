@@ -24,6 +24,9 @@ class RunConfig:
     plateau_window: int
     max_generations: int
     mutation_strategy: str = "graph_ga"
+    # benchmark|exploratory — server-derived via capychem.mode.derive_mode, never
+    # client-set. Only benchmark runs feed the committed G1 numbers (07-01).
+    mode: str = "benchmark"
 
 
 async def create_run(session: AsyncSession, config: RunConfig) -> int:
@@ -39,6 +42,7 @@ async def create_run(session: AsyncSession, config: RunConfig) -> int:
         mutation_rate=config.mutation_rate,
         seed=config.seed,
         status="running",
+        mode=config.mode,
     )
     session.add(row)
     await session.commit()

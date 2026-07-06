@@ -15,6 +15,7 @@ const ROWS: RunListItem[] = [
     run_id: 1,
     task: "jnk3",
     mutation_strategy: "llm",
+    mode: "benchmark",
     status: "running",
     best_score: 0.51,
     oracle_calls: 120,
@@ -25,6 +26,7 @@ const ROWS: RunListItem[] = [
     run_id: 2,
     task: "qed",
     mutation_strategy: "graph_ga",
+    mode: "exploratory",
     status: "exhausted",
     best_score: 0.88,
     oracle_calls: 200,
@@ -71,6 +73,13 @@ describe("RunsBrowse", () => {
         expect.objectContaining({ status: "running" }),
       ),
     );
+  });
+
+  it("badges each row's mode; exploratory reads not benchmark-comparable", async () => {
+    render(<RunsBrowse />);
+    await waitFor(() => screen.getByText("jnk3"));
+    expect(screen.getByText(/^Benchmark$/)).toBeInTheDocument(); // run 1
+    expect(screen.getByText(/not benchmark-comparable/i)).toBeInTheDocument(); // run 2
   });
 
   it("navigates to the run detail when a row is clicked", async () => {

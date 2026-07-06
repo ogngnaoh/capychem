@@ -36,6 +36,7 @@ const RUNS: RunListItem[] = [
     run_id: 11,
     task: "jnk3",
     mutation_strategy: "llm",
+    mode: "benchmark",
     status: "exhausted",
     best_score: 0.8812,
     oracle_calls: 10000,
@@ -46,6 +47,7 @@ const RUNS: RunListItem[] = [
     run_id: 9,
     task: "qed",
     mutation_strategy: "graph_ga",
+    mode: "benchmark",
     status: "plateaued",
     best_score: 0.9377,
     oracle_calls: 3400,
@@ -58,6 +60,7 @@ const PAYLOAD: ComparePayload = {
   a: {
     run_id: 11,
     task: "jnk3",
+    mode: "benchmark",
     status: "exhausted",
     best_score: 0.8812,
     oracle_calls: 10000,
@@ -75,6 +78,7 @@ const PAYLOAD: ComparePayload = {
   b: {
     run_id: 9,
     task: "qed",
+    mode: "exploratory",
     status: "plateaued",
     best_score: 0.9377,
     oracle_calls: 3400,
@@ -110,6 +114,8 @@ describe("CompareView", () => {
     // the analyzer story: LLM run has a hypothesis, GA run shows "no analyzer step"
     expect(screen.getByText(/1 analyzer hypothesis/i)).toBeInTheDocument();
     expect(screen.getByText(/no analyzer step/i)).toBeInTheDocument();
+    // per-run mode badge: run b is exploratory → not benchmark-comparable
+    expect(screen.getByText(/not benchmark-comparable/i)).toBeInTheDocument();
   });
 
   it("routes to a new comparison when a run selector changes", async () => {

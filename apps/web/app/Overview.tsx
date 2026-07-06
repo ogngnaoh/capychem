@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { ModeBadge } from "@/components/ModeBadge";
 import { getCatalog, listRuns, type CatalogGroup, type RunListItem } from "@/lib/api";
 import { Eyebrow, InSilicoTag, LoopDiagram, StatusChip } from "@/components/workbench/ui";
 
@@ -158,6 +159,7 @@ export function Overview() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
+                        <ModeBadge mode={r.mode} />
                         <StatusChip status={r.status} />
                         <span className="w-14 text-right text-sm font-semibold tabular-nums">
                           {r.best_score?.toFixed(4) ?? "—"}

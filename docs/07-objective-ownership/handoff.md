@@ -1,24 +1,24 @@
 # Handoff — milestone 07 objective-ownership
 
 ## Next session start here
-Branch off `main` (branch-first), then execute slice **07-01 run-mode-split** — the benchmark/exploratory invariant every other 07 feature depends on. Deliverables:
-1. Alembic revision (chain from head `f4251d568ae6`): `Run.mode` (`benchmark`|`exploratory`, default benchmark), `Run.objective_json` (nullable), `Run.constraints_json` (nullable).
-2. `packages/core/capychem/mode.py` `derive_mode(*, objective_json=None, constraints_json=None, seed_smiles=None)` — exploratory if ANY exploratory input present, else benchmark (later slices route their inputs through it; at 07-01 all runs derive to benchmark). Mode is server-derived, never client-set.
-3. **G1-contamination guard:** in `routes_runs.py` snapshot building (~:207 live, ~:231 DB), set `graph_ga_baseline = graph_ga_baseline(task) if mode == "benchmark" else None`. An exploratory run must never present a Graph-GA "beat". Add `mode` to `RunSnapshot`/`RunListItem`.
-4. `packages/core/capychem/figure_canon.py` — single honest-figure source (21 comparable, 2 excluded, 9 decisive; never "21/23"). A test fails if any surface prints "21/23".
-5. A mode badge on every web run surface (Overview, RunsBrowse, Cockpit, Compare); exploratory reads "not benchmark-comparable". Don't reuse the coral `--primary`.
-6. Regression: the benchmark path must stay byte-identical (existing suite green); a test proves an exploratory snapshot drops the baseline while a benchmark one keeps it.
+Branch off `main` (branch-first), then execute slice **07-02 seed-SMILES plumbing** (FR-001) — the 6-layer fix so an operator can bring their own starting compounds; a custom seed ⇒ `exploratory` (routes through `derive_mode`, now live). Deliverables (per plan Task 07-02):
+1. Alembic revision (chain from head `f8342ecfc066`): `Run.seed_smiles` (nullable JSON/text), `Run.seed_source` (`default`|`custom`).
+2. `api.ts` `CreateRunBody` + `Launcher.tsx:126-136` include `plan.seed_smiles` in the `createRun` body.
+3. `CreateRunRequest` (+ `seed_smiles: list[str] | None`) with an **RDKit-validating field validator at the `/runs` boundary** (a client can POST directly — don't rely on intent-preview validation).
+4. `RunConfig` (+ `seed_smiles`, `seed_source`); `create_run` insert; route the seed through `derive_mode(seed_smiles=...)` so a custom seed ⇒ exploratory.
+5. `loop/state.py` `LoopState` (+ seed-population key); `loop/graph.py:48-50` gen-0 branch builds the population from RDKit-validated + canonicalized operator seeds (GA-filled from the pool or truncated to exactly `pop_size`; keep ≥2 parents for crossover) instead of `_load_starting_pop`; `loop/seeds.py` validate/canonicalize helper.
+6. Test `test_seed_plumbing.py`: operator seed reaches gen-0 population; invalid SMILES rejected at `/runs`; custom seed forces exploratory; **integer RNG `seed` untouched** (reproducibility contract).
 
-Then 07-02…07-08 per `docs/07-objective-ownership/milestone.md` + the plan `docs/superpowers/plans/2026-07-03-capychem-production-v1.md`.
+Then 07-03…07-08 per `docs/07-objective-ownership/milestone.md` + the plan `docs/superpowers/plans/2026-07-03-capychem-production-v1.md`.
 
 ## Current state
-- Branch `main`: milestone 06 shipped + merged (`27f005b`..`968dc5d`), **not pushed** (`origin/main` is behind — push when ready). Working tree has one uncommitted change: the `CLAUDE.md` convention update.
-- Engine production-grade: CI-gated (backend + web + axe), WCAG-AA, Alembic-migrated (head `f4251d568ae6`; new columns go through migrations chained from head — `create_all` is test-only), fault-tolerant (pause + retry + durable G6-exact resume). 303 backend + 30 web + 10 axe tests green with the harness present.
-- No 07 code started. The vault paste-prompt `prompts/capychem/2026-07-05-…-milestone-07-objective-ownership-handoff.md` mirrors this handoff.
+- Slice **07-01 shipped** on branch `m07-01-run-mode-split` (mode split + `figure_canon` + baseline gate + badge everywhere). Alembic head is now **`f8342ecfc066`**; the dev DB is upgraded (571 rows backfilled `mode="benchmark"`). 07-02's migration chains from this head.
+- Gate all green: mypy · ruff · 325 backend · web typecheck/ESLint · 38 vitest · axe 10/10.
+- Branch `main` is 10 commits ahead of `origin/main` (m06 + m07 docs, unpushed) + one uncommitted `CLAUDE.md` convention line (unrelated to 07-01).
 
 ## Active concerns
-- **Mode split is load-bearing — enforce in code + tests, not convention.** The whole honesty story + G1 pristineness depends on it; ship every exploratory feature WITH its enforcement test.
-- **Figure canon:** every new doc/badge/manifest derives from `figure_canon` (2 excluded). Never "21/23"; no SOTA/multi-seed/real-world-efficacy claims (N6).
-- **Trust ships WITH the pluggable seam** (07-05 alongside 07-03/04), not after — the custom oracle increases reward-hacking risk.
-- **Execution (repo learning):** run build subagents synchronously; independently re-verify every self-reported check against source (Critics caught 3 real defects in m06 — mypy is the real typecheck, pyright import-warnings are venv noise); orchestrator owns doc writes; reuse existing agents.
-- **Sizing:** 8 slices is over the guideline — split a slice past 2 pages (fold 07-06 into 07-07; spin 07-08 into its own UI milestone).
+- **Mode split is live — every exploratory feature (07-02/03/04) must route its input through `derive_mode` AND ship its enforcement test.** The gate is `_gated_baseline(mode, task)` in `routes_runs.py`; `RunSnapshot/RunListItem/CompareRun.mode` are required (never defaulted).
+- **07-02 must not touch the integer RNG `seed`** — seed-SMILES is a population source, not the RNG seed. Keep G6 reproducibility intact; test it.
+- **Figure canon:** `figure_canon` exists but isn't wired into README/manifest yet (that's 07-06/07-08). Never "21/23"; derive every new figure surface from it.
+- **Local schema drift:** `create_all` never ALTERs; after any model column change, `alembic upgrade head` the dev DB (CI runs fresh Postgres, so `test_migrations.py` gates there).
+- **Trust ships WITH the pluggable seam** (07-05 alongside 07-03/04), not after.

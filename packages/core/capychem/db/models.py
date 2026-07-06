@@ -35,6 +35,13 @@ class Run(Base):
     mutation_rate: Mapped[float]
     seed: Mapped[int]
     status: Mapped[str] = mapped_column(String(16), default="running")
+    # benchmark|exploratory (07-01): server-derived from the run's inputs, never
+    # client-set. Only benchmark runs feed the committed G1 numbers.
+    mode: Mapped[str] = mapped_column(String(16), default="benchmark")
+    # Custom-objective / constraint specs (populated by 07-04); their presence is
+    # what forces mode=exploratory via capychem.mode.derive_mode.
+    objective_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
+    constraints_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
     started_at: Mapped[datetime] = mapped_column(server_default=func.now())
     ended_at: Mapped[datetime | None] = mapped_column(default=None)
     summary_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)

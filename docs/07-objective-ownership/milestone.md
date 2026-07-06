@@ -19,7 +19,7 @@ This is Phase-1 Tier 1 ("make-it-yours + trust") from `docs/superpowers/plans/20
 - No auth / hosting / multi-user (NG-1/NG-2). No real-world efficacy claim, ever (N6/NG-8).
 
 ## Slices (execution order; see the plan for per-slice files + acceptance)
-1. `07-01-run-mode-split` — `Run.mode`/`objective_json`/`constraints_json` (Alembic), API + eval-ingestion enforcement, `figure_canon` module, mode badge everywhere. **Must precede every feature below.** — planned
+1. `07-01-run-mode-split` — `Run.mode`/`objective_json`/`constraints_json` (Alembic), API enforcement (`_gated_baseline`), `figure_canon` module, mode badge everywhere. **Must precede every feature below.** — shipped ✓ (eval ingestion needs no gate: `eval/*` runs its own loops, never ingests DB runs)
 2. `07-02-seed-smiles-plumbing` — FR-001 6-layer fix + gen-0 branch + RDKit validation at `/runs`; custom seed ⇒ exploratory. — planned
 3. `07-03-pluggable-oracle` — `ScoringOracle` protocol + registry; PmoOracle (parity test) + RDKit-descriptor + ADMET-AI presets; direction metadata. — planned
 4. `07-04-objective-composition` — components/transforms/aggregator → [0,1]; SMARTS + property-band constraints; constraint-starvation signal; `POST /objective/validate`. — planned

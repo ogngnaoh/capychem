@@ -41,6 +41,7 @@ def _snapshot_from_state(run_id: int, cfg: RunConfig, state: dict[str, Any]) -> 
     return {
         "run_id": run_id,
         "task": cfg.task,
+        "mode": cfg.mode,  # carried so the live snapshot gates graph_ga_baseline (07-01)
         "status": "running",
         "budget": cfg.budget,
         "plateau_window": cfg.plateau_window,
@@ -126,6 +127,7 @@ class RunRegistry:
                     plateau_window=row.plateau_window,
                     max_generations=row.max_generations,
                     mutation_strategy=row.mutation_strategy,
+                    mode=row.mode,  # a resumed run keeps its mode (baseline gate stays correct)
                 )
                 # Already-terminal guard: a run swept to "paused" after a crash in
                 # the window between its last generation's persist and finalize may

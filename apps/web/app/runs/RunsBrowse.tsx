@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { listRuns, type RunListItem } from "@/lib/api";
+import { ModeBadge } from "@/components/ModeBadge";
 import { Eyebrow, StatusChip } from "@/components/workbench/ui";
 
 type SortKey = "started_at" | "best_score" | "oracle_calls" | "status";
@@ -210,7 +211,10 @@ export function RunsBrowse() {
                       {r.task}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {strategyLabel(r.mutation_strategy)}
+                      <span className="flex items-center gap-2">
+                        {strategyLabel(r.mutation_strategy)}
+                        <ModeBadge mode={r.mode} />
+                      </span>
                     </TableCell>
                     <TableCell>
                       <StatusChip status={r.status} />

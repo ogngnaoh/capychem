@@ -17,6 +17,7 @@ import {
   type RunListItem,
 } from "@/lib/api";
 import { CompareChart } from "@/components/workbench/charts";
+import { ModeBadge } from "@/components/ModeBadge";
 import { Eyebrow, MoleculeTile } from "@/components/workbench/ui";
 
 const strategyLabel = (s: string) => (s === "llm" ? "LLM proposer" : "Graph-GA");
@@ -199,6 +200,7 @@ function RunColumn({
               {strategy}
             </span>
           )}
+          <ModeBadge mode={run.mode} />
         </div>
 
         <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-lg bg-border">

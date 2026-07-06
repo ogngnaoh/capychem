@@ -64,13 +64,14 @@ export const CATALOG = [
 const iso = (minsAgo: number) => new Date(Date.UTC(2026, 6, 2, 14, 0, 0) - minsAgo * 60_000).toISOString();
 
 export const RUNS_LIST = [
-  { run_id: 284, task: "troglitazone_rediscovery", mutation_strategy: "llm", status: "running", best_score: 0.7431, oracle_calls: 4200, budget: 10000, started_at: iso(3) },
-  { run_id: 281, task: "troglitazone_rediscovery", mutation_strategy: "llm", status: "exhausted", best_score: 0.8814, oracle_calls: 10000, budget: 10000, started_at: iso(120) },
-  { run_id: 277, task: "jnk3", mutation_strategy: "llm", status: "exhausted", best_score: 0.8812, oracle_calls: 10000, budget: 10000, started_at: iso(300) },
-  { run_id: 271, task: "qed", mutation_strategy: "graph_ga", status: "plateaued", best_score: 0.9377, oracle_calls: 3400, budget: 10000, started_at: iso(1500) },
-  { run_id: 268, task: "troglitazone_rediscovery", mutation_strategy: "graph_ga", status: "exhausted", best_score: 0.7719, oracle_calls: 10000, budget: 10000, started_at: iso(2600) },
-  { run_id: 264, task: "sitagliptin_mpo", mutation_strategy: "llm", status: "stopped", best_score: 0.5312, oracle_calls: 2100, budget: 10000, started_at: iso(4000) },
-  { run_id: 251, task: "deco_hop", mutation_strategy: "graph_ga", status: "errored", best_score: null, oracle_calls: 120, budget: 10000, started_at: iso(9000) },
+  { run_id: 284, task: "troglitazone_rediscovery", mutation_strategy: "llm", mode: "benchmark", status: "running", best_score: 0.7431, oracle_calls: 4200, budget: 10000, started_at: iso(3) },
+  { run_id: 281, task: "troglitazone_rediscovery", mutation_strategy: "llm", mode: "benchmark", status: "exhausted", best_score: 0.8814, oracle_calls: 10000, budget: 10000, started_at: iso(120) },
+  { run_id: 277, task: "jnk3", mutation_strategy: "llm", mode: "benchmark", status: "exhausted", best_score: 0.8812, oracle_calls: 10000, budget: 10000, started_at: iso(300) },
+  // one exploratory row so the axe gate exercises the amber (non-primary) badge in light + dark
+  { run_id: 271, task: "qed", mutation_strategy: "graph_ga", mode: "exploratory", status: "plateaued", best_score: 0.9377, oracle_calls: 3400, budget: 10000, started_at: iso(1500) },
+  { run_id: 268, task: "troglitazone_rediscovery", mutation_strategy: "graph_ga", mode: "benchmark", status: "exhausted", best_score: 0.7719, oracle_calls: 10000, budget: 10000, started_at: iso(2600) },
+  { run_id: 264, task: "sitagliptin_mpo", mutation_strategy: "llm", mode: "benchmark", status: "stopped", best_score: 0.5312, oracle_calls: 2100, budget: 10000, started_at: iso(4000) },
+  { run_id: 251, task: "deco_hop", mutation_strategy: "graph_ga", mode: "benchmark", status: "errored", best_score: null, oracle_calls: 120, budget: 10000, started_at: iso(9000) },
 ];
 
 const LONG_SMILES = "CC(C)C[C@H](NC(=O)[C@@H](N)Cc1ccccc1)C(=O)N[C@@H](Cc1ccc(O)cc1)C(=O)N[C@@H](CCCCN)C(=O)O";
@@ -105,6 +106,7 @@ const HYPS = [
 export const SNAPSHOT_COMPLETED = {
   run_id: 281,
   task: "troglitazone_rediscovery",
+  mode: "benchmark",
   status: "exhausted",
   budget: 10000,
   plateau_window: 5,
@@ -132,6 +134,7 @@ export const SNAPSHOT_COMPLETED = {
 export const SNAPSHOT_RUNNING = {
   run_id: 284,
   task: "troglitazone_rediscovery",
+  mode: "benchmark",
   status: "running",
   budget: 10000,
   plateau_window: 5,
@@ -159,6 +162,7 @@ export const COMPARE_PAYLOAD = {
   a: {
     run_id: 281,
     task: "troglitazone_rediscovery",
+    mode: "benchmark",
     status: "exhausted",
     best_score: 0.8814,
     oracle_calls: 10000,
@@ -170,6 +174,7 @@ export const COMPARE_PAYLOAD = {
   b: {
     run_id: 268,
     task: "troglitazone_rediscovery",
+    mode: "exploratory",
     status: "exhausted",
     best_score: 0.7719,
     oracle_calls: 10000,

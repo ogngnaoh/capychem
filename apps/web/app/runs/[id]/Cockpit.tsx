@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { ModeBadge } from "@/components/ModeBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { RunSnapshot } from "@/lib/api";
@@ -115,6 +116,7 @@ export function Cockpit({
           <h1 className="font-heading text-2xl font-normal tracking-tight">Run {snap.run_id}</h1>
           <span className="font-mono text-sm text-muted-foreground">{snap.task}</span>
           <StatusChip status={snap.status} />
+          <ModeBadge mode={snap.mode} />
           <span className="text-xs text-muted-foreground">{conn}</span>
           <div className="ml-auto flex items-center gap-3">
             {snap.trace_url && (

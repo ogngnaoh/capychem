@@ -51,6 +51,8 @@ async def test_create_then_snapshot_then_complete_over_ws() -> None:
             snap = (await c.get(f"/runs/{run_id}")).json()
             assert snap["run_id"] == run_id and snap["budget"] == 40
             assert snap["hypotheses"] == []  # graph_ga run has no analyzer hypotheses
+            # server-derived mode: a plain run (no custom inputs) is benchmark (07-01)
+            assert snap["mode"] == "benchmark"
 
             types: list[str] = []
             async with asyncio.timeout(120):

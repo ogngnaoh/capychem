@@ -24,6 +24,7 @@ def make_run(
     strategy: str = "graph_ga",
     status: str = "exhausted",
     budget: int = 100,
+    mode: str = "benchmark",
     started_at: datetime | None = None,
     summary: dict[str, Any] | None = None,
 ) -> Run:
@@ -33,6 +34,9 @@ def make_run(
         mutation_strategy=strategy,
         status=status,
         budget=budget,
+        # Set explicitly: the ORM default only applies at flush, but these rows are
+        # never flushed — run_list_item reads row.mode directly (real rows are NOT NULL).
+        mode=mode,
         plateau_window=5,
         started_at=started_at or datetime(2026, 6, 30, 12, 0, 0),
         summary_json=summary,
@@ -58,6 +62,11 @@ def test_run_list_item_uses_live_snapshot_when_present() -> None:
     assert item.mutation_strategy == "llm"
     assert item.budget == 200
     assert item.started_at == datetime(2026, 6, 30, 12, 0, 0)
+
+
+def test_run_list_item_carries_mode() -> None:
+    assert run_list_item(make_run(1, mode="benchmark"), None).mode == "benchmark"
+    assert run_list_item(make_run(2, mode="exploratory"), None).mode == "exploratory"
 
 
 def test_run_list_item_falls_back_to_summary_json() -> None:

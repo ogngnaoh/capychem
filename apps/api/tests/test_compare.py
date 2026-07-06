@@ -93,6 +93,7 @@ def _snap(
     return RunSnapshot(
         run_id=run_id,
         task=task,
+        mode="benchmark",
         status=status,
         budget=10000,
         plateau_window=5,

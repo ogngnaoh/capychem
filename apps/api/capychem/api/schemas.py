@@ -52,6 +52,9 @@ class RunSnapshot(BaseModel):
     run_id: int
     task: str
     status: str
+    # benchmark|exploratory (07-01). Required, never defaulted: a snapshot with an
+    # unknown mode must fail loudly rather than silently claim benchmark-comparable.
+    mode: str
     budget: int
     plateau_window: int
     generation_index: int
@@ -83,6 +86,7 @@ class RunListItem(BaseModel):
     run_id: int
     task: str
     mutation_strategy: str
+    mode: str  # benchmark|exploratory (07-01); required, mirrors RunSnapshot.mode
     status: str
     best_score: float | None
     oracle_calls: int
@@ -96,6 +100,7 @@ class CompareRun(BaseModel):
 
     run_id: int
     task: str
+    mode: str  # benchmark|exploratory (07-01); an exploratory run is not AUC-comparable
     status: str
     best_score: float | None
     oracle_calls: int

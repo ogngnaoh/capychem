@@ -28,6 +28,7 @@ function terminalSnap(over: Partial<RunSnapshot> = {}): RunSnapshot {
   return {
     run_id: 271,
     task: "qed",
+    mode: "benchmark",
     status: "max_generations", // terminal → no WebSocket opened
     budget: 120,
     plateau_window: 5,
@@ -58,6 +59,22 @@ describe("LiveRun trace link (FR-014)", () => {
     render(<LiveRun runId={271} />);
     await screen.findByText(/Run 271/);
     expect(screen.queryByRole("link", { name: /view trace/i })).toBeNull();
+  });
+});
+
+describe("Cockpit mode badge (07-01)", () => {
+  it("badges a benchmark run", async () => {
+    getRun.mockResolvedValue(terminalSnap({ mode: "benchmark" }));
+    render(<LiveRun runId={271} />);
+    await screen.findByText(/Run 271/);
+    expect(screen.getByText(/^Benchmark$/)).toBeInTheDocument();
+  });
+
+  it("badges an exploratory run as not benchmark-comparable", async () => {
+    getRun.mockResolvedValue(terminalSnap({ mode: "exploratory" }));
+    render(<LiveRun runId={271} />);
+    await screen.findByText(/Run 271/);
+    expect(screen.getByText(/not benchmark-comparable/i)).toBeInTheDocument();
   });
 });
 

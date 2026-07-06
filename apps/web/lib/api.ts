@@ -10,6 +10,7 @@ export type AnalyzerHypothesis = {
 export type RunSnapshot = {
   run_id: number;
   task: string;
+  mode: string; // "benchmark" | "exploratory" (07-01); server-derived, gates graph_ga_baseline
   status: string;
   budget: number;
   plateau_window: number;
@@ -31,6 +32,7 @@ export type RunListItem = {
   run_id: number;
   task: string;
   mutation_strategy: string;
+  mode: string; // "benchmark" | "exploratory" (07-01)
   status: string;
   best_score: number | null;
   oracle_calls: number;
@@ -40,6 +42,7 @@ export type RunListItem = {
 export type CompareRun = {
   run_id: number;
   task: string;
+  mode: string; // "benchmark" | "exploratory" (07-01)
   status: string;
   best_score: number | null;
   oracle_calls: number;

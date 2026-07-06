@@ -30,6 +30,7 @@ const RECENT: RunListItem[] = [
     run_id: 284,
     task: "troglitazone_rediscovery",
     mutation_strategy: "llm",
+    mode: "benchmark",
     status: "running",
     best_score: 0.7431,
     oracle_calls: 4200,
@@ -62,5 +63,11 @@ describe("Overview", () => {
     expect(screen.getByText("qed")).toBeInTheDocument();
     // "See all N objectives" reflects the fetched task count (1 + 4 = 5)
     expect(screen.getByText(/See all 5 objectives/i)).toBeInTheDocument();
+  });
+
+  it("badges each recent run's mode", async () => {
+    render(<Overview />);
+    await waitFor(() => expect(screen.getByText("troglitazone_rediscovery")).toBeInTheDocument());
+    expect(screen.getByText(/^Benchmark$/)).toBeInTheDocument();
   });
 });

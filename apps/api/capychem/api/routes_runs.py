@@ -18,6 +18,7 @@ from capychem.api.schemas import (
     RunSnapshot,
 )
 from capychem.db.models import AnalyzerHypothesis, Run, RunCost
+from capychem.mode import derive_mode
 from capychem.run import RunConfig
 from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy import select
@@ -25,6 +26,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from starlette.requests import HTTPConnection
 
 router = APIRouter()
+
+
+def _gated_baseline(mode: str, task: str) -> float | None:
+    """The G1-contamination gate: a Graph-GA baseline is presentable ONLY for a
+    benchmark run. An exploratory run (custom seed/oracle/objective/constraint) has
+    no comparable Graph-GA control, so its snapshot never carries one — the single
+    rule both the live and DB snapshot paths apply."""
+    return graph_ga_baseline(task) if mode == "benchmark" else None
 
 
 def registry_of(conn: HTTPConnection) -> RunRegistry:
@@ -63,6 +72,7 @@ def run_list_item(row: Run, live: dict[str, Any] | None) -> RunListItem:
         run_id=row.id,
         task=row.task,
         mutation_strategy=row.mutation_strategy,
+        mode=row.mode,
         status=status,
         best_score=best_score,
         oracle_calls=oracle_calls,
@@ -120,6 +130,10 @@ async def create_run_endpoint(body: CreateRunRequest, request: Request) -> dict[
         plateau_window=body.plateau_window,
         max_generations=body.max_generations,
         mutation_strategy=body.mutation_strategy,
+        # Server-derived, never client-set. At 07-01 no exploratory inputs exist on
+        # the request yet, so this always derives "benchmark"; 07-02+ route their
+        # new inputs (seed_smiles, objective, constraints) through derive_mode here.
+        mode=derive_mode(),
     )
     run_id = await registry_of(request).start_run(cfg)
     return {"run_id": run_id, "status": "running"}
@@ -204,7 +218,10 @@ async def _run_snapshot(
         return RunSnapshot(
             **live,
             hypotheses=hyps,
-            graph_ga_baseline=graph_ga_baseline(live["task"]),
+            # G1-contamination guard (07-01): an exploratory run never presents a
+            # Graph-GA baseline, so its snapshot can never render a "beat". mode is
+            # carried in the live dict (**live) itself.
+            graph_ga_baseline=_gated_baseline(live["mode"], live["task"]),
             llm_cost_usd=llm_cost_usd,
             oracle_cost_usd=oracle_cost_usd,
         )
@@ -216,6 +233,7 @@ async def _run_snapshot(
     return RunSnapshot(
         run_id=row.id,
         task=row.task,
+        mode=row.mode,
         status=status,
         budget=row.budget,
         plateau_window=row.plateau_window,
@@ -228,7 +246,7 @@ async def _run_snapshot(
         hypotheses=hyps,
         trace_url=config.trace_url(summary.get("trace_id")),
         valid_smiles_rate=(summary.get("valid_smiles") or {}).get("rate"),
-        graph_ga_baseline=graph_ga_baseline(row.task),
+        graph_ga_baseline=_gated_baseline(row.mode, row.task),
         llm_cost_usd=llm_cost_usd,
         oracle_cost_usd=oracle_cost_usd,
     )

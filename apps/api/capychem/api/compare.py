@@ -49,6 +49,7 @@ def _compare_run(s: RunSnapshot) -> CompareRun:
     return CompareRun(
         run_id=s.run_id,
         task=s.task,
+        mode=s.mode,
         status=s.status,
         best_score=s.best_score,
         oracle_calls=s.oracle_calls_used,
