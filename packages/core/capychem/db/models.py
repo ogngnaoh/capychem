@@ -82,6 +82,9 @@ class Candidate(Base):
     proposer: Mapped[str] = mapped_column(String(16))  # "starting" | "graph_ga" | "llm"
     valid: Mapped[bool] = mapped_column(default=True)
     score: Mapped[float | None] = mapped_column(default=None)
+    # Per-candidate RDKit quality report (07-05): SA/QED/Lipinski/Veber/PAINS/Brenk,
+    # computed at persistence. Annotate-only — never affects scoring/selection (OD-4).
+    quality_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
 
 
 class OracleCall(Base):

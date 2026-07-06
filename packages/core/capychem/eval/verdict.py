@@ -17,9 +17,9 @@ from dataclasses import dataclass
 from capychem.eval.metric import top_auc
 from capychem.eval.runner import run_reproduction
 
-# Mirror the valid-SMILES gate: below this the with-arm's hypotheses are not really
-# parsing, so the AUC delta is not a true with/without comparison.
-_PARSE_RATE_FLOOR = 0.8
+# Single source (07-05): below this the with-arm's hypotheses are not really parsing,
+# so the AUC delta is not a true with/without comparison. In capychem.trust.gates.
+from capychem.trust.gates import PARSE_RATE_FLOOR as _PARSE_RATE_FLOOR
 
 
 @dataclass(frozen=True)

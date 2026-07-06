@@ -2,6 +2,40 @@
 
 Append-only. Dated rationale/findings a diff can't show. Git records what shipped.
 
+## 2026-07-06 — Slice 07-05 quality & trust layer shipped
+
+Per-candidate quality report + run-level diversity + a shared trust-gate home. Findings:
+
+- **Quality is annotate-only (OD-4) — the whole point.** `molecule_quality` is computed at
+  persist and written to `Candidate.quality_json`; it NEVER drops or reorders a candidate,
+  so a benchmark run's top-10 is byte-identical to pre-07-05. That's the OD-4 contract:
+  benchmark comparability is sacred, the reward-hacking defense is a *read*, not a filter.
+  (The exploratory hard-drop toggle isn't in the acceptance and wasn't built.)
+
+- **`build_summary` gained an RDKit dependency — lazy-imported.** Diversity/novelty need
+  Morgan FPs, but `loop/logic.py` is the "pure decision helpers" module imported everywhere.
+  A top-level `from capychem.quality import …` would pull RDKit + the FilterCatalog builds
+  at every import of logic. Lazy import *inside* build_summary defers that to the one call
+  site that needs it.
+
+- **Novelty is half-wired on purpose.** The helper + `build_summary(seed_pop=…)` param exist
+  and are unit-tested, but threading the canonical gen-0 seed set through the live
+  stop_check + 4 runner fallback build_summary calls (+ resume) is real churn for a secondary
+  metric. Deferred to 07-08 (the UI slice that surfaces it). **Diversity** is self-contained
+  and already surfaces in every run's summary_json.
+
+- **`_PARSE_RATE_FLOOR` unified via alias-import.** `eval/beat.py` and `eval/verdict.py`
+  each had `_PARSE_RATE_FLOOR = 0.8`. Moved the single source to `trust/gates.py::PARSE_RATE_FLOOR`;
+  both now do `from capychem.trust.gates import PARSE_RATE_FLOOR as _PARSE_RATE_FLOOR` —
+  keeps their internal name, one source of truth (a test asserts `is` identity).
+
+- **Test data gotcha:** aspirin trips a **Brenk** alarm (acetate ester / carboxylic acid),
+  so it's NOT a clean-molecule fixture. Used **caffeine** for the clean drug-like case and
+  **hydroquinone** for the alarm case (both verified against the catalogs).
+
+- Gate: mypy (65 files) · ruff · **386** backend (+9: quality + trust + a persist e2e that
+  asserts top-K candidates carry a report) · migration drift · benchmark top-10 unchanged.
+
 ## 2026-07-06 — Slice 07-04b constraints shipped
 
 Hard structural constraints at the validity gate + a distinct constraint-starvation

@@ -16,10 +16,10 @@ from capychem.eval.metric import top_auc
 from capychem.eval.runner import run_reproduction
 from capychem.loop.logic import valid_smiles_gate
 
-# Mirror the valid-SMILES gate and verdict._PARSE_RATE_FLOOR: below this the
-# with-analyzer arm's hypotheses are not really parsing (a $0-balance mid-run
-# degrades the LLM arm to Graph-GA), so a beat is not trustworthy.
-_PARSE_RATE_FLOOR = 0.8
+# Single source (07-05): below this the with-analyzer arm's hypotheses are not really
+# parsing (a $0-balance mid-run degrades the LLM arm to Graph-GA), so a beat is not
+# trustworthy. De-duplicated into capychem.trust.gates.
+from capychem.trust.gates import PARSE_RATE_FLOOR as _PARSE_RATE_FLOOR
 
 
 @dataclass(frozen=True)

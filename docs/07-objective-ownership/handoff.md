@@ -1,52 +1,47 @@
 # Handoff — milestone 07 objective-ownership
 
 ## Next session start here
-Branch off `main` (branch-first), then execute slice **07-05 quality & trust layer**
-(plan Task 07-05) — the headline reward-hacking defense that ships WITH the now-landed
-pluggable seam. Build:
-1. `packages/core/capychem/quality.py` — per-candidate SA-score/QED/Lipinski/Veber/PAINS/
-   Brenk, computed at persistence time (bounded cost; all RDKit-native — reuse the 07-03
-   descriptor oracles + 07-04b `Constraints`/FilterCatalog where possible).
-2. Alembic revision (chain from head `ed2d80a8ccda`): `Candidate` quality fields (or a
-   linked `CandidateQuality`).
-3. `loop/graph.py` persist path — attach quality to each persisted Candidate;
-   `logic.build_summary` — run-level MOSES internal diversity (mean pairwise Tanimoto on
-   Morgan FPs) + novelty vs seed into `summary_json` (JSON, no migration).
-4. `packages/core/capychem/trust/gates.py` — **de-dup `_PARSE_RATE_FLOOR`** (currently
-   duplicated in `eval/verdict.py:22` + `eval/beat.py:22`) + `valid_smiles_gate` into one
-   home; add the custom-oracle **canary** (score a fixed degenerate probe set before an
-   exploratory run on a new oracle; warn on implausibly-high scores) and the **OD-4 gate**
-   (annotate-only in benchmark — top-10 stays comparable; per-run hard-drop toggle allowed
-   only in exploratory mode).
-5. `apps/web/components/workbench/ui.tsx` — quality badges on top-K tiles; diversity/novelty
-   in the run summary. Tests: `test_quality.py`, `test_trust_gates.py`.
+Branch off `main` (branch-first), then execute slice **07-06 provenance manifest**
+(plan Task 07-06, OD-5). Build:
+1. `harness/capychem_harness/score.py:102` `_emit` — add `pytdc_version`
+   (`tdc.__version__` or `importlib.metadata.version("PyTDC")`) to the emitted JSON;
+   mirror in `apps/worker/app.py`; parse it in `oracle/__init__.py` (`score_smiles`
+   maps it onto `OracleResult` or a batch-level field). **This runs in the isolated
+   harness venv** — verify with `harness/.venv/bin/python`.
+2. Alembic revision (chain from head `0cc25e46d571`): `Run.manifest_json` (git SHA, LLM
+   model id from `proposer.llm_model()`, harness/PyTDC pin, Langfuse trace URL, config)
+   and `OracleCall.oracle_version`.
+3. `run.py`/`runner.py` — populate the manifest at run start/finalize (git SHA via
+   `subprocess git rev-parse HEAD`; model id from `proposer.llm_model()`; PyTDC version
+   from the harness JSON).
+4. `GET /runs/{id}/manifest`. Test `test_manifest.py` (harness emits a version string;
+   manifest round-trips model id + PyTDC pin + git SHA).
 
-Then 07-06 (manifest) → 07-07 (export) → 07-08 (UI), per milestone.md + the plan.
+Then 07-07 (lineage export CSV/SDF) → 07-08 (UI: objective builder + seed-import +
+quality/diversity DISPLAY + novelty seed_pop wiring + cockpit + WS reconnect).
 
 ## Current state
-- Slice **07-04b shipped** (merged to `main`): hard constraints. New
-  `packages/core/capychem/constraints.py` (`Constraints.from_json`/`passes` — RDKit
-  `FilterCatalog` PAINS/BRENK/NIH + custom SMARTS include/exclude; invalid→False). Score
-  node drops constraint-failing candidates before scoring (no budget spent); a fully-failed
-  generation is flagged `_constraint_starved`; `stop_check` accumulates the streak and
-  `stop_reason` terminates as **`constraint_starved`** at streak ≥ `plateau_window` (distinct
-  from plateau/no_progress — a starved gen never fires no_progress). `constraints_json`
-  threaded through config/runner/route; `derive_mode(constraints_json=…)` ⇒ exploratory.
-  Soft property bands need **no new code** (a band = a descriptor-oracle objective term with
-  a `double_sigmoid` transform, 07-04).
-- **Alembic head `ed2d80a8ccda`**: `runs.status` widened `String(16)`→`String(32)` (dev DB
-  upgraded) because `constraint_starved` is 18 chars. New revisions chain from this head.
-- Gate all green: mypy (61 files) · ruff · **377** backend (+15) · migration drift · web untouched.
-- `main` ahead of `origin/main` (unpushed) + m07-02/03/04/04b commits.
+- Slice **07-05 shipped** (merged to `main`): molecule-quality & trust layer.
+  `packages/core/capychem/quality.py` (`molecule_quality` — SA/QED/Lipinski/Veber/PAINS/
+  Brenk; `internal_diversity`; `novelty`). `Candidate.quality_json` column (migration
+  `0cc25e46d571`) attached at persist (annotate-only, OD-4 — benchmark top-10 unchanged;
+  e2e-verified). `build_summary` now emits `diversity` per run (+ optional `novelty`).
+  `packages/core/capychem/trust/gates.py` — unified `PARSE_RATE_FLOOR` (eval/beat.py +
+  eval/verdict.py import it, copies deleted) + `oracle_canary(oracle)` (flags an oracle
+  scoring degenerate probes ≥0.9).
+- **Alembic head `0cc25e46d571`** (dev DB upgraded). New revisions chain from it.
+- Gate all green: mypy (65 files) · ruff · **386** backend (+9) · migration drift · web untouched.
+- `main` ahead of `origin/main` (unpushed) + m07-02..05 commits.
 
 ## Active concerns
-- **Benchmark byte-identical:** the score node's constraint filter + `_constraint_starved`
-  are inert when `constraints_json` is None (streak stays 0, stop_reason unchanged). Keep it.
-- **Starvation-vs-empty-population limitation:** if constraints starve gen 0 *entirely*, the
-  survivor population empties, so the next generation proposes nothing (candidates empty ⇒
-  `_constraint_starved=False`) and the run terminates as `no_progress`, not `constraint_starved`.
-  The distinct signal reliably fires when candidates persist but keep failing for a full
-  window. Unit-proven; a full-loop starvation e2e is fragile, so not added. Documented in log.
-- **07-05 trust gate is OD-4:** annotate-only in benchmark (top-10 comparability preserved);
-  hard-drop toggle exploratory-only. Don't let a quality gate change the benchmark top-10.
-- Test basenames unique across the two roots; `.gitignore` `oracle/` is root-anchored.
+- **Quality is annotate-only (OD-4):** it's computed at persist and never drops/reorders a
+  candidate — a benchmark run's top-10 is unchanged. Keep it that way (no hard-drop in
+  benchmark). An exploratory hard-drop toggle is deferred (not built).
+- **Novelty is half-wired:** the helper + `build_summary(seed_pop=…)` param exist and are
+  tested, but the live runner/stop_check calls don't pass `seed_pop` yet, so real runs show
+  `diversity` but not `novelty`. Thread the gen-0 seed set in **07-08** (stash canonical
+  gen-0 population in state; pass through the stop_check + 4 runner fallback build_summary
+  sites; resume → None). Diversity already surfaces per run.
+- **07-06 touches the isolated harness** — modify `score.py` and test via `harness/.venv`
+  (never import harness into the modern env; PyTDC 0.3.6 / Python 3.10).
+- Test basenames unique across the two roots; `.gitignore` `oracle/` root-anchored.

@@ -29,6 +29,7 @@ from capychem.loop.seeds import load_starting_pop as _load_starting_pop
 from capychem.loop.state import HypothesisRecord, LoopState, Scored
 from capychem.objective import Objective
 from capychem.oracle import HarnessError, OracleResult, score_batch_async
+from capychem.quality import molecule_quality
 from capychem.validate import validate_batch_with_stats
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
@@ -290,6 +291,7 @@ async def _persist(
                     proposer=vc.proposer,
                     valid=True,
                     score=sc,
+                    quality_json=molecule_quality(vc.smiles),  # annotate-only (07-05)
                 )
                 session.add(cand)
                 await session.flush()  # cand.id

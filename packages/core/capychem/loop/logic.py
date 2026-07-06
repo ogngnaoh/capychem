@@ -111,6 +111,7 @@ def build_summary(
     validation_stats: dict[str, int] | None = None,
     top_k: int = 10,
     direction: Direction = "maximize",
+    seed_pop: set[str] | None = None,
 ) -> dict[str, Any]:
     """Build the (un-authoritative) summary_json. The auc_curve here is the
     running top-10-mean; the canonical AUC lives in packages/core/eval (later
@@ -136,6 +137,14 @@ def build_summary(
             "rate": rate,
             "gate": valid_smiles_gate(rate),
         }
+    # Run-level trust metrics (07-05). Lazy import so this pure-ish module doesn't pull
+    # RDKit/FilterCatalog at import time (build_summary is the only RDKit caller here).
+    from capychem.quality import internal_diversity, novelty
+
+    pop_smiles = [m.smiles for m in population]
+    summary["diversity"] = internal_diversity(pop_smiles)
+    if seed_pop is not None:
+        summary["novelty"] = novelty(pop_smiles, seed_pop)
     return summary
 
 
