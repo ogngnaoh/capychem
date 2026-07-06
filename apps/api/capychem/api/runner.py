@@ -14,7 +14,8 @@ from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
 from typing import Any, cast
 
-from capychem import cost
+from capychem import cost, proposer
+from capychem.api import config
 from capychem.api.schemas import (
     AnalyzerHypothesisEvent,
     GenerationCompleteEvent,
@@ -26,12 +27,26 @@ from capychem.loop import trace
 from capychem.loop.graph import build_graph
 from capychem.loop.logic import build_summary, stop_reason
 from capychem.loop.state import LoopState
-from capychem.oracle import HarnessError
+from capychem.oracle import HarnessError, pytdc_version
 from capychem.resume import reconstruct_state
-from capychem.run import RunConfig, create_run, finalize_run
+from capychem.run import RunConfig, build_manifest, create_run, finalize_run
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 logger = logging.getLogger(__name__)
+
+
+def _git_sha() -> str | None:
+    """Best-effort current commit SHA for the manifest (07-06). None if not a git
+    checkout or git is unavailable — provenance degrades gracefully."""
+    import subprocess
+
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=5
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.stdout.strip() if out.returncode == 0 and out.stdout.strip() else None
 
 
 def _snapshot_from_state(run_id: int, cfg: RunConfig, state: dict[str, Any]) -> dict[str, Any]:
@@ -427,8 +442,23 @@ class RunRegistry:
         # existing JSON column. None when Langfuse is off or the run errored.
         if summary is not None and run_trace_id is not None:
             summary = {**summary, "trace_id": run_trace_id}
+        # Reproducibility manifest (07-06, OD-5): pin code + model + oracle + config +
+        # trace. pytdc_version is cached (one probe per process); git_sha/model are
+        # best-effort. Built once, at finalize.
+        manifest = build_manifest(
+            cfg,
+            git_sha=_git_sha(),
+            model_id=proposer.llm_model(),
+            pytdc_version=pytdc_version(),
+            trace_url=config.trace_url(run_trace_id),
+        )
         async with self._sm() as session:
-            await finalize_run(session, handle.run_id, {"stop_reason": status, "summary": summary})
+            await finalize_run(
+                session,
+                handle.run_id,
+                {"stop_reason": status, "summary": summary},
+                manifest=manifest,
+            )
         trace.flush()
         if handle.snapshot is not None:
             handle.snapshot["status"] = status  # terminal status for a post-completion GET

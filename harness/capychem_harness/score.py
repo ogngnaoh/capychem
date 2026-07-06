@@ -33,6 +33,17 @@ def _emit(payload: dict, code: int = 0) -> None:
     sys.exit(code)
 
 
+def _pytdc_version() -> str:
+    """The pinned legacy PyTDC version (OD-5 provenance). Best-effort — a citable
+    manifest wants the real installed version, not a hard-coded constant."""
+    try:
+        from importlib.metadata import version
+
+        return version("PyTDC")
+    except Exception:  # noqa: BLE001 - provenance is best-effort, never fails scoring
+        return "unknown"
+
+
 def _err(msg: str, task: object = None) -> None:
     _emit({"task": task, "results": [], "error": msg}, code=1)
 
@@ -99,7 +110,7 @@ def main() -> None:
         wall_ms = int((time.perf_counter() - start) * 1000)
         results.append({"smiles": smi, "score": score, "valid": valid, "wall_ms": wall_ms})
 
-    _emit({"task": task, "results": results, "error": None})
+    _emit({"task": task, "results": results, "error": None, "pytdc_version": _pytdc_version()})
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ This module is the only sanctioned crossing of the harness↔modern boundary.
 from __future__ import annotations
 
 import asyncio
+import functools
 import json
 import os
 import subprocess
@@ -56,11 +57,12 @@ def _harness_python() -> Path:
     return Path(override) if override else _DEFAULT_HARNESS_PYTHON
 
 
-def score_smiles(smiles: list[str], task: str, *, timeout_s: float = 120.0) -> list[OracleResult]:
-    """Score SMILES against a PyTDC oracle via the isolated harness subprocess.
+def _run_scorer(smiles: list[str], task: str, *, timeout_s: float = 120.0) -> dict[str, Any]:
+    """Invoke the harness scorer subprocess and return its parsed JSON payload.
 
-    Raises ``HarnessError`` if the harness env is missing, the subprocess fails,
-    or the response is malformed.
+    Raises ``HarnessError`` if the harness env is missing, the subprocess fails, or
+    the response is malformed / carries an error. Shared by ``score_smiles`` and
+    ``pytdc_version`` so both cross the harness boundary the one sanctioned way.
     """
     python = _harness_python()
     if not python.exists():
@@ -88,7 +90,16 @@ def score_smiles(smiles: list[str], task: str, *, timeout_s: float = 120.0) -> l
         )
     if payload.get("error"):
         raise HarnessError(str(payload["error"]))
+    return payload
 
+
+def score_smiles(smiles: list[str], task: str, *, timeout_s: float = 120.0) -> list[OracleResult]:
+    """Score SMILES against a PyTDC oracle via the isolated harness subprocess.
+
+    Raises ``HarnessError`` if the harness env is missing, the subprocess fails,
+    or the response is malformed.
+    """
+    payload = _run_scorer(smiles, task, timeout_s=timeout_s)
     return [
         OracleResult(
             smiles=row["smiles"],
@@ -98,6 +109,21 @@ def score_smiles(smiles: list[str], task: str, *, timeout_s: float = 120.0) -> l
         )
         for row in payload["results"]
     ]
+
+
+@functools.lru_cache(maxsize=1)
+def pytdc_version() -> str | None:
+    """The harness's real PyTDC version (OD-5 provenance), via a fast analytic probe
+    (qed needs no model download; empty SMILES so nothing is scored). The pin is
+    constant per process, so the result is cached — at most one probe subprocess, and
+    a short timeout so a run's finalize never blocks on it. Best-effort: returns None
+    if the harness is unavailable, so a manifest degrades gracefully."""
+    try:
+        payload = _run_scorer([], "qed", timeout_s=15.0)
+    except HarnessError:
+        return None
+    version = payload.get("pytdc_version")
+    return version if isinstance(version, str) else None
 
 
 def propose_offspring(

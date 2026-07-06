@@ -304,6 +304,19 @@ async def get_run_endpoint(run_id: int, request: Request) -> RunSnapshot:
     return snap
 
 
+@router.get("/runs/{run_id}/manifest")
+async def get_manifest_endpoint(run_id: int, request: Request) -> dict[str, Any]:
+    """The run's reproducibility manifest (07-06, OD-5): git SHA + model id + PyTDC pin
+    + config + trace URL. 404 if the run is unknown; an empty object while the run is
+    still live (the manifest is written at finalize)."""
+    sm = sessionmaker_of(request)
+    async with sm() as session:
+        row = await session.get(Run, run_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return row.manifest_json or {}
+
+
 @router.get("/trace/{run_id}")
 async def get_trace_endpoint(run_id: int, request: Request) -> dict[str, str | None]:
     """Langfuse deep link for a run (FR-014 / SPEC §6.3). 404 if the run is

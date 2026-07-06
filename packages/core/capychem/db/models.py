@@ -53,6 +53,9 @@ class Run(Base):
     started_at: Mapped[datetime] = mapped_column(server_default=func.now())
     ended_at: Mapped[datetime | None] = mapped_column(default=None)
     summary_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
+    # Reproducibility manifest (07-06, OD-5): git SHA + model id + PyTDC pin + config +
+    # trace URL, populated at finalize. Citable provenance for a run's result.
+    manifest_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
 
 
 class Generation(Base):
@@ -98,6 +101,8 @@ class OracleCall(Base):
     score: Mapped[float]
     wall_ms: Mapped[int]
     compute_cost_usd: Mapped[float] = mapped_column(default=0.0)  # 0 for local oracle
+    # Oracle version (07-06, OD-5): the harness PyTDC pin, backfilled at finalize.
+    oracle_version: Mapped[str | None] = mapped_column(String(32), default=None)
 
 
 class RunCost(Base):

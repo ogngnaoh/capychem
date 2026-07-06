@@ -2,6 +2,39 @@
 
 Append-only. Dated rationale/findings a diff can't show. Git records what shipped.
 
+## 2026-07-06 — Slice 07-06 provenance manifest shipped (OD-5)
+
+The harness finally emits its own version; every run gets a citable manifest. Findings:
+
+- **`importlib.metadata.version("PyTDC")`, not `tdc.__version__`.** `tdc` has no
+  `__version__` attribute (returns "?"); the distribution name is `PyTDC` and
+  `importlib.metadata.version("PyTDC")` → "0.3.6" in the legacy venv. OD-5 wanted the REAL
+  installed version, so the harness reads it at emit time (best-effort, "unknown" on failure).
+
+- **`pytdc_version()` is cached + short-timeout — the version is a process constant.** It
+  probes the local harness (`_run_scorer([], "qed")` — qed is analytic, empty SMILES so
+  nothing is scored) with a 15s timeout and `@lru_cache(maxsize=1)`, so a run's finalize
+  spawns at most ONE probe per process (not per run) and never blocks 120s on a hung
+  harness. Crucially it uses the LOCAL harness directly, independent of
+  `CAPYCHEM_ORACLE_BACKEND`, so no Modal-worker mirror was needed (the plan's mirror step
+  was unnecessary).
+
+- **Manifest built once at finalize; oracle_version backfilled in one UPDATE.** Rather than
+  stamp `OracleCall.oracle_version` per call (a subprocess tax at score time) or per run
+  start (latency on every launch), `finalize_run` writes `Run.manifest_json` AND
+  `UPDATE oracle_calls SET oracle_version=<pin> WHERE run_id=…` in one shot at the end.
+
+- **`score_smiles` refactored to delegate to `_run_scorer`** (extracted subprocess+parse) so
+  `score_smiles` and `pytdc_version` cross the harness boundary the one sanctioned way. All
+  existing oracle/eval tests pass unchanged — the refactor is byte-identical.
+
+- **Everything is best-effort/nullable.** git_sha (not a checkout → None), model_id, PyTDC
+  pin (harness down → None), trace_url (Langfuse off → None). A manifest never fails a run.
+
+- Gate: mypy (66 files) · ruff · **391** backend (+5, incl. a real-run e2e asserting the
+  manifest carries the real 0.3.6 pin + a git SHA + model id) · migration drift · benchmark
+  unchanged.
+
 ## 2026-07-06 — Slice 07-05 quality & trust layer shipped
 
 Per-candidate quality report + run-level diversity + a shared trust-gate home. Findings:

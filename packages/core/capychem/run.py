@@ -9,7 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from capychem.db.models import Run
+from capychem.db.models import OracleCall, Run
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -64,11 +65,59 @@ async def create_run(session: AsyncSession, config: RunConfig) -> int:
     return row.id
 
 
-async def finalize_run(session: AsyncSession, run_id: int, final_state: dict[str, Any]) -> None:
-    """Set terminal status + summary_json from the loop's final state."""
+def build_manifest(
+    config: RunConfig,
+    *,
+    git_sha: str | None,
+    model_id: str | None,
+    pytdc_version: str | None,
+    trace_url: str | None,
+) -> dict[str, Any]:
+    """A citable reproducibility manifest (OD-5): what to pin to rerun this exact run —
+    code (git SHA), model (id), oracle (PyTDC version), the full launch config, and the
+    Langfuse trace. Any field may be None (best-effort provenance)."""
+    return {
+        "git_sha": git_sha,
+        "model_id": model_id,
+        "pytdc_version": pytdc_version,
+        "trace_url": trace_url,
+        "config": {
+            "task": config.task,
+            "budget": config.budget,
+            "seed": config.seed,
+            "pop_size": config.pop_size,
+            "offspring": config.offspring,
+            "mutation_rate": config.mutation_rate,
+            "plateau_window": config.plateau_window,
+            "max_generations": config.max_generations,
+            "mutation_strategy": config.mutation_strategy,
+            "mode": config.mode,
+            "seed_source": config.seed_source,
+            "objective_json": config.objective_json,
+            "constraints_json": config.constraints_json,
+        },
+    }
+
+
+async def finalize_run(
+    session: AsyncSession,
+    run_id: int,
+    final_state: dict[str, Any],
+    manifest: dict[str, Any] | None = None,
+) -> None:
+    """Set terminal status + summary_json from the loop's final state; persist the
+    reproducibility manifest (OD-5) and backfill each OracleCall's oracle_version from
+    its PyTDC pin in a single UPDATE (cheaper than per-call at score time)."""
     row = await session.get(Run, run_id)
     if row is None:  # defensive; the row was just created by us
         return
     row.status = final_state.get("stop_reason") or "exhausted"
     row.summary_json = final_state.get("summary")
+    if manifest is not None:
+        row.manifest_json = manifest
+        pin = manifest.get("pytdc_version")
+        if pin is not None:
+            await session.execute(
+                update(OracleCall).where(OracleCall.run_id == run_id).values(oracle_version=pin)
+            )
     await session.commit()
