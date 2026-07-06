@@ -121,4 +121,4 @@ Per `~/.claude/CLAUDE.md`:
 - On session start, load: `docs/milestones.md` → active `milestone.md` → its `handoff.md`. The handoff's "Next session start here" line is the literal first action.
 - On session end, overwrite `handoff.md`. Don't append; git preserves history.
 
-When a slice ships, land all of these in one commit on the main-flow branch: milestone status flip, handoff status flip, "Next session start here" advance, slice-file freeze, dated "Slice N shipped" log line, commit refs under "Completed this session".
+When a slice ships, land all of these in one commit on the main-flow branch: milestone status flip, handoff status flip, "Next session start here" advance, slice-file freeze, dated "Slice N shipped" line appended to the milestone's `log.md` (never the handoff), commit refs under "Completed this session".
