@@ -1,6 +1,22 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-export type TopMolecule = { smiles: string; score: number };
+export type MoleculeQuality = {
+  valid: boolean;
+  sa_score?: number;
+  qed?: number;
+  mw?: number;
+  logp?: number;
+  hbd?: number;
+  hba?: number;
+  rotatable_bonds?: number;
+  tpsa?: number;
+  lipinski_pass?: boolean;
+  veber_pass?: boolean;
+  pains?: boolean;
+  brenk?: boolean;
+};
+// quality is populated at finalize (07-05/07-08); null on a live snapshot.
+export type TopMolecule = { smiles: string; score: number; quality?: MoleculeQuality | null };
 export type CurvePoint = { oracle_calls: number; top10_mean: number };
 export type AnalyzerHypothesis = {
   after_generation_index: number;
@@ -27,6 +43,9 @@ export type RunSnapshot = {
   graph_ga_baseline?: number | null;
   llm_cost_usd?: number | null;
   oracle_cost_usd?: number | null;
+  // Run-level trust metrics (07-08); populated at finalize.
+  diversity?: number | null;
+  novelty?: number | null;
 };
 export type RunListItem = {
   run_id: number;

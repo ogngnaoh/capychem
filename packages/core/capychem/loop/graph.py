@@ -312,12 +312,18 @@ async def _persist(
         top10 = sorted(survivors, key=lambda m: (-m.score, m.smiles))[:10]
         top10_mean = sum(m.score for m in top10) / len(top10) if top10 else 0.0
         curve = [*state.get("auc_curve", []), (state["calls_used"], top10_mean)]
-        return {
+        result: dict[str, Any] = {
             "population": survivors,
             "auc_curve": curve,
             "_made_progress": bool(new_scored),
             "gen_db_id": gen.id,
         }
+        # Stash the canonical gen-0 population once (07-08): novelty vs seed = the
+        # fraction of the final population NOT among these starting molecules. Threaded
+        # into build_summary at run end; subsequent generations never overwrite it.
+        if state["gen_index"] == 0:
+            result["seed_pop"] = {m.smiles for m in survivors}
+        return result
 
 
 async def _analyze(
@@ -412,6 +418,7 @@ async def stop_check(state: LoopState) -> dict[str, Any]:
                 generations=state["gen_index"] + 1,
                 oracle_calls=state["calls_used"],
                 validation_stats=state.get("_validation_stats"),
+                seed_pop=state.get("seed_pop"),  # novelty vs the gen-0 seed (07-08)
             )
             result = {"done": True, "stop_reason": reason, "summary": summary}
         else:

@@ -2,6 +2,34 @@
 
 Append-only. Dated rationale/findings a diff can't show. Git records what shipped.
 
+## 2026-07-06 — Slice 07-08 BACKEND WIRING shipped (UI deferred to a fresh session)
+
+The operator chose to land 07-08's backend wiring now and build the visual UI in a fresh,
+screenshot-iterated session (their usual frontend workflow). Backend findings:
+
+- **Novelty needed the gen-0 seed set stashed once.** `_persist` stashes
+  `seed_pop = {survivor smiles}` into `LoopState` ONLY at gen 0 (later generations never
+  overwrite it); `stop_check` + the 3 runner-fallback `build_summary` calls pass it, so a
+  real run's `summary_json.novelty` = fraction of the final population not among the starting
+  molecules. The **resume** path can't reconstruct the gen-0 seed from DB rows → novelty null
+  there (best-effort, documented).
+
+- **The live snapshot shadows the DB path for completed runs** (the handle is never evicted),
+  so putting quality/diversity/novelty only in `summary_json` wouldn't surface them on a
+  post-completion GET. Fix: the runner **overlays** `top_k` (with quality) + `diversity` +
+  `novelty` onto `handle.snapshot` at finalize, alongside the terminal status. The DB path
+  also reads them from `summary_json` (for runs not in the registry).
+
+- **Quality on top-K is recomputed in `build_summary`**, not joined from `Candidate.quality_json`.
+  build_summary is finalize-only (the heavy O(n²) diversity already lives there), so
+  recomputing `molecule_quality` for the top-10 is negligible AND keeps the live path (no DB)
+  and DB path identical. One consequence: `test_build_summary_shape` asserted the exact top_k
+  dict — updated to check smiles/score + `quality.valid` (the intentional shape change).
+
+- Gate: mypy (66) · ruff · **396** backend (+2: build_summary top_k quality unit + a completed-
+  run snapshot e2e asserting diversity/novelty/top-K-quality) · web typecheck/ESLint · 40
+  vitest · benchmark unchanged. **Milestone 07 backend is now complete; only the UI remains.**
+
 ## 2026-07-06 — Slice 07-07 lineage export shipped
 
 CSV + SDF lineage export. Findings:

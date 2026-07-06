@@ -1,57 +1,55 @@
 # Handoff — milestone 07 objective-ownership
 
-## Next session start here
-Branch off `main` (branch-first), then execute slice **07-08 objective-authoring UI +
-live** — the LAST slice; it closes the milestone. Surface everything the backend now
-carries. Scope (frontend + one small backend wiring):
-1. **Objective builder** component (`apps/web`): pick oracles + weights + transforms +
-   SMARTS/property constraints; live preview via `POST /objective/validate`; collapses to
-   the single-task pick in benchmark mode. Sends `objective_json` / `constraints_json` in
-   the `createRun` body.
-2. **Seed-import** component: paste/upload SMILES (SDF/CSV parse optional), RDKit-validate
-   at the `/runs` boundary, show accepted/rejected. (The single-field version shipped in
-   07-02; this is the richer UI.)
-3. **Quality + diversity display**: quality badges on top-K tiles (SA/QED/Lipinski/PAINS
-   from `Candidate.quality_json`), diversity/novelty in the run summary. Needs the snapshot
-   to expose quality — add `quality`/`diversity`/`novelty` to `RunSnapshot` + the run-detail
-   read (small backend add).
-4. **Novelty seed_pop wiring** (deferred from 07-05): stash the canonical gen-0 population
-   in `LoopState` at gen 0; pass `seed_pop` through the `stop_check` + runner-fallback
-   `build_summary` calls so real runs surface `novelty` (diversity already surfaces).
-5. **Manifest + export download buttons** on run-detail (`GET /runs/{id}/manifest`,
-   `/export.csv`, `/export.sdf`).
-6. **Cockpit**: analyzer per-component reasoning (which objective term moved) + WS
-   reconnect-with-backoff + "connection lost" + cold-start "waking the model ~30s" copy.
-7. Tests: vitest for the objective builder + import + quality display; **extend the axe
-   gate** (`apps/web/e2e/a11y.spec.ts`) to the new surfaces (keep AA green).
+## Next session start here (07-08 UI — the milestone closer)
+Milestone 07's **backend is 100% complete**, including 07-08's backend wiring (novelty
+threading + quality/diversity/novelty on the run snapshot). The ONLY remaining work is the
+**visual UI for 07-08**, to be built in this fresh, screenshot-iterated session. Branch off
+`main` (branch-first), invoke the **frontend-design** skill, and build against the shipped
+Anthropic warm-token system (cream+coral, Source Serif 4 / Inter). Iterate with `/run` +
+screenshots. Deliverables (all in `apps/web`; the backend APIs already exist):
 
-Use the frontend-design skill + the shipped Anthropic warm-token design system (cream+coral,
-Source Serif 4/Inter). Iterate with `/run` + screenshots.
+1. **Objective builder** — pick oracles (`GET /catalog` + the descriptor presets
+   qed/sa_score/mw/clogp/tpsa) + weights + transforms (`identity`/`sigmoid`/`reverse_sigmoid`/
+   `double_sigmoid`/`value_map`) + SMARTS-exclude/include + property-band constraints; live
+   preview via `POST /objective/validate`; **collapses to the single-task pick in benchmark
+   mode**. Sends `objective_json`/`constraints_json` in the `createRun` body (both already
+   accepted + validated server-side; a non-null one ⇒ `exploratory`).
+2. **Seed-import** — paste/upload SMILES (SDF/CSV parse), RDKit-validated at `/runs`; show
+   accepted/rejected. (07-02 shipped the single space/comma field; this is the rich version.)
+3. **Quality + diversity display** — badges on top-K tiles from `RunSnapshot.top_k[].quality`
+   (SA/QED/Lipinski/Veber/PAINS/Brenk); `RunSnapshot.diversity`/`novelty` in the run summary.
+4. **Manifest + export downloads** on run-detail — `GET /runs/{id}/manifest`, `/export.csv`,
+   `/export.sdf` (all live).
+5. **Cockpit** — analyzer per-component reasoning (which objective term moved) + WS
+   reconnect-with-backoff + "connection lost" state + cold-start "waking the model ~30s" copy.
+6. **Tests** — vitest for the objective builder + import + quality display; **extend the axe
+   gate** (`apps/web/e2e/a11y.spec.ts`) to the new surfaces; keep WCAG-AA green.
 
-## When 07-08 ships → milestone 07 is COMPLETE
-Land in the ship commit: flip 07-08 in `milestone.md`; then **flip `docs/milestones.md`**
-(08-objective-ownership → shipped, next milestone → active or note "milestone 07 complete");
-overwrite this handoff for milestone 08; per the milestone-boundary convention, the NEXT
-milestone's build starts in a FRESH session.
+**Honesty on every new surface:** mode badge; exploratory = "not benchmark-comparable";
+figure-canon never "21/23".
+
+## When 07-08 UI ships → MILESTONE 07 IS COMPLETE
+In the ship commit: flip 07-08 → shipped in `milestone.md`; **flip `docs/milestones.md`**
+(mark 07-objective-ownership shipped, next milestone `← active` or note "milestone 07
+complete"); append a dated line to `log.md`; overwrite this handoff for the next milestone.
+Per the milestone-boundary convention, the NEXT milestone starts in another fresh session.
 
 ## Current state
-- Slice **07-07 shipped** (merged to `main`): lineage export. `GET /runs/{id}/export.csv`
-  (per-candidate lineage + quality + hypothesis-at-birth columns) + `GET /runs/{id}/export.sdf`
-  (RDKit round-trips it — props preserved; manifest git-SHA/PyTDC-pin embedded). `_lineage_rows`
-  in `routes_runs.py` (Candidate⋈Generation, hypothesis-at-birth = hyp after gen g-1).
-- **Backend is objective-ownership COMPLETE**: mode split (01) · seed plumbing (02) ·
-  pluggable oracle (03) · composed objective (04) · constraints (04b) · quality+trust (05) ·
-  manifest (06) · export (07). Alembic head **`38f369ef45a6`**. Only the UI (08) remains.
-- Gate all green: mypy (66 files) · ruff · **394** backend (+3) · migration drift · web untouched.
-- `main` ahead of `origin/main` (unpushed) + m07-02..07 commits.
+- **Milestone 07 backend COMPLETE** (01 mode-split · 02 seed · 03 pluggable-oracle · 04
+  objective · 04b constraints · 05 quality+trust · 06 manifest · 07 export · **08 backend
+  wiring**). Alembic head **`38f369ef45a6`**.
+- 07-08 backend wiring shipped this session: gen-0 `seed_pop` stashed at persist + threaded
+  through `stop_check`/runner fallbacks → `summary_json.novelty`; `build_summary` attaches
+  `molecule_quality` to each `top_k` entry; `RunSnapshot.diversity`/`novelty` +
+  `TopMolecule.quality` (runner overlays them onto the live snapshot at finalize since the
+  handle is never evicted); `api.ts` types added.
+- Gate all green: mypy (66) · ruff · **396** backend · web typecheck/ESLint · 40 vitest ·
+  migration drift. `main` ahead of `origin/main` (unpushed) + m07-02..07 + the 07-08-wiring commit.
 
 ## Active concerns
-- **07-08 is the milestone closer** — it also does the deferred novelty seed_pop wiring +
-  exposes quality/diversity in the snapshot (small backend add). Keep benchmark surfaces
-  honest (mode badge everywhere; figure-canon never "21/23"; exploratory = "not
-  benchmark-comparable"). Keep axe AA green (extend the gate to new surfaces).
-- **Snapshot doesn't expose quality yet** — top-K tiles need `Candidate.quality_json`
-  surfaced through `RunSnapshot.top_k` (add per-molecule quality) or a sibling field.
-- Backend export/manifest are best-effort/nullable — the UI must tolerate nulls.
-- Test basenames unique across the two roots; `.gitignore` `oracle/` root-anchored;
-  new Alembic revisions chain from `38f369ef45a6`.
+- **UI-only remains** — no backend changes needed for 07-08 (all APIs exist). If a surface
+  needs a field the snapshot lacks, prefer adding it to `RunSnapshot` over new endpoints.
+- **Live vs. finalized snapshot:** quality/diversity/novelty are null WHILE a run is live
+  (populated at finalize); the UI must handle nulls (show "computing…"/hide badges live).
+- **Novelty is best-effort:** null on a resumed run (seed set not reconstructable). Tolerate null.
+- Keep axe AA green (extend the gate); test basenames unique across the two roots.

@@ -120,9 +120,17 @@ def build_summary(
     When ``validation_stats`` (cumulative {"proposed","valid"}) is supplied, a
     stable ``valid_smiles`` block is added. This is the field milestone 02's
     >80% gate reads; keep its shape stable."""
+    # Lazy import so this pure-ish module doesn't pull RDKit/FilterCatalog at import time
+    # (build_summary is finalize-only — the one RDKit caller here). 07-05/07-08.
+    from capychem.quality import internal_diversity, molecule_quality, novelty
+
     top = sorted(population, key=lambda m: _sort_key(m, direction))[:top_k]
     summary: dict[str, Any] = {
-        "top_k": [{"smiles": m.smiles, "score": m.score} for m in top],
+        # Each top-K molecule carries its quality report (07-08) so the UI renders badges.
+        "top_k": [
+            {"smiles": m.smiles, "score": m.score, "quality": molecule_quality(m.smiles)}
+            for m in top
+        ],
         "auc_curve": [{"oracle_calls": c, "top10_mean": v} for c, v in auc_curve],
         "generations": generations,
         "oracle_calls": oracle_calls,
@@ -137,10 +145,7 @@ def build_summary(
             "rate": rate,
             "gate": valid_smiles_gate(rate),
         }
-    # Run-level trust metrics (07-05). Lazy import so this pure-ish module doesn't pull
-    # RDKit/FilterCatalog at import time (build_summary is the only RDKit caller here).
-    from capychem.quality import internal_diversity, novelty
-
+    # Run-level trust metrics (07-05/07-08): internal diversity + novelty vs the seed.
     pop_smiles = [m.smiles for m in population]
     summary["diversity"] = internal_diversity(pop_smiles)
     if seed_pop is not None:

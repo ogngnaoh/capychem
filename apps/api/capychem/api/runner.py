@@ -70,6 +70,9 @@ def _snapshot_from_state(run_id: int, cfg: RunConfig, state: dict[str, Any]) -> 
         "top_k": [{"smiles": m.smiles, "score": m.score} for m in top],
         "auc_curve": [{"oracle_calls": c, "top10_mean": v} for c, v in curve],
         "cost_so_far_usd": 0.0,
+        # Populated from the summary at finalize (07-08); null while live.
+        "diversity": None,
+        "novelty": None,
     }
 
 
@@ -405,6 +408,7 @@ class RunRegistry:
                     final_state.get("auc_curve", []),
                     generations=last_curve_len,
                     oracle_calls=final_state.get("calls_used", 0),
+                    seed_pop=final_state.get("seed_pop"),  # novelty vs the gen-0 seed (07-08)
                 )
         elif errored:
             status = "errored"
@@ -422,6 +426,7 @@ class RunRegistry:
                     final_state.get("auc_curve", []),
                     generations=last_curve_len,
                     oracle_calls=final_state.get("calls_used", 0),
+                    seed_pop=final_state.get("seed_pop"),  # novelty vs the gen-0 seed (07-08)
                 )
         else:
             status = "stopped" if stopped else (final_state.get("stop_reason") or "exhausted")
@@ -436,6 +441,7 @@ class RunRegistry:
                     final_state.get("auc_curve", []),
                     generations=last_curve_len,
                     oracle_calls=final_state.get("calls_used", 0),
+                    seed_pop=final_state.get("seed_pop"),  # novelty vs the gen-0 seed (07-08)
                 )
         # Persist the run's Langfuse trace id in summary_json so the run-detail
         # view can deep-link to it (FR-014). No schema change — summary_json is an
@@ -462,6 +468,13 @@ class RunRegistry:
         trace.flush()
         if handle.snapshot is not None:
             handle.snapshot["status"] = status  # terminal status for a post-completion GET
+            # Overlay the finalize-only trust fields so a post-completion GET on the live
+            # snapshot carries per-candidate quality + diversity/novelty (07-08). The
+            # handle is never evicted, so the live path shadows the DB path for these.
+            if summary is not None:
+                handle.snapshot["top_k"] = summary.get("top_k", handle.snapshot["top_k"])
+                handle.snapshot["diversity"] = summary.get("diversity")
+                handle.snapshot["novelty"] = summary.get("novelty")
         terminal = RunCompleteEvent(
             run_id=handle.run_id, status=status, summary=summary
         ).model_dump()

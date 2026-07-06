@@ -109,6 +109,9 @@ class ObjectiveValidateResponse(BaseModel):
 class TopMolecule(BaseModel):
     smiles: str
     score: float
+    # Per-candidate quality report (07-05/07-08); None on a live snapshot (populated at
+    # finalize) or a pre-07-05 run. Loose dict — the UI reads the fields it renders.
+    quality: dict[str, Any] | None = None
 
 
 class CurvePoint(BaseModel):
@@ -155,6 +158,10 @@ class RunSnapshot(BaseModel):
     # run has no RunCost row yet.
     llm_cost_usd: float | None = None
     oracle_cost_usd: float | None = None
+    # Run-level trust metrics (07-05/07-08): internal diversity + novelty vs the gen-0
+    # seed. Populated at finalize (null while a run is still live).
+    diversity: float | None = None
+    novelty: float | None = None
 
 
 class RunListItem(BaseModel):

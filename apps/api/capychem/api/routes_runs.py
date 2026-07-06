@@ -293,6 +293,8 @@ async def _run_snapshot(
         graph_ga_baseline=_gated_baseline(row.mode, row.task),
         llm_cost_usd=llm_cost_usd,
         oracle_cost_usd=oracle_cost_usd,
+        diversity=summary.get("diversity"),  # 07-08 trust metrics from summary_json
+        novelty=summary.get("novelty"),
     )
 
 

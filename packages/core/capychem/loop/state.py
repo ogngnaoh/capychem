@@ -87,6 +87,7 @@ class LoopState(TypedDict, total=False):
     llm_cost_usd: float  # cumulative LLM proposer spend this run (slice 05)
     gen_index: int
     population: list[Scored]  # survivor pool, kept at pop_size
+    seed_pop: set[str]  # canonical gen-0 population, stashed once for novelty (07-08)
     # langfuse ids threaded for nesting across async nodes:
     #   run_trace_id — the run-level trace id (set once at run start)
     #   gen_span_id  — the CURRENT generation span id (updated each generation)

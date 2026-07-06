@@ -67,7 +67,10 @@ def test_build_summary_shape() -> None:
     pop = [s("c1ccccc1", 0.9, 3), s("CCO", 0.5, 1)]
     curve = [(20, 0.5), (30, 0.7)]
     summary = build_summary(pop, curve, generations=3, oracle_calls=30, top_k=10)
-    assert summary["top_k"][0] == {"smiles": "c1ccccc1", "score": 0.9}
+    # top_k carries per-molecule quality (07-08) alongside smiles/score.
+    assert summary["top_k"][0]["smiles"] == "c1ccccc1"
+    assert summary["top_k"][0]["score"] == 0.9
+    assert summary["top_k"][0]["quality"]["valid"] is True
     assert summary["auc_curve"] == [
         {"oracle_calls": 20, "top10_mean": 0.5},
         {"oracle_calls": 30, "top10_mean": 0.7},

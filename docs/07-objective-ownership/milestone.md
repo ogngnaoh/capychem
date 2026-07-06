@@ -27,7 +27,7 @@ This is Phase-1 Tier 1 ("make-it-yours + trust") from `docs/superpowers/plans/20
 5. `07-05-quality-trust-layer` — per-candidate quality report + diversity/novelty + canary + shared trust-gate module (de-dup `_PARSE_RATE_FLOOR`). — shipped ✓ (Alembic head `0cc25e46d571`; backend only — quality DISPLAY + novelty seed_pop wiring deferred to 07-08)
 6. `07-06-provenance-manifest` — OD-5: harness emits PyTDC version; persist model id/pin/git SHA; `GET /runs/{id}/manifest`. — shipped ✓ (Alembic head `38f369ef45a6`; `pytdc_version()` cached local probe; manifest built at finalize)
 7. `07-07-lineage-export` — `GET /runs/{id}/export.{csv,sdf}` (lineage + quality); export UI. — shipped ✓ (backend routes; RDKit round-trips the SDF; download buttons deferred to 07-08)
-8. `07-08-objective-authoring-ui` — structured objective builder + seed-import + quality display + cockpit per-component reasoning + WS reconnect. — planned
+8. `07-08-objective-authoring-ui` — structured objective builder + seed-import + quality display + cockpit per-component reasoning + WS reconnect. — in-progress (backend wiring shipped: novelty seed_pop threading + quality/diversity/novelty on the snapshot; **UI pending a fresh screenshot-iterated session** per operator choice — see handoff)
 
 ## Integration notes
 - **Sizing:** 8 slices exceeds the 7-per-milestone guideline — acceptable given the plan, but a session may split (e.g. fold 07-06 into 07-07 as "outputs", or spin 07-08 into its own UI milestone) if any slice grows past 2 pages.

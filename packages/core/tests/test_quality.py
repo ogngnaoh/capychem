@@ -60,3 +60,12 @@ def test_summary_diversity_and_novelty() -> None:
     )
     assert distinct["diversity"] > 0.0
     assert distinct["novelty"] == 0.5  # benzene is novel, ethanol was in the seed
+
+
+def test_summary_top_k_carries_per_molecule_quality() -> None:
+    from capychem.loop.logic import build_summary
+    from capychem.loop.state import Scored
+
+    s = build_summary([Scored("CCO", 0.5)], [], generations=1, oracle_calls=1)
+    assert s["top_k"][0]["quality"]["valid"] is True  # 07-08: quality on each top-K tile
+    assert "qed" in s["top_k"][0]["quality"]
