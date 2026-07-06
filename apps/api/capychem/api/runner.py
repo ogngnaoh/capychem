@@ -128,6 +128,8 @@ class RunRegistry:
                     max_generations=row.max_generations,
                     mutation_strategy=row.mutation_strategy,
                     mode=row.mode,  # a resumed run keeps its mode (baseline gate stays correct)
+                    seed_smiles=row.seed_smiles,  # provenance only; gen-0 is bypassed on resume
+                    seed_source=row.seed_source,
                 )
                 # Already-terminal guard: a run swept to "paused" after a crash in
                 # the window between its last generation's persist and finalize may
@@ -254,6 +256,10 @@ class RunRegistry:
             "plateau_window": cfg.plateau_window,
             "max_generations": cfg.max_generations,
             "mutation_strategy": cfg.mutation_strategy,
+            # Operator bring-your-own compounds (07-02): used only at a fresh run's
+            # gen 0. On a resume, gen_index > 0 bypasses the gen-0 branch, so this is
+            # inert there (cfg.seed_smiles is carried for provenance only).
+            "seed_smiles": cfg.seed_smiles,
             "calls_used": prog["calls_used"],
             "gen_index": prog["gen_index"],
             "population": prog["population"],

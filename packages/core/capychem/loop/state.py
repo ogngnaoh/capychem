@@ -66,6 +66,11 @@ class LoopState(TypedDict, total=False):
     plateau_window: int
     max_generations: int
     mutation_strategy: str
+    # Operator bring-your-own starting compounds (07-02, FR-001); None -> the shipped
+    # starting pool. Present only for a fresh run's gen 0 (a resume rebuilds the
+    # population from persisted rows, bypassing the gen-0 branch). Distinct from the
+    # integer RNG ``seed`` above — a population source, never the RNG seed (G6).
+    seed_smiles: list[str] | None
     # progress
     calls_used: int
     mol_buffer: set[str]  # canonical SMILES already scored — unique-call budget memo (slice 05)

@@ -2,6 +2,40 @@
 
 Append-only. Dated rationale/findings a diff can't show. Git records what shipped.
 
+## 2026-07-06 — Slice 07-02 seed-SMILES plumbing shipped
+
+FR-001: an operator's bring-your-own compounds now reach the gen-0 population. Findings:
+
+- **`seed_smiles` is a `list[str]`, never the RNG `seed`.** The integer RNG `seed` (G6
+  reproducibility) and the seed *population* are distinct concepts; the plan flagged the
+  hazard of overloading one for the other. A dedicated `list[str]` column + LoopState key
+  keeps them orthogonal — a test asserts `cfg.seed == 42` is untouched by a custom seed.
+
+- **Gen-0 tops up from the shipped pool.** The plan's "GA-filled from the shipped pool or
+  truncated to exactly pop_size" resolves to: canon+dedup operator seeds (they lead), then
+  fill remaining slots from the shipped starting pool (skipping dups) up to `pop_size`
+  (truncate if the operator gives more). Top-up guarantees the ≥2 parents crossover needs.
+  Trade-off: a tiny custom seed set is diluted by generic fill — acceptable for a GA that
+  needs diversity, and it's exploratory-only anyway.
+
+- **The `/runs` boundary validator is authoritative.** The intent-preview already validated
+  a *single* seed, but a client can POST `/runs` directly, so the Pydantic `field_validator`
+  on `CreateRunRequest.seed_smiles` RDKit-checks each entry, drops empties, and collapses an
+  all-empty/`[]` list to `None` (so it stays `benchmark` via `derive_mode`). The intent
+  preview stays best-effort; the Launcher only sends a seed to it when exactly one is parsed,
+  so a valid multi-seed list is never falsely refused there.
+
+- **Two test roots, one rootdir, no `__init__.py`** → test file basenames must be unique
+  across `packages/core/tests` and `apps/api/tests`, or pytest errors on an import-file
+  mismatch. Renamed the API test to `test_seed_plumbing_route.py`.
+
+- **Single-line `<input>` strips newlines** (DOM), so the 07-02 seed field is space/comma
+  separated; multi-line SDF/CSV paste with an accepted/rejected list is deferred to 07-08.
+
+- Gate: mypy (53 files) · ruff · **336** backend (was 325; +6 core, +5 API incl. a real-app
+  end-to-end drive) · web typecheck + ESLint · 40 vitest · migration drift gate. Alembic head
+  `b4ea6a051441`; dev DB upgraded (571 rows backfilled `seed_source="default"`).
+
 ## 2026-07-06 — Slice 07-01 run-mode-split shipped
 
 The benchmark/exploratory invariant carrier. Findings worth keeping:

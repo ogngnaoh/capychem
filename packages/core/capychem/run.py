@@ -27,6 +27,11 @@ class RunConfig:
     # benchmark|exploratory — server-derived via capychem.mode.derive_mode, never
     # client-set. Only benchmark runs feed the committed G1 numbers (07-01).
     mode: str = "benchmark"
+    # Operator bring-your-own starting compounds (07-02, FR-001); None -> default
+    # pool. seed_source is default|custom. A non-null seed_smiles forces exploratory
+    # (via derive_mode at the route). Distinct from the integer RNG ``seed``.
+    seed_smiles: list[str] | None = None
+    seed_source: str = "default"
 
 
 async def create_run(session: AsyncSession, config: RunConfig) -> int:
@@ -43,6 +48,8 @@ async def create_run(session: AsyncSession, config: RunConfig) -> int:
         seed=config.seed,
         status="running",
         mode=config.mode,
+        seed_smiles=config.seed_smiles,
+        seed_source=config.seed_source,
     )
     session.add(row)
     await session.commit()

@@ -39,6 +39,15 @@ const DEFAULT_PLAN: Plan = {
   seed_smiles: "",
 };
 
+// Split the free-text seed field into individual SMILES on whitespace, commas, or
+// newlines (07-02). RDKit validates each authoritatively at the /runs boundary.
+function parseSeeds(text: string): string[] {
+  return text
+    .split(/[\s,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 export function Launcher() {
   const router = useRouter();
   const [catalog, setCatalog] = useState<CatalogGroup[]>([]);
@@ -68,10 +77,14 @@ export function Launcher() {
     setResolving(true);
     setError(null);
     try {
+      // The intent preview validates a SINGLE seed only; skip it for a multi-seed
+      // list (the /runs boundary is the authoritative check) so a valid list is
+      // never falsely refused here.
+      const seeds = parseSeeds(plan.seed_smiles);
       const res = await resolveIntent({
         text: intentText,
         budget: plan.budget,
-        seed_smiles: plan.seed_smiles.trim() || undefined,
+        seed_smiles: seeds.length === 1 ? seeds[0] : undefined,
       });
       setResolution(res);
       if (res.matched_task && res.resolved_plan) {
@@ -124,6 +137,7 @@ export function Launcher() {
     setStarting(true);
     setError(null);
     try {
+      const seeds = parseSeeds(plan.seed_smiles);
       const { run_id } = await createRun({
         task: plan.task,
         budget: plan.budget,
@@ -134,6 +148,9 @@ export function Launcher() {
         plateau_window: plan.plateau_window,
         max_generations: 100,
         mutation_strategy: plan.mutation_strategy,
+        // FR-001: a custom seed list starts gen 0 from these compounds and marks
+        // the run exploratory server-side; omitted when empty (stays benchmark).
+        seed_smiles: seeds.length ? seeds : undefined,
       });
       router.push(`/runs/${run_id}`);
     } catch (e) {
@@ -374,11 +391,13 @@ function ResolvedMirror({
             aria-label="Seed molecules"
             value={plan.seed_smiles}
             onChange={(e) => setPlan((p) => ({ ...p, seed_smiles: e.target.value }))}
-            placeholder="default population"
+            placeholder="default population — or paste SMILES (space/comma separated)"
             className="h-8 w-full rounded-lg border border-input bg-background px-2.5 font-mono text-xs"
           />
           <p className="text-[0.7rem] leading-relaxed text-muted-foreground">
-            Validated here — MVP runs start from the standard population.
+            RDKit-validated at launch. A custom list starts gen 0 from your compounds
+            and marks the run <span className="font-medium">exploratory</span> (not
+            benchmark-comparable); empty uses the standard population.
           </p>
         </Field>
 

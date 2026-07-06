@@ -92,6 +92,9 @@ export type CreateRunBody = {
   plateau_window: number;
   max_generations: number;
   mutation_strategy: string;
+  // Operator bring-your-own starting compounds (07-02, FR-001). A non-empty list
+  // marks the run exploratory server-side. Distinct from the integer RNG `seed`.
+  seed_smiles?: string[];
 };
 
 export async function createRun(

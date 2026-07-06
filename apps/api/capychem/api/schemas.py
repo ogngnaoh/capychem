@@ -7,6 +7,11 @@ from typing import Any, Literal
 
 from capychem.eval.tasks import PMO_TASKS
 from pydantic import BaseModel, Field, field_validator
+from rdkit import Chem, RDLogger
+
+# Silence per-molecule parse warnings; invalidity is signalled by a None mol
+# (mirrors packages/core/capychem/validate.py's convention).
+RDLogger.DisableLog("rdApp.*")
 
 
 class CreateRunRequest(BaseModel):
@@ -19,6 +24,10 @@ class CreateRunRequest(BaseModel):
     plateau_window: int = Field(default=5, gt=0)
     max_generations: int = Field(default=100, gt=0)
     mutation_strategy: Literal["graph_ga", "llm"] = "graph_ga"
+    # Operator bring-your-own starting compounds (07-02, FR-001). A non-empty list
+    # forces mode=exploratory (server-derived at the route). Distinct from the
+    # integer RNG ``seed`` above — a population source, never the RNG seed (G6).
+    seed_smiles: list[str] | None = None
 
     @field_validator("task")
     @classmethod
@@ -26,6 +35,22 @@ class CreateRunRequest(BaseModel):
         if v not in PMO_TASKS:
             raise ValueError(f"Choose a PMO task from the 23-task surface; got {v!r}.")
         return v
+
+    @field_validator("seed_smiles")
+    @classmethod
+    def _seeds_must_be_valid_smiles(cls, v: list[str] | None) -> list[str] | None:
+        """Authoritative RDKit gate at the /runs boundary (a client can POST here
+        directly, so this cannot rely on the intent-preview check). Empties are
+        dropped; an all-empty/`[]` list collapses to None so it stays benchmark."""
+        if v is None:
+            return None
+        cleaned = [s.strip() for s in v if s.strip()]
+        if not cleaned:
+            return None
+        invalid = [s for s in cleaned if Chem.MolFromSmiles(s) is None]
+        if invalid:
+            raise ValueError(f"Validate seed SMILES via RDKit; these did not parse: {invalid}")
+        return cleaned
 
 
 class TopMolecule(BaseModel):

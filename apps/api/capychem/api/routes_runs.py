@@ -130,10 +130,13 @@ async def create_run_endpoint(body: CreateRunRequest, request: Request) -> dict[
         plateau_window=body.plateau_window,
         max_generations=body.max_generations,
         mutation_strategy=body.mutation_strategy,
-        # Server-derived, never client-set. At 07-01 no exploratory inputs exist on
-        # the request yet, so this always derives "benchmark"; 07-02+ route their
-        # new inputs (seed_smiles, objective, constraints) through derive_mode here.
-        mode=derive_mode(),
+        # Operator bring-your-own compounds (07-02). The schema validator already
+        # RDKit-checked them and collapsed an empty list to None.
+        seed_smiles=body.seed_smiles,
+        seed_source="custom" if body.seed_smiles else "default",
+        # Server-derived, never client-set: a custom seed (07-02) — or later a custom
+        # objective/constraints — forces exploratory; a plain run stays benchmark.
+        mode=derive_mode(seed_smiles=body.seed_smiles),
     )
     run_id = await registry_of(request).start_run(cfg)
     return {"run_id": run_id, "status": "running"}

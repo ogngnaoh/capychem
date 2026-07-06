@@ -23,6 +23,7 @@ from capychem.loop.logic import (
     merge_and_truncate,
     stop_reason,
 )
+from capychem.loop.seeds import build_seed_population
 from capychem.loop.seeds import load_starting_pop as _load_starting_pop
 from capychem.loop.state import HypothesisRecord, LoopState, Scored
 from capychem.oracle import HarnessError, score_batch_async
@@ -58,7 +59,14 @@ async def propose(state: LoopState) -> dict[str, Any]:
         raw: list[tuple[str, tuple[int, int] | None]]
         gen_llm_cost = 0.0
         if state["gen_index"] == 0:
-            raw = [(smi, None) for smi in _load_starting_pop(state["pop_size"])]
+            # Operator bring-your-own compounds (07-02) override the shipped pool;
+            # build_seed_population canonicalizes + tops up/truncates to pop_size.
+            operator_seeds = state.get("seed_smiles")
+            if operator_seeds:
+                pop_smis = build_seed_population(operator_seeds, state["pop_size"])
+            else:
+                pop_smis = _load_starting_pop(state["pop_size"])
+            raw = [(smi, None) for smi in pop_smis]
             proposer_label = "starting"
         else:
             pop = [(m.smiles, m.score) for m in state["population"]]
@@ -74,7 +82,10 @@ async def propose(state: LoopState) -> dict[str, Any]:
                     seed=seed,
                 ) as llm_span_id:
                     results = await strategy.propose_llm_async(
-                        state["task"], pop, n=state["offspring"], seed=seed,
+                        state["task"],
+                        pop,
+                        n=state["offspring"],
+                        seed=seed,
                         hypothesis=state.get("analyzer_hypothesis"),
                     )
                     gen_llm_cost = sum(r.cost_usd for r in results)

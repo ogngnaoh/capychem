@@ -92,6 +92,29 @@ describe("Launcher", () => {
     expect(strategy.value).toBe("llm");
   });
 
+  it("parses the seed field into a list and includes it in the run body (FR-001)", async () => {
+    render(<Launcher />);
+    await waitFor(() => screen.getByText("troglitazone_rediscovery"));
+    fireEvent.click(screen.getByText("troglitazone_rediscovery"));
+    fireEvent.change(screen.getByLabelText(/Seed molecules/i), {
+      target: { value: "CCO, CCN c1ccccc1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Start run$/i }));
+    await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1));
+    expect(createRun).toHaveBeenCalledWith(
+      expect.objectContaining({ seed_smiles: ["CCO", "CCN", "c1ccccc1"] }),
+    );
+  });
+
+  it("omits seed_smiles when the seed field is empty", async () => {
+    render(<Launcher />);
+    await waitFor(() => screen.getByText("troglitazone_rediscovery"));
+    fireEvent.click(screen.getByText("troglitazone_rediscovery"));
+    fireEvent.click(screen.getByRole("button", { name: /^Start run$/i }));
+    await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1));
+    expect(createRun.mock.calls[0][0].seed_smiles).toBeUndefined();
+  });
+
   it("renders a grounded no-match refusal with the Start action disabled (FR-015)", async () => {
     resolveIntent.mockResolvedValue(
       resolution({
