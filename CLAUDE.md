@@ -33,7 +33,7 @@ Test all:
 - `pnpm --filter web test`
 
 Test single:
-- `uv run pytest packages/core/tests/test_loop.py::test_invalid_smiles_falls_back -x`
+- `uv run pytest packages/core/tests/test_loop_fallback.py::test_fallback_backfills_gap_for_llm -x`
 - `pnpm --filter web test -- --runTestsByPath app/runs/[id]/page.test.tsx`
 
 Typecheck:
