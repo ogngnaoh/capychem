@@ -74,6 +74,13 @@ class LoopState(TypedDict, total=False):
     # Composed exploratory objective spec (07-04); None -> the single-task benchmark
     # scoring path (byte-identical). Present only for an exploratory run.
     objective_json: dict[str, Any] | None
+    # Hard constraints spec (07-04b); None -> no constraint filtering (byte-identical).
+    constraints_json: dict[str, Any] | None
+    # Constraint-starvation carriers (07-04b): the score node sets _constraint_starved
+    # for a generation whose candidates all failed the constraints; stop_check turns it
+    # into a running streak and terminates as constraint_starved once it's sustained.
+    _constraint_starved: bool
+    constraint_starved_streak: int
     # progress
     calls_used: int
     mol_buffer: set[str]  # canonical SMILES already scored — unique-call budget memo (slice 05)

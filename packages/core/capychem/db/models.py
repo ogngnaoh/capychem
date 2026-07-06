@@ -34,7 +34,9 @@ class Run(Base):
     offspring: Mapped[int]
     mutation_rate: Mapped[float]
     seed: Mapped[int]
-    status: Mapped[str] = mapped_column(String(16), default="running")
+    # 32 not 16: the 07-04b terminal status "constraint_starved" is 18 chars. Widened
+    # once so future status names have headroom (was String(16) through milestone 06).
+    status: Mapped[str] = mapped_column(String(32), default="running")
     # benchmark|exploratory (07-01): server-derived from the run's inputs, never
     # client-set. Only benchmark runs feed the committed G1 numbers.
     mode: Mapped[str] = mapped_column(String(16), default="benchmark")

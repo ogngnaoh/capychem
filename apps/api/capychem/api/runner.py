@@ -131,6 +131,7 @@ class RunRegistry:
                     seed_smiles=row.seed_smiles,  # provenance only; gen-0 is bypassed on resume
                     seed_source=row.seed_source,
                     objective_json=row.objective_json,  # a resumed run keeps its objective
+                    constraints_json=row.constraints_json,
                 )
                 # Already-terminal guard: a run swept to "paused" after a crash in
                 # the window between its last generation's persist and finalize may
@@ -265,6 +266,8 @@ class RunRegistry:
             # by the score node every generation (not just gen 0), so it's threaded
             # for both fresh runs and resumes.
             "objective_json": cfg.objective_json,
+            # Hard constraints (07-04b); None -> no filtering. Also every-generation.
+            "constraints_json": cfg.constraints_json,
             "calls_used": prog["calls_used"],
             "gen_index": prog["gen_index"],
             "population": prog["population"],

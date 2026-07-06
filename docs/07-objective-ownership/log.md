@@ -2,6 +2,44 @@
 
 Append-only. Dated rationale/findings a diff can't show. Git records what shipped.
 
+## 2026-07-06 — Slice 07-04b constraints shipped
+
+Hard structural constraints at the validity gate + a distinct constraint-starvation
+signal. Findings:
+
+- **Constraint-failing = invalid.** Constraint-failing molecules are dropped at the score
+  node BEFORE scoring — no oracle budget spent, same treatment as an RDKit-invalid SMILES
+  (FR-005 GA-fallback keeps throughput). No constraints ⇒ the filter is skipped entirely,
+  benchmark byte-identical.
+
+- **Starvation ≠ plateau ≠ no_progress.** A generation whose candidates ALL fail the
+  constraints is "starved" (`_constraint_starved`). The subtlety: a starved gen makes no
+  progress, so naive logic would fire `no_progress` after one generation and mask the real
+  cause. Fix: a starved gen never triggers no_progress — `stop_check` accumulates a streak,
+  and only a *sustained* streak (≥ `plateau_window`) terminates as `constraint_starved`.
+  Plateau/no_progress apply only to non-starved generations.
+
+- **Known limitation — gen-0 total starvation → no_progress, not constraint_starved.**
+  If constraints reject the *entire* gen-0 population, the survivor pool empties; the next
+  generation then proposes nothing (candidates empty ⇒ not "starved"), so the run stops as
+  `no_progress`. The distinct `constraint_starved` reliably fires only when candidates keep
+  being proposed but keep failing for a full window (population persists). The mechanism is
+  unit-proven; a full-loop starvation e2e is fragile (depends on the empty-population edge),
+  so it wasn't added. Acceptable — the run still terminates cleanly either way.
+
+- **`runs.status` widened `String(16)`→`String(32)` (migration `ed2d80a8ccda`).**
+  `constraint_starved` is 18 chars and would overflow the old column on Postgres (sqlite
+  doesn't enforce varchar length, so unit tests wouldn't catch it — caught by inspection).
+  Widened once with headroom. `constraint_starved` needs no special status-branch handling
+  (it's terminal like plateaued/exhausted; unlike `paused`, no resume action).
+
+- **Soft property bands need NO new code.** A MW/logP/TPSA band is a descriptor-oracle
+  objective term (07-03/07-04) with a `double_sigmoid` transform. constraints.py is
+  HARD-only (SMARTS/catalog). Documented, not reimplemented.
+
+- Gate: mypy (61 files) · ruff · **377** backend (+15: constraints/stop_reason + score-node +
+  route) · migration drift · web untouched.
+
 ## 2026-07-06 — Slice 07-04 objective composition shipped (split from plan Task 07-04)
 
 Composed multi-term objective → one [0,1] scalar, consumed by the loop. Findings:

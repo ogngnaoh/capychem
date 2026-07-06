@@ -68,16 +68,31 @@ def stop_reason(
     made_progress: bool,
     top10_history: list[float] | None = None,
     plateau_window: int = 0,
+    constraint_starved_streak: int = 0,
 ) -> str | None:
     """Return a termination reason, or None to continue.
 
-    Priority: budget exhaustion (FR-002, hard) > plateau (FR-003) > max-generations
-    cap > zero forward progress (guards an all-invalid / all-duplicate batch from
-    looping forever). Plateau outranks the gen cap because it is the informative
-    convergence signal (Story 2); the hard budget guarantee still wins.
+    Priority: budget exhaustion (FR-002, hard) > constraint-starvation (07-04b) >
+    plateau (FR-003) > max-generations cap > zero forward progress (guards an
+    all-invalid / all-duplicate batch from looping forever). Plateau outranks the gen
+    cap because it is the informative convergence signal (Story 2); the hard budget
+    guarantee still wins.
+
+    ``constraint_starved_streak`` > 0 means the current generation produced zero
+    constraint-passing candidates. A *sustained* starvation (streak ≥ plateau_window)
+    terminates distinctly as ``constraint_starved`` — the constraints are too tight —
+    while a *transient* one keeps trying (the GA proposes anew), and is NOT read as
+    ``no_progress`` (which would otherwise stop the run after one starved generation
+    and mask the real cause).
     """
     if calls_used >= budget:
         return "exhausted"
+    if constraint_starved_streak > 0:
+        if plateau_window > 0 and constraint_starved_streak >= plateau_window:
+            return "constraint_starved"
+        if gen_index >= max_generations:
+            return "max_generations"
+        return None
     if is_plateau(top10_history or [], plateau_window):
         return "plateaued"
     if gen_index >= max_generations:

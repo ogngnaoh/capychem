@@ -139,12 +139,18 @@ async def create_run_endpoint(body: CreateRunRequest, request: Request) -> dict[
         # RDKit-checked them and collapsed an empty list to None.
         seed_smiles=body.seed_smiles,
         seed_source="custom" if body.seed_smiles else "default",
-        # Composed objective (07-04); the schema validator already checked it is
-        # well-formed. Scoring routes through it instead of the single task.
+        # Composed objective (07-04) + hard constraints (07-04b); the schema validators
+        # already checked both are well-formed. Scoring routes through the objective;
+        # constraint-failing molecules are dropped at the validity gate.
         objective_json=body.objective_json,
-        # Server-derived, never client-set: a custom seed (07-02) or a custom
-        # objective (07-04) forces exploratory; a plain run stays benchmark.
-        mode=derive_mode(seed_smiles=body.seed_smiles, objective_json=body.objective_json),
+        constraints_json=body.constraints_json,
+        # Server-derived, never client-set: a custom seed (07-02), objective (07-04), or
+        # constraints (07-04b) forces exploratory; a plain run stays benchmark.
+        mode=derive_mode(
+            seed_smiles=body.seed_smiles,
+            objective_json=body.objective_json,
+            constraints_json=body.constraints_json,
+        ),
     )
     run_id = await registry_of(request).start_run(cfg)
     return {"run_id": run_id, "status": "running"}

@@ -1,51 +1,52 @@
 # Handoff — milestone 07 objective-ownership
 
 ## Next session start here
-Branch off `main` (branch-first), then execute slice **07-04b constraints** (the half
-split out of plan Task 07-04). Build:
-1. `packages/core/capychem/constraints.py`:
-   - **Hard SMARTS include/exclude** via RDKit `FilterCatalog` (bundle the PAINS + Brenk
-     catalogs) applied at the **validity gate** — the same path FR-005 uses, so a
-     constraint-failing molecule is treated like an invalid one (dropped before scoring,
-     GA-fallback keeps throughput). Custom SMARTS include/exclude patterns too.
-   - **Soft property bands** (MW/logP/TPSA) expressed as `sigmoid`/`double_sigmoid`
-     objective components (reuse `objective.apply_transform`) — a band is just a term.
-   - A **constraint-starvation** signal distinct from FR-003 plateau: "no candidate
-     satisfies the hard constraints this generation" (vs. plateau = "score stopped
-     improving"). Surface it as its own stop_reason/status so the UI can say *why*.
-2. Wire constraints into the loop: `Run.constraints_json` (column exists, 07-01) →
-   `RunConfig`/`LoopState`/`runner`; apply hard filters in the validate/fallback path;
-   any non-null constraints ⇒ `mode=exploratory` via `derive_mode(constraints_json=…)`
-   (already a param). Route: `CreateRunRequest.constraints_json` + validator.
-3. Tests: `test_constraints.py` (SMARTS include/exclude drop the right molecules;
-   starvation ≠ plateau; benchmark path unaffected), mode-enforcement test.
+Branch off `main` (branch-first), then execute slice **07-05 quality & trust layer**
+(plan Task 07-05) — the headline reward-hacking defense that ships WITH the now-landed
+pluggable seam. Build:
+1. `packages/core/capychem/quality.py` — per-candidate SA-score/QED/Lipinski/Veber/PAINS/
+   Brenk, computed at persistence time (bounded cost; all RDKit-native — reuse the 07-03
+   descriptor oracles + 07-04b `Constraints`/FilterCatalog where possible).
+2. Alembic revision (chain from head `ed2d80a8ccda`): `Candidate` quality fields (or a
+   linked `CandidateQuality`).
+3. `loop/graph.py` persist path — attach quality to each persisted Candidate;
+   `logic.build_summary` — run-level MOSES internal diversity (mean pairwise Tanimoto on
+   Morgan FPs) + novelty vs seed into `summary_json` (JSON, no migration).
+4. `packages/core/capychem/trust/gates.py` — **de-dup `_PARSE_RATE_FLOOR`** (currently
+   duplicated in `eval/verdict.py:22` + `eval/beat.py:22`) + `valid_smiles_gate` into one
+   home; add the custom-oracle **canary** (score a fixed degenerate probe set before an
+   exploratory run on a new oracle; warn on implausibly-high scores) and the **OD-4 gate**
+   (annotate-only in benchmark — top-10 stays comparable; per-run hard-drop toggle allowed
+   only in exploratory mode).
+5. `apps/web/components/workbench/ui.tsx` — quality badges on top-K tiles; diversity/novelty
+   in the run summary. Tests: `test_quality.py`, `test_trust_gates.py`.
 
-Then 07-05 (quality + trust — ships WITH the pluggable seam, now landed) → 07-06 →
-07-07 → 07-08, per `docs/07-objective-ownership/milestone.md` + the plan.
+Then 07-06 (manifest) → 07-07 (export) → 07-08 (UI), per milestone.md + the plan.
 
 ## Current state
-- Slice **07-04 shipped** (merged to `main`): composed multi-term objective. New
-  `packages/core/capychem/objective.py` (transforms `identity`/`sigmoid`/
-  `reverse_sigmoid`/`double_sigmoid`/`value_map` → [0,1]; `weighted_sum`/`weighted_product`
-  aggregators, single term == raw; `Objective.evaluate_async(smiles, pmo_scorer=…)` with a
-  **dependency-injected** harness scorer so PMO terms keep the exact cost/backend path).
-  Score node has a composed-objective branch (benchmark path byte-identical, same lines);
-  `objective_json` threaded through `RunConfig`/`LoopState`/`runner`; `POST /objective/validate`;
-  `derive_mode(objective_json=…)` ⇒ exploratory.
-- Gate all green: mypy (59 files) · ruff · **362** backend (+16; all eval/benchmark tests
-  byte-identical) · web untouched.
-- Alembic head unchanged (`b4ea6a051441`); `Run.objective_json` column already existed (07-01),
-  now populated. `main` ahead of `origin/main` (unpushed) + m07-02/03/04 commits.
+- Slice **07-04b shipped** (merged to `main`): hard constraints. New
+  `packages/core/capychem/constraints.py` (`Constraints.from_json`/`passes` — RDKit
+  `FilterCatalog` PAINS/BRENK/NIH + custom SMARTS include/exclude; invalid→False). Score
+  node drops constraint-failing candidates before scoring (no budget spent); a fully-failed
+  generation is flagged `_constraint_starved`; `stop_check` accumulates the streak and
+  `stop_reason` terminates as **`constraint_starved`** at streak ≥ `plateau_window` (distinct
+  from plateau/no_progress — a starved gen never fires no_progress). `constraints_json`
+  threaded through config/runner/route; `derive_mode(constraints_json=…)` ⇒ exploratory.
+  Soft property bands need **no new code** (a band = a descriptor-oracle objective term with
+  a `double_sigmoid` transform, 07-04).
+- **Alembic head `ed2d80a8ccda`**: `runs.status` widened `String(16)`→`String(32)` (dev DB
+  upgraded) because `constraint_starved` is 18 chars. New revisions chain from this head.
+- Gate all green: mypy (61 files) · ruff · **377** backend (+15) · migration drift · web untouched.
+- `main` ahead of `origin/main` (unpushed) + m07-02/03/04/04b commits.
 
 ## Active concerns
-- **Benchmark stays byte-identical:** the score node's objective branch fires ONLY when
-  `objective_json` is present; the no-objective path is the original code, unchanged. Keep it
-  that way in 07-04b (constraints apply at the validate gate, not the benchmark score path).
-- **Direction normalizes at the transform:** a `minimize` oracle in a composed objective uses
-  `reverse_sigmoid`/`double_sigmoid` so the loop/AUC always see maximize-in-[0,1]. Don't thread
-  loop `direction` for composed objectives.
-- **Budget is per-candidate (OD-2):** one objective eval = one unique call regardless of term
-  count. `mol_buffer` dedup already enforces this; keep it when constraints add pre-filtering.
-- **`/objective/validate` scores PMO terms via the harness** — keep probe sets tiny (1–2 mols).
-- Test basenames unique across the two roots; Alembic revisions chain from `b4ea6a051441`;
-  `.gitignore` `oracle/` is now root-anchored (`/oracle/`) — new source dirs are safe.
+- **Benchmark byte-identical:** the score node's constraint filter + `_constraint_starved`
+  are inert when `constraints_json` is None (streak stays 0, stop_reason unchanged). Keep it.
+- **Starvation-vs-empty-population limitation:** if constraints starve gen 0 *entirely*, the
+  survivor population empties, so the next generation proposes nothing (candidates empty ⇒
+  `_constraint_starved=False`) and the run terminates as `no_progress`, not `constraint_starved`.
+  The distinct signal reliably fires when candidates persist but keep failing for a full
+  window. Unit-proven; a full-loop starvation e2e is fragile, so not added. Documented in log.
+- **07-05 trust gate is OD-4:** annotate-only in benchmark (top-10 comparability preserved);
+  hard-drop toggle exploratory-only. Don't let a quality gate change the benchmark top-10.
+- Test basenames unique across the two roots; `.gitignore` `oracle/` is root-anchored.

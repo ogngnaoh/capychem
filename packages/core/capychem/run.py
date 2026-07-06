@@ -35,6 +35,9 @@ class RunConfig:
     # Composed exploratory objective spec (07-04); None -> single-task benchmark
     # scoring (byte-identical). A non-null objective forces exploratory via derive_mode.
     objective_json: dict[str, Any] | None = None
+    # Hard constraints spec (07-04b); None -> no constraint filtering. A non-null
+    # constraints set forces exploratory via derive_mode.
+    constraints_json: dict[str, Any] | None = None
 
 
 async def create_run(session: AsyncSession, config: RunConfig) -> int:
@@ -54,6 +57,7 @@ async def create_run(session: AsyncSession, config: RunConfig) -> int:
         seed_smiles=config.seed_smiles,
         seed_source=config.seed_source,
         objective_json=config.objective_json,
+        constraints_json=config.constraints_json,
     )
     session.add(row)
     await session.commit()

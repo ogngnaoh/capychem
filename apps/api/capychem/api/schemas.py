@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
+from capychem.constraints import Constraints
 from capychem.eval.tasks import PMO_TASKS
 from capychem.objective import Objective
 from pydantic import BaseModel, Field, field_validator
@@ -32,6 +33,9 @@ class CreateRunRequest(BaseModel):
     # Composed multi-term objective spec (07-04). Present ⇒ mode=exploratory. Scoring
     # routes through the objective instead of the single task; None = benchmark.
     objective_json: dict[str, Any] | None = None
+    # Hard constraints spec (07-04b). Present ⇒ mode=exploratory. Constraint-failing
+    # molecules are dropped at the validity gate; None = no filtering.
+    constraints_json: dict[str, Any] | None = None
 
     @field_validator("task")
     @classmethod
@@ -68,6 +72,19 @@ class CreateRunRequest(BaseModel):
             Objective.from_json(v)
         except (ValueError, KeyError, TypeError) as exc:
             raise ValueError(f"Invalid objective spec: {exc}") from exc
+        return v
+
+    @field_validator("constraints_json")
+    @classmethod
+    def _constraints_must_be_well_formed(cls, v: dict[str, Any] | None) -> dict[str, Any] | None:
+        """Compile the constraints at the boundary — a bad SMARTS or unknown catalog is
+        a 422 here, not a mid-run failure."""
+        if v is None:
+            return None
+        try:
+            Constraints.from_json(v)
+        except (ValueError, KeyError, TypeError) as exc:
+            raise ValueError(f"Invalid constraints spec: {exc}") from exc
         return v
 
 

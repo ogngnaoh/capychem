@@ -15,6 +15,7 @@ from dataclasses import replace
 from typing import Any, cast
 
 from capychem import proposer
+from capychem.constraints import Constraints
 from capychem.db.models import AnalyzerHypothesis, Candidate, Generation, OracleCall
 from capychem.loop import strategy, trace
 from capychem.loop.logic import (
@@ -193,6 +194,17 @@ async def score(state: LoopState) -> dict[str, Any]:
         parent_observation_id=state.get("gen_span_id"),
     ):
         candidates = [*state["validated"], *state.get("_fallback_validated", [])]
+        # Hard constraints (07-04b): a constraint-failing candidate is treated like an
+        # invalid one — dropped before scoring, so no budget is spent on it. A generation
+        # whose candidates ALL fail the constraints is "starved" (a signal distinct from
+        # plateau/no_progress; stop_check accumulates it). No constraints -> byte-identical.
+        starved = False
+        constraints_json = state.get("constraints_json")
+        if constraints_json:
+            constraints = Constraints.from_json(constraints_json)
+            passing = [c for c in candidates if constraints.passes(c.smiles)]
+            starved = bool(candidates) and not passing
+            candidates = passing
         buffer = state.get("mol_buffer", set())
         # Cross-generation memoization (slice 05): a molecule a prior generation
         # already scored is a cache hit — not re-scored, not counted, not persisted.
@@ -201,7 +213,12 @@ async def score(state: LoopState) -> dict[str, Any]:
         room = max(state["budget"] - len(buffer), 0)  # remaining unique headroom
         batch = unseen[:room]
         if not batch:
-            return {"_scored": [], "calls_used": len(buffer), "mol_buffer": buffer}
+            return {
+                "_scored": [],
+                "calls_used": len(buffer),
+                "mol_buffer": buffer,
+                "_constraint_starved": starved,
+            }
         smis = [c.smiles for c in batch]
         obj_json = state.get("objective_json")
         scored: list[tuple[Any, float, float]]
@@ -236,6 +253,7 @@ async def score(state: LoopState) -> dict[str, Any]:
             "_scored": scored,
             "calls_used": len(new_buffer),
             "mol_buffer": new_buffer,
+            "_constraint_starved": starved,
         }
 
 
@@ -368,6 +386,12 @@ async def stop_check(state: LoopState) -> dict[str, Any]:
         trace_id=state.get("run_trace_id"),
         parent_observation_id=state.get("gen_span_id"),
     ):
+        # Constraint-starvation streak (07-04b): +1 for a starved generation, reset to
+        # 0 otherwise. A sustained streak terminates as constraint_starved; a single
+        # starved gen never fires no_progress (stop_reason handles the distinction).
+        starved_streak = (
+            state.get("constraint_starved_streak", 0) + 1 if state.get("_constraint_starved") else 0
+        )
         reason = stop_reason(
             calls_used=state["calls_used"],
             budget=state["budget"],
@@ -376,6 +400,7 @@ async def stop_check(state: LoopState) -> dict[str, Any]:
             made_progress=state["_made_progress"],
             top10_history=[v for _, v in state.get("auc_curve", [])],
             plateau_window=state["plateau_window"],
+            constraint_starved_streak=starved_streak,
         )
         result: dict[str, Any]
         if reason is not None:
@@ -388,7 +413,11 @@ async def stop_check(state: LoopState) -> dict[str, Any]:
             )
             result = {"done": True, "stop_reason": reason, "summary": summary}
         else:
-            result = {"done": False, "gen_index": state["gen_index"] + 1}
+            result = {
+                "done": False,
+                "gen_index": state["gen_index"] + 1,
+                "constraint_starved_streak": starved_streak,
+            }
     # End this generation's span at the generation boundary (after the node span
     # closes, before the next generation's propose opens a new gen span).
     trace.end_gen_span(state["run_id"], state["gen_index"])
