@@ -1,53 +1,51 @@
 # Handoff — milestone 07 objective-ownership
 
 ## Next session start here
-Branch off `main` (branch-first), then execute slice **07-04 objective composition +
-constraints** (plan Task 07-04). This is where the 07-03 oracle seam gets *consumed*:
-1. `packages/core/capychem/objective.py` — objective spec
-   `[{oracle, weight, transform}]` + aggregator (`weighted_sum`|`weighted_product`)
-   → **one scalar in [0,1]** (preserves AUC comparability by construction).
-   Transforms: `sigmoid`, `double_sigmoid`/`step`, `reverse_sigmoid`, `value_map`
-   (REINVENT4 parity). A `minimize` oracle is normalized to maximize-in-[0,1] by its
-   transform (so the loop/AUC always see maximize — 07-03's `direction` metadata drives
-   the default transform choice).
-2. `packages/core/capychem/constraints.py` — hard SMARTS include/exclude via RDKit
-   `FilterCatalog` (PAINS/Brenk) applied at the validity gate (same path FR-005 uses);
-   soft property bands (MW/logP/TPSA) as sigmoid/step components. A **constraint-
-   starvation** signal distinct from FR-003 plateau ("no candidate satisfies constraints").
-3. **Loop/route consumption (deferred from 07-03):** wire the score node to evaluate the
-   objective (default = single `PmoOracle(task)` = today's benchmark path, byte-identical)
-   with the unified score+valid+cost contract; budget stays per-candidate (OD-2).
-4. `routes_runs.py`/`intent.py` accept an objective spec; `POST /objective/validate`
-   previews the composite + what's penalized. Any composed objective/constraint ⇒
-   `mode=exploratory` (route through `derive_mode(objective_json=…, constraints_json=…)`).
-5. Tests: `test_objective.py` (each transform; weighted-sum/product in [0,1]; single-term
-   objective == raw oracle), `test_constraints.py` (SMARTS include/exclude; starvation ≠
-   plateau), mode-enforcement test.
+Branch off `main` (branch-first), then execute slice **07-04b constraints** (the half
+split out of plan Task 07-04). Build:
+1. `packages/core/capychem/constraints.py`:
+   - **Hard SMARTS include/exclude** via RDKit `FilterCatalog` (bundle the PAINS + Brenk
+     catalogs) applied at the **validity gate** — the same path FR-005 uses, so a
+     constraint-failing molecule is treated like an invalid one (dropped before scoring,
+     GA-fallback keeps throughput). Custom SMARTS include/exclude patterns too.
+   - **Soft property bands** (MW/logP/TPSA) expressed as `sigmoid`/`double_sigmoid`
+     objective components (reuse `objective.apply_transform`) — a band is just a term.
+   - A **constraint-starvation** signal distinct from FR-003 plateau: "no candidate
+     satisfies the hard constraints this generation" (vs. plateau = "score stopped
+     improving"). Surface it as its own stop_reason/status so the UI can say *why*.
+2. Wire constraints into the loop: `Run.constraints_json` (column exists, 07-01) →
+   `RunConfig`/`LoopState`/`runner`; apply hard filters in the validate/fallback path;
+   any non-null constraints ⇒ `mode=exploratory` via `derive_mode(constraints_json=…)`
+   (already a param). Route: `CreateRunRequest.constraints_json` + validator.
+3. Tests: `test_constraints.py` (SMARTS include/exclude drop the right molecules;
+   starvation ≠ plateau; benchmark path unaffected), mode-enforcement test.
 
-Then 07-05…07-08 per `docs/07-objective-ownership/milestone.md` + the plan. **Trust layer
-(07-05) ships WITH the pluggable seam** — keep it in view as 07-04 lands.
+Then 07-05 (quality + trust — ships WITH the pluggable seam, now landed) → 07-06 →
+07-07 → 07-08, per `docs/07-objective-ownership/milestone.md` + the plan.
 
 ## Current state
-- Slice **07-03 shipped** (merged to `main`): `oracle.py` → `oracle/` package
-  (`__init__` = bridge verbatim, so all imports + the monkeypatch test are unchanged) +
-  `protocol.py` (`ScoringOracle`, read-only-property members so a frozen oracle satisfies
-  it), `registry.py`, `pmo.py` (`PmoOracle`, parity-tested), `descriptors.py`
-  (qed/sa_score/mw/clogp/tpsa), `admet.py` (import-guarded). `direction` threaded through
-  `logic._sort_key`/`merge_and_truncate`/`build_summary`/`build_analyzer_summary` +
-  `eval.metric.top_auc`, default `maximize` = byte-identical.
-- Gate all green: mypy (58 files) · ruff · **346** backend · web untouched (backend-only slice).
-- Alembic head unchanged (`b4ea6a051441`); no schema change in 07-03.
-- `main` ahead of `origin/main` (unpushed) + the m07-02 and m07-03 commits.
+- Slice **07-04 shipped** (merged to `main`): composed multi-term objective. New
+  `packages/core/capychem/objective.py` (transforms `identity`/`sigmoid`/
+  `reverse_sigmoid`/`double_sigmoid`/`value_map` → [0,1]; `weighted_sum`/`weighted_product`
+  aggregators, single term == raw; `Objective.evaluate_async(smiles, pmo_scorer=…)` with a
+  **dependency-injected** harness scorer so PMO terms keep the exact cost/backend path).
+  Score node has a composed-objective branch (benchmark path byte-identical, same lines);
+  `objective_json` threaded through `RunConfig`/`LoopState`/`runner`; `POST /objective/validate`;
+  `derive_mode(objective_json=…)` ⇒ exploratory.
+- Gate all green: mypy (59 files) · ruff · **362** backend (+16; all eval/benchmark tests
+  byte-identical) · web untouched.
+- Alembic head unchanged (`b4ea6a051441`); `Run.objective_json` column already existed (07-01),
+  now populated. `main` ahead of `origin/main` (unpushed) + m07-02/03/04 commits.
 
 ## Active concerns
-- **07-03 did NOT rewire the loop/route** — the live loop still calls `score_batch_async`
-  directly (benchmark byte-identical). 07-04 is where a run consumes a `ScoringOracle` /
-  composed objective; that's also where `mode=exploratory` enforcement for a custom
-  oracle/objective/constraint lands (route through `derive_mode`).
-- **PMO parity is the benchmark guardrail:** any objective wiring in 07-04 must keep a
-  single-`PmoOracle(task)` run byte-identical (parity test + the eval suite).
-- **`direction` normalizes at the objective, not the loop:** 07-04 transforms flip a
-  `minimize` oracle into maximize-in-[0,1], so the loop/AUC stay `maximize`. The threaded
-  `direction` params exist for a bare single-oracle exploratory run.
-- **Test basenames unique across the two roots** (no `__init__.py`); Alembic revisions chain
-  from `b4ea6a051441`; `alembic upgrade head` the dev DB after any model change.
+- **Benchmark stays byte-identical:** the score node's objective branch fires ONLY when
+  `objective_json` is present; the no-objective path is the original code, unchanged. Keep it
+  that way in 07-04b (constraints apply at the validate gate, not the benchmark score path).
+- **Direction normalizes at the transform:** a `minimize` oracle in a composed objective uses
+  `reverse_sigmoid`/`double_sigmoid` so the loop/AUC always see maximize-in-[0,1]. Don't thread
+  loop `direction` for composed objectives.
+- **Budget is per-candidate (OD-2):** one objective eval = one unique call regardless of term
+  count. `mol_buffer` dedup already enforces this; keep it when constraints add pre-filtering.
+- **`/objective/validate` scores PMO terms via the harness** — keep probe sets tiny (1–2 mols).
+- Test basenames unique across the two roots; Alembic revisions chain from `b4ea6a051441`;
+  `.gitignore` `oracle/` is now root-anchored (`/oracle/`) — new source dirs are safe.

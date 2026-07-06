@@ -2,6 +2,43 @@
 
 Append-only. Dated rationale/findings a diff can't show. Git records what shipped.
 
+## 2026-07-06 — Slice 07-04 objective composition shipped (split from plan Task 07-04)
+
+Composed multi-term objective → one [0,1] scalar, consumed by the loop. Findings:
+
+- **The score node's objective branch fires ONLY when `objective_json` is present.**
+  The no-objective path is the *original code, unchanged* (same lines) — so the benchmark
+  is byte-identical by construction, not by a parity argument. The composed branch is
+  additive. This is the zero-risk way to consume the objective (vs. routing benchmark
+  through a single-term objective and hoping it stays identical).
+
+- **Dependency-injected `pmo_scorer` keeps the harness path intact.**
+  `Objective.evaluate_async(smiles, *, pmo_scorer)` — a PMO term calls the injected scorer
+  (the loop's retry-wrapped `score_batch_async`), so cost/backend/retry are preserved and
+  untouched; descriptor terms score sync in a thread, cost 0. The objective layer only
+  ADDS transform + aggregation; it never reimplements scoring. Budget stays per-candidate
+  (OD-2): one objective eval = one unique call regardless of term count.
+
+- **Direction normalizes at the transform, not the loop.** A `minimize` oracle in a
+  composed objective uses `reverse_sigmoid`/`double_sigmoid`, so the aggregate is always
+  maximize-in-[0,1] and the loop/AUC never need the 07-03 `direction` params (those are for
+  a *bare* single-oracle run). Aggregators (`weighted_sum`, weighted-geometric-mean
+  `weighted_product`) both reduce to the raw value for a single term — so a single identity
+  term == the raw oracle.
+
+- **A test that "passes" without the feature is a bug in the test.** The first score-node
+  objective test used a single *identity* PMO term, which equals the raw benchmark score —
+  so it passed whether or not the objective branch existed. Fixed by using a `sigmoid`
+  transform whose output ≠ the raw value, so it genuinely fails on the benchmark path.
+
+- **Split:** plan Task 07-04 bundled constraints; that would push the working doc past 2
+  pages and enlarge the loop change. Constraints (SMARTS `FilterCatalog` at the validity
+  gate + property bands + starvation-≠-plateau) are slice **07-04b**.
+
+- Gate: mypy (59 files) · ruff · **362** backend (+16: 9 objective + 2 score-node + 4 route +
+  1 real-app e2e; all eval/benchmark tests byte-identical). `Run.objective_json` (07-01 column)
+  now populated; no new migration.
+
 ## 2026-07-06 — Slice 07-03 pluggable ScoringOracle shipped
 
 The pluggable scoring seam + presets + direction, proven at parity. Findings:

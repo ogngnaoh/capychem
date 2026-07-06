@@ -14,11 +14,16 @@ from capychem.api.schemas import (
     AnalyzerHypothesisOut,
     ComparePayload,
     CreateRunRequest,
+    ObjectiveValidateRequest,
+    ObjectiveValidateResponse,
+    ObjectiveValidateResult,
     RunListItem,
     RunSnapshot,
 )
 from capychem.db.models import AnalyzerHypothesis, Run, RunCost
 from capychem.mode import derive_mode
+from capychem.objective import Objective
+from capychem.oracle import OracleResult, score_batch_async
 from capychem.run import RunConfig
 from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy import select
@@ -134,12 +139,39 @@ async def create_run_endpoint(body: CreateRunRequest, request: Request) -> dict[
         # RDKit-checked them and collapsed an empty list to None.
         seed_smiles=body.seed_smiles,
         seed_source="custom" if body.seed_smiles else "default",
-        # Server-derived, never client-set: a custom seed (07-02) — or later a custom
-        # objective/constraints — forces exploratory; a plain run stays benchmark.
-        mode=derive_mode(seed_smiles=body.seed_smiles),
+        # Composed objective (07-04); the schema validator already checked it is
+        # well-formed. Scoring routes through it instead of the single task.
+        objective_json=body.objective_json,
+        # Server-derived, never client-set: a custom seed (07-02) or a custom
+        # objective (07-04) forces exploratory; a plain run stays benchmark.
+        mode=derive_mode(seed_smiles=body.seed_smiles, objective_json=body.objective_json),
     )
     run_id = await registry_of(request).start_run(cfg)
     return {"run_id": run_id, "status": "running"}
+
+
+@router.post("/objective/validate", response_model=ObjectiveValidateResponse)
+async def validate_objective_endpoint(body: ObjectiveValidateRequest) -> ObjectiveValidateResponse:
+    """Preview a composed objective (07-04): the single composite [0,1] score per
+    probe molecule (None = the objective couldn't score it — invalid or penalized).
+    A malformed spec is a 422. PMO terms score via the harness (keep the probe small)."""
+    try:
+        objective = Objective.from_json(body.spec)
+    except (ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid objective spec: {exc}") from exc
+
+    async def _pmo_scorer(smis: list[str], task: str) -> list[OracleResult]:
+        return await score_batch_async(smis, task)
+
+    results = await objective.evaluate_async(body.smiles, pmo_scorer=_pmo_scorer)
+    return ObjectiveValidateResponse(
+        aggregator=objective.spec.aggregator,
+        n_terms=len(objective.spec.terms),
+        results=[
+            ObjectiveValidateResult(smiles=s, score=r.score)
+            for s, r in zip(body.smiles, results, strict=True)
+        ],
+    )
 
 
 @router.get("/runs", response_model=list[RunListItem])

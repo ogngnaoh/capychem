@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any, Literal
 
 from capychem.eval.tasks import PMO_TASKS
+from capychem.objective import Objective
 from pydantic import BaseModel, Field, field_validator
 from rdkit import Chem, RDLogger
 
@@ -28,6 +29,9 @@ class CreateRunRequest(BaseModel):
     # forces mode=exploratory (server-derived at the route). Distinct from the
     # integer RNG ``seed`` above — a population source, never the RNG seed (G6).
     seed_smiles: list[str] | None = None
+    # Composed multi-term objective spec (07-04). Present ⇒ mode=exploratory. Scoring
+    # routes through the objective instead of the single task; None = benchmark.
+    objective_json: dict[str, Any] | None = None
 
     @field_validator("task")
     @classmethod
@@ -51,6 +55,38 @@ class CreateRunRequest(BaseModel):
         if invalid:
             raise ValueError(f"Validate seed SMILES via RDKit; these did not parse: {invalid}")
         return cleaned
+
+    @field_validator("objective_json")
+    @classmethod
+    def _objective_must_be_well_formed(cls, v: dict[str, Any] | None) -> dict[str, Any] | None:
+        """Structural gate at the /runs boundary — a bad objective (unknown oracle,
+        empty terms, non-positive weight, unknown transform) is rejected here rather
+        than failing mid-run."""
+        if v is None:
+            return None
+        try:
+            Objective.from_json(v)
+        except (ValueError, KeyError, TypeError) as exc:
+            raise ValueError(f"Invalid objective spec: {exc}") from exc
+        return v
+
+
+class ObjectiveValidateRequest(BaseModel):
+    """POST /objective/validate: preview a composed objective on a probe set (07-04)."""
+
+    spec: dict[str, Any]
+    smiles: list[str] = Field(default_factory=lambda: ["c1ccccc1"])
+
+
+class ObjectiveValidateResult(BaseModel):
+    smiles: str
+    score: float | None  # None = the objective could not score it (invalid / penalized)
+
+
+class ObjectiveValidateResponse(BaseModel):
+    aggregator: str
+    n_terms: int
+    results: list[ObjectiveValidateResult]
 
 
 class TopMolecule(BaseModel):

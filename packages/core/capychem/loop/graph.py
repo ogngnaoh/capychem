@@ -12,7 +12,7 @@ import asyncio
 import inspect
 from collections.abc import Callable
 from dataclasses import replace
-from typing import Any
+from typing import Any, cast
 
 from capychem import proposer
 from capychem.db.models import AnalyzerHypothesis, Candidate, Generation, OracleCall
@@ -26,7 +26,8 @@ from capychem.loop.logic import (
 from capychem.loop.seeds import build_seed_population
 from capychem.loop.seeds import load_starting_pop as _load_starting_pop
 from capychem.loop.state import HypothesisRecord, LoopState, Scored
-from capychem.oracle import HarnessError, score_batch_async
+from capychem.objective import Objective
+from capychem.oracle import HarnessError, OracleResult, score_batch_async
 from capychem.validate import validate_batch_with_stats
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
@@ -201,14 +202,35 @@ async def score(state: LoopState) -> dict[str, Any]:
         batch = unseen[:room]
         if not batch:
             return {"_scored": [], "calls_used": len(buffer), "mol_buffer": buffer}
-        results = await _with_harness_retry(
-            lambda: score_batch_async([c.smiles for c in batch], task=state["task"])
-        )
-        scored = [
-            (c, r.score, r.cost_usd)
-            for c, r in zip(batch, results, strict=True)
-            if r.valid and r.score is not None
-        ]
+        smis = [c.smiles for c in batch]
+        obj_json = state.get("objective_json")
+        scored: list[tuple[Any, float, float]]
+        if obj_json:
+            # Composed exploratory objective (07-04): PMO terms reuse the SAME
+            # retry-wrapped harness path below, so cost/backend are preserved; the
+            # budget still counts one call per unique candidate (OD-2), not per term.
+            async def _pmo_scorer(s: list[str], task: str) -> list[OracleResult]:
+                return cast(
+                    "list[OracleResult]",
+                    await _with_harness_retry(lambda: score_batch_async(s, task=task)),
+                )
+
+            obj_results = await Objective.from_json(obj_json).evaluate_async(
+                smis, pmo_scorer=_pmo_scorer
+            )
+            scored = [
+                (c, r.score, r.cost_usd)
+                for c, r in zip(batch, obj_results, strict=True)
+                if r.score is not None
+            ]
+        else:
+            # Benchmark path — unchanged, byte-identical.
+            results = await _with_harness_retry(lambda: score_batch_async(smis, task=state["task"]))
+            scored = [
+                (c, r.score, r.cost_usd)
+                for c, r in zip(batch, results, strict=True)
+                if r.valid and r.score is not None
+            ]
         new_buffer = buffer | {c.smiles for c, _, _ in scored}
         return {
             "_scored": scored,

@@ -71,6 +71,9 @@ class LoopState(TypedDict, total=False):
     # population from persisted rows, bypassing the gen-0 branch). Distinct from the
     # integer RNG ``seed`` above — a population source, never the RNG seed (G6).
     seed_smiles: list[str] | None
+    # Composed exploratory objective spec (07-04); None -> the single-task benchmark
+    # scoring path (byte-identical). Present only for an exploratory run.
+    objective_json: dict[str, Any] | None
     # progress
     calls_used: int
     mol_buffer: set[str]  # canonical SMILES already scored — unique-call budget memo (slice 05)

@@ -32,6 +32,9 @@ class RunConfig:
     # (via derive_mode at the route). Distinct from the integer RNG ``seed``.
     seed_smiles: list[str] | None = None
     seed_source: str = "default"
+    # Composed exploratory objective spec (07-04); None -> single-task benchmark
+    # scoring (byte-identical). A non-null objective forces exploratory via derive_mode.
+    objective_json: dict[str, Any] | None = None
 
 
 async def create_run(session: AsyncSession, config: RunConfig) -> int:
@@ -50,6 +53,7 @@ async def create_run(session: AsyncSession, config: RunConfig) -> int:
         mode=config.mode,
         seed_smiles=config.seed_smiles,
         seed_source=config.seed_source,
+        objective_json=config.objective_json,
     )
     session.add(row)
     await session.commit()
