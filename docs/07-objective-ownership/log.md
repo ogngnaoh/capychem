@@ -2,6 +2,28 @@
 
 Append-only. Dated rationale/findings a diff can't show. Git records what shipped.
 
+## 2026-07-06 — Slice 07-07 lineage export shipped
+
+CSV + SDF lineage export. Findings:
+
+- **SDF must `flush()`, never `close()`, the StringIO.** `Chem.SDWriter(buf)` needs a flush
+  to emit the trailing `$$$$` record terminator, but `writer.close()` also closes the
+  underlying `StringIO`, after which `buf.getvalue()` fails. `writer.flush()` emits the
+  terminator and leaves the buffer readable. Verified the round-trip:
+  `Chem.ForwardSDMolSupplier(BytesIO(sdf.encode()))` re-reads the mols + props.
+
+- **Hypothesis-at-birth = the hypothesis after gen g-1.** The analyzer produces a hypothesis
+  AFTER generation N, which conditions gen N+1's proposals. So a candidate in generation g
+  was born under `AnalyzerHypothesis.after_generation_index == g-1` (null for gen 0/1).
+
+- **Quality flattened into columns.** `_lineage_rows` reads `Candidate.quality_json` (07-05)
+  and spreads its keys into fixed CSV columns / SDF props, so an exported file is a flat,
+  tool-agnostic table. Manifest git-SHA + PyTDC pin ride as SDF props so the file is
+  self-describing.
+
+- Purely additive, read-only routes — no model/loop change, no migration. Gate: mypy (66) ·
+  ruff · **394** backend (+3) · benchmark untouched.
+
 ## 2026-07-06 — Slice 07-06 provenance manifest shipped (OD-5)
 
 The harness finally emits its own version; every run gets a citable manifest. Findings:

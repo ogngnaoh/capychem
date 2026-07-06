@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import csv
+import io
 from collections.abc import Mapping
 from typing import Any
 
@@ -20,12 +22,13 @@ from capychem.api.schemas import (
     RunListItem,
     RunSnapshot,
 )
-from capychem.db.models import AnalyzerHypothesis, Run, RunCost
+from capychem.db.models import AnalyzerHypothesis, Candidate, Generation, Run, RunCost
 from capychem.mode import derive_mode
 from capychem.objective import Objective
 from capychem.oracle import OracleResult, score_batch_async
 from capychem.run import RunConfig
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response
+from rdkit import Chem
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from starlette.requests import HTTPConnection
@@ -315,6 +318,132 @@ async def get_manifest_endpoint(run_id: int, request: Request) -> dict[str, Any]
     if row is None:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
     return row.manifest_json or {}
+
+
+# Lineage export (07-07). Column order: identity/lineage first, then the 07-05 quality
+# fields flattened out of quality_json.
+_QUALITY_COLS = (
+    "valid",
+    "sa_score",
+    "qed",
+    "mw",
+    "logp",
+    "hbd",
+    "hba",
+    "rotatable_bonds",
+    "tpsa",
+    "lipinski_pass",
+    "veber_pass",
+    "pains",
+    "brenk",
+)
+_LINEAGE_COLS = (
+    "candidate_id",
+    "generation",
+    "parent_candidate_id",
+    "proposer",
+    "smiles",
+    "score",
+    "hypothesis_at_birth",
+    *_QUALITY_COLS,
+)
+
+
+async def _lineage_rows(session: AsyncSession, run_id: int) -> list[dict[str, Any]]:
+    """Full per-candidate lineage for a run: gen index + parent + proposer + score +
+    the hypothesis that conditioned its generation + the flattened quality report."""
+    result = await session.execute(
+        select(Candidate, Generation.index)
+        .join(Generation, Candidate.generation_id == Generation.id)
+        .where(Generation.run_id == run_id)
+        .order_by(Generation.index, Candidate.id)
+    )
+    hyps = {
+        h.after_generation_index: h.text
+        for h in (
+            await session.execute(
+                select(AnalyzerHypothesis).where(AnalyzerHypothesis.run_id == run_id)
+            )
+        )
+        .scalars()
+        .all()
+    }
+    rows: list[dict[str, Any]] = []
+    for cand, gen_index in result.all():
+        quality = cand.quality_json or {}
+        row: dict[str, Any] = {
+            "candidate_id": cand.id,
+            "generation": gen_index,
+            "parent_candidate_id": cand.parent_candidate_id,
+            "proposer": cand.proposer,
+            "smiles": cand.smiles,
+            "score": cand.score,
+            # The analyzer hypothesis after gen N conditions gen N+1's proposals, so a
+            # candidate in generation g was born under the hypothesis after gen g-1.
+            "hypothesis_at_birth": hyps.get(gen_index - 1),
+        }
+        for col in _QUALITY_COLS:
+            row[col] = quality.get(col)
+        rows.append(row)
+    return rows
+
+
+async def _run_or_404(session: AsyncSession, run_id: int) -> Run:
+    row = await session.get(Run, run_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return row
+
+
+@router.get("/runs/{run_id}/export.csv")
+async def export_csv_endpoint(run_id: int, request: Request) -> Response:
+    """Full lineage as CSV (07-07): one row per candidate, lineage + quality columns."""
+    sm = sessionmaker_of(request)
+    async with sm() as session:
+        await _run_or_404(session, run_id)
+        rows = await _lineage_rows(session, run_id)
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=list(_LINEAGE_COLS))
+    writer.writeheader()
+    writer.writerows(rows)
+    return Response(
+        content=buf.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="run-{run_id}-lineage.csv"'},
+    )
+
+
+@router.get("/runs/{run_id}/export.sdf")
+async def export_sdf_endpoint(run_id: int, request: Request) -> Response:
+    """Full lineage as an SDF (07-07): one record per candidate with the lineage +
+    quality attached as properties. RDKit round-trips it (SDMolSupplier re-reads it)."""
+    sm = sessionmaker_of(request)
+    async with sm() as session:
+        row = await _run_or_404(session, run_id)
+        rows = await _lineage_rows(session, run_id)
+    buf = io.StringIO()
+    writer = Chem.SDWriter(buf)
+    # First-record provenance so the file is self-describing (manifest pin, if finalized).
+    manifest = row.manifest_json or {}
+    for r in rows:
+        mol = Chem.MolFromSmiles(r["smiles"])
+        if mol is None:  # a persisted candidate is RDKit-valid, but stay defensive
+            continue
+        mol.SetProp("_Name", f"cand-{r['candidate_id']}")
+        for key, value in r.items():
+            if value is not None:
+                mol.SetProp(key, str(value))
+        if manifest.get("pytdc_version"):
+            mol.SetProp("pytdc_version", str(manifest["pytdc_version"]))
+        if manifest.get("git_sha"):
+            mol.SetProp("git_sha", str(manifest["git_sha"]))
+        writer.write(mol)
+    writer.flush()  # emit the trailing $$$$ WITHOUT closing (close() would close buf)
+    return Response(
+        content=buf.getvalue(),
+        media_type="chemical/x-mdl-sdfile",
+        headers={"Content-Disposition": f'attachment; filename="run-{run_id}-lineage.sdf"'},
+    )
 
 
 @router.get("/trace/{run_id}")

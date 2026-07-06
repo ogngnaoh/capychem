@@ -26,7 +26,7 @@ This is Phase-1 Tier 1 ("make-it-yours + trust") from `docs/superpowers/plans/20
 4b. `07-04b-constraints` — hard SMARTS include/exclude (FilterCatalog PAINS/Brenk) at the validity gate; soft property bands = objective terms (no new code); constraint-starvation signal distinct from FR-003 plateau. — shipped ✓ (Alembic head `ed2d80a8ccda`: `runs.status` widened 16→32 for `constraint_starved`)
 5. `07-05-quality-trust-layer` — per-candidate quality report + diversity/novelty + canary + shared trust-gate module (de-dup `_PARSE_RATE_FLOOR`). — shipped ✓ (Alembic head `0cc25e46d571`; backend only — quality DISPLAY + novelty seed_pop wiring deferred to 07-08)
 6. `07-06-provenance-manifest` — OD-5: harness emits PyTDC version; persist model id/pin/git SHA; `GET /runs/{id}/manifest`. — shipped ✓ (Alembic head `38f369ef45a6`; `pytdc_version()` cached local probe; manifest built at finalize)
-7. `07-07-lineage-export` — `GET /runs/{id}/export.{csv,sdf}` (lineage + quality); export UI. — planned
+7. `07-07-lineage-export` — `GET /runs/{id}/export.{csv,sdf}` (lineage + quality); export UI. — shipped ✓ (backend routes; RDKit round-trips the SDF; download buttons deferred to 07-08)
 8. `07-08-objective-authoring-ui` — structured objective builder + seed-import + quality display + cockpit per-component reasoning + WS reconnect. — planned
 
 ## Integration notes

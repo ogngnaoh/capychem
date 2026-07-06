@@ -1,49 +1,57 @@
 # Handoff — milestone 07 objective-ownership
 
 ## Next session start here
-Branch off `main` (branch-first), then execute slice **07-07 lineage export** (plan
-Task 07-07). Build:
-1. `GET /runs/{id}/export.csv` and `GET /runs/{id}/export.sdf` — the full lineage:
-   per-candidate gen index, parent id, proposer, score, hypothesis-at-birth, + the
-   07-05 `quality_json` fields flattened into columns. Read the persisted rows
-   (`Candidate` join `Generation`, `AnalyzerHypothesis` by after-generation-index).
-   - CSV: `csv.writer` over an in-memory buffer → `StreamingResponse`/`Response` with
-     `text/csv` + a `Content-Disposition` filename.
-   - SDF: build an RDKit mol per candidate (`Chem.MolFromSmiles`), attach props
-     (`SetProp`) for score/gen/parent/quality, write via `Chem.SDWriter`. **RDKit must
-     round-trip it** — the acceptance test parses the SDF back with `Chem.SDMolSupplier`.
-2. Bundle the manifest (07-06) reference in the export (a header comment / a prop), so an
-   exported file is self-describing.
-3. Test `test_export.py`: CSV has lineage + quality columns; SDF is RDKit-parseable and
-   carries the props.
+Branch off `main` (branch-first), then execute slice **07-08 objective-authoring UI +
+live** — the LAST slice; it closes the milestone. Surface everything the backend now
+carries. Scope (frontend + one small backend wiring):
+1. **Objective builder** component (`apps/web`): pick oracles + weights + transforms +
+   SMARTS/property constraints; live preview via `POST /objective/validate`; collapses to
+   the single-task pick in benchmark mode. Sends `objective_json` / `constraints_json` in
+   the `createRun` body.
+2. **Seed-import** component: paste/upload SMILES (SDF/CSV parse optional), RDKit-validate
+   at the `/runs` boundary, show accepted/rejected. (The single-field version shipped in
+   07-02; this is the richer UI.)
+3. **Quality + diversity display**: quality badges on top-K tiles (SA/QED/Lipinski/PAINS
+   from `Candidate.quality_json`), diversity/novelty in the run summary. Needs the snapshot
+   to expose quality — add `quality`/`diversity`/`novelty` to `RunSnapshot` + the run-detail
+   read (small backend add).
+4. **Novelty seed_pop wiring** (deferred from 07-05): stash the canonical gen-0 population
+   in `LoopState` at gen 0; pass `seed_pop` through the `stop_check` + runner-fallback
+   `build_summary` calls so real runs surface `novelty` (diversity already surfaces).
+5. **Manifest + export download buttons** on run-detail (`GET /runs/{id}/manifest`,
+   `/export.csv`, `/export.sdf`).
+6. **Cockpit**: analyzer per-component reasoning (which objective term moved) + WS
+   reconnect-with-backoff + "connection lost" + cold-start "waking the model ~30s" copy.
+7. Tests: vitest for the objective builder + import + quality display; **extend the axe
+   gate** (`apps/web/e2e/a11y.spec.ts`) to the new surfaces (keep AA green).
 
-Then 07-08 (the UI slice — the last one): objective builder + seed-import + quality/
-diversity DISPLAY + novelty seed_pop wiring + manifest/export download buttons + cockpit
-per-component reasoning + WS reconnect. **07-08 closes the milestone.**
+Use the frontend-design skill + the shipped Anthropic warm-token design system (cream+coral,
+Source Serif 4/Inter). Iterate with `/run` + screenshots.
+
+## When 07-08 ships → milestone 07 is COMPLETE
+Land in the ship commit: flip 07-08 in `milestone.md`; then **flip `docs/milestones.md`**
+(08-objective-ownership → shipped, next milestone → active or note "milestone 07 complete");
+overwrite this handoff for milestone 08; per the milestone-boundary convention, the NEXT
+milestone's build starts in a FRESH session.
 
 ## Current state
-- Slice **07-06 shipped** (merged to `main`): provenance manifest (OD-5). Harness
-  `score.py` `_emit` now carries `pytdc_version` (real `importlib.metadata.version("PyTDC")`
-  = "0.3.6"); `oracle.pytdc_version()` reads it via a cached fast probe (`_run_scorer([],
-  "qed")`, 15s timeout, `lru_cache` → one harness spawn per process). `Run.manifest_json`
-  (git SHA + model id + PyTDC pin + config + trace URL) + `OracleCall.oracle_version`
-  (migration `38f369ef45a6`); `run.build_manifest`; `finalize_run` persists the manifest +
-  backfills oracle_version in one UPDATE; `runner._drive` builds it at finalize
-  (`_git_sha()` via `git rev-parse`, `proposer.llm_model()`). `GET /runs/{id}/manifest`.
-- **Alembic head `38f369ef45a6`** (dev DB upgraded). New revisions chain from it.
-- Gate all green: mypy (66 files) · ruff · **391** backend (+5, incl. a real-run e2e
-  asserting the manifest carries the real pin + git SHA + model id) · migration drift · web
-  untouched.
-- `main` ahead of `origin/main` (unpushed) + m07-02..06 commits.
+- Slice **07-07 shipped** (merged to `main`): lineage export. `GET /runs/{id}/export.csv`
+  (per-candidate lineage + quality + hypothesis-at-birth columns) + `GET /runs/{id}/export.sdf`
+  (RDKit round-trips it — props preserved; manifest git-SHA/PyTDC-pin embedded). `_lineage_rows`
+  in `routes_runs.py` (Candidate⋈Generation, hypothesis-at-birth = hyp after gen g-1).
+- **Backend is objective-ownership COMPLETE**: mode split (01) · seed plumbing (02) ·
+  pluggable oracle (03) · composed objective (04) · constraints (04b) · quality+trust (05) ·
+  manifest (06) · export (07). Alembic head **`38f369ef45a6`**. Only the UI (08) remains.
+- Gate all green: mypy (66 files) · ruff · **394** backend (+3) · migration drift · web untouched.
+- `main` ahead of `origin/main` (unpushed) + m07-02..07 commits.
 
 ## Active concerns
-- **`score_smiles` refactor is byte-identical:** it now delegates to `_run_scorer`
-  (extracted subprocess+parse); all existing oracle/eval tests pass unchanged — keep it
-  that way (07-07 reads persisted rows, doesn't touch scoring).
-- **Manifest is best-effort:** any field may be None (harness down → pytdc None; not a git
-  checkout → git_sha None). The export/UI must tolerate nulls.
-- **07-07 SDF must round-trip:** assert `Chem.SDMolSupplier` re-reads what `SDWriter` wrote.
-- **07-08 is the milestone closer** — it also does the deferred **novelty seed_pop wiring**
-  and surfaces quality/diversity/manifest. After 07-08 ships, the milestone is complete:
-  flip `docs/milestones.md` (07 → shipped, 08 → active) and STOP for a fresh session.
-- Test basenames unique across the two roots; `.gitignore` `oracle/` root-anchored.
+- **07-08 is the milestone closer** — it also does the deferred novelty seed_pop wiring +
+  exposes quality/diversity in the snapshot (small backend add). Keep benchmark surfaces
+  honest (mode badge everywhere; figure-canon never "21/23"; exploratory = "not
+  benchmark-comparable"). Keep axe AA green (extend the gate to new surfaces).
+- **Snapshot doesn't expose quality yet** — top-K tiles need `Candidate.quality_json`
+  surfaced through `RunSnapshot.top_k` (add per-molecule quality) or a sibling field.
+- Backend export/manifest are best-effort/nullable — the UI must tolerate nulls.
+- Test basenames unique across the two roots; `.gitignore` `oracle/` root-anchored;
+  new Alembic revisions chain from `38f369ef45a6`.
