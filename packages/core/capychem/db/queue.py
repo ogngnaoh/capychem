@@ -15,10 +15,11 @@ host and Postgres can never cause a premature or missed reclaim.
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Any
+from typing import Any, cast
 
 from capychem.db.models import Run
 from sqlalchemy import func, or_, select, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -68,39 +69,53 @@ async def claim_next_run(session: AsyncSession, *, worker_id: str, lease_ttl_s: 
     return run_id
 
 
-async def renew_lease(session: AsyncSession, run_id: int, worker_id: str, lease_ttl_s: int) -> None:
+async def renew_lease(session: AsyncSession, run_id: int, worker_id: str, lease_ttl_s: int) -> bool:
     """Extend a still-owned lease's expiry + heartbeat.
 
     Scoped to ``lease_owner == worker_id``: if another worker already reclaimed
     this run (this worker's previous lease having expired), the UPDATE matches
     zero rows and is a no-op — a zombie renewal can never resurrect a lease it
     no longer owns.
+
+    Returns True iff the UPDATE matched a row (this worker still owns the
+    lease), False otherwise. A revived zombie (m08-02b) — a worker whose event
+    loop stalled past its lease TTL, was reclaimed, then kept running — sees
+    False here; the caller (RunRegistry._renew_lease_loop) uses that to stop
+    driving instead of racing the new owner.
     """
-    await session.execute(
-        update(Run)
-        .where(Run.id == run_id, Run.lease_owner == worker_id)
-        .values(
-            lease_expires_at=func.now() + timedelta(seconds=lease_ttl_s),
-            heartbeat_at=func.now(),
-        )
+    result = cast(
+        "CursorResult[Any]",
+        await session.execute(
+            update(Run)
+            .where(Run.id == run_id, Run.lease_owner == worker_id)
+            .values(
+                lease_expires_at=func.now() + timedelta(seconds=lease_ttl_s),
+                heartbeat_at=func.now(),
+            )
+        ),
     )
     await session.commit()
+    return result.rowcount > 0
 
 
-async def release_run(session: AsyncSession, run_id: int) -> None:
+async def release_run(session: AsyncSession, run_id: int, *, worker_id: str | None = None) -> None:
     """Clear the lease once a run has reached a terminal status.
 
-    Unconditional (no worker_id check): by the time a run is terminal its own
-    driver is the only writer left, so there is no owner to race. Callers must
-    only call this AFTER the row has actually been finalized to a terminal
-    status — never on a run that is merely interrupted (e.g. a graceful
-    process shutdown), since a cleared lease_expires_at (NULL) would never
-    satisfy claim_next_run's ``< now()`` comparison and would strand the row
-    unclaimable forever. An interrupted-but-still-"running" row is meant to be
-    left alone: its (unexpired) lease naturally times out and becomes
+    ``worker_id``, when given, scopes the clear to the CURRENT lease owner
+    (m08-02b): a revived zombie's release must not clear a reclaiming owner's
+    lease out from under it. None (default) keeps the prior unconditional
+    behavior, for callers where there is no owner left to race.
+
+    Callers must only call this AFTER the row has actually been finalized to a
+    terminal status — never on a run that is merely interrupted (e.g. a
+    graceful process shutdown), since a cleared lease_expires_at (NULL) would
+    never satisfy claim_next_run's ``< now()`` comparison and would strand the
+    row unclaimable forever. An interrupted-but-still-"running" row is meant to
+    be left alone: its (unexpired) lease naturally times out and becomes
     reclaimable through the normal path.
     """
-    await session.execute(
-        update(Run).where(Run.id == run_id).values(lease_owner=None, lease_expires_at=None)
-    )
+    stmt = update(Run).where(Run.id == run_id).values(lease_owner=None, lease_expires_at=None)
+    if worker_id is not None:
+        stmt = stmt.where(Run.lease_owner == worker_id)
+    await session.execute(stmt)
     await session.commit()

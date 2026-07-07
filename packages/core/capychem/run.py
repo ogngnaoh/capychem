@@ -7,10 +7,11 @@ FastAPI background runner agree on column population and terminal status.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 from capychem.db.models import OracleCall, Run
 from sqlalchemy import update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -112,17 +113,33 @@ async def finalize_run(
     run_id: int,
     final_state: dict[str, Any],
     manifest: dict[str, Any] | None = None,
+    *,
+    owner_worker_id: str | None = None,
 ) -> None:
     """Set terminal status + summary_json from the loop's final state; persist the
     reproducibility manifest (OD-5) and backfill each OracleCall's oracle_version from
-    its PyTDC pin in a single UPDATE (cheaper than per-call at score time)."""
-    row = await session.get(Run, run_id)
-    if row is None:  # defensive; the row was just created by us
-        return
-    row.status = final_state.get("stop_reason") or "exhausted"
-    row.summary_json = final_state.get("summary")
+    its PyTDC pin in a single UPDATE (cheaper than per-call at score time).
+
+    ``owner_worker_id``, when given, fences the terminal write to the run's
+    CURRENT lease owner (m08-02b): if another worker has since reclaimed the
+    row (a revived zombie whose lease already lost the race), the UPDATE
+    matches zero rows and is a no-op — it will not clobber the reclaiming
+    owner's terminal state, nor backfill oracle_version against calls that may
+    no longer belong to this drive. None (the CLI / resume-guard / test
+    default) keeps the prior unconditional write, for callers with no owner to
+    race against.
+    """
+    values: dict[str, Any] = {
+        "status": final_state.get("stop_reason") or "exhausted",
+        "summary_json": final_state.get("summary"),
+    }
     if manifest is not None:
-        row.manifest_json = manifest
+        values["manifest_json"] = manifest
+    stmt = update(Run).where(Run.id == run_id).values(**values)
+    if owner_worker_id is not None:
+        stmt = stmt.where(Run.lease_owner == owner_worker_id)
+    result = cast("CursorResult[Any]", await session.execute(stmt))
+    if result.rowcount > 0 and manifest is not None:
         pin = manifest.get("pytdc_version")
         if pin is not None:
             await session.execute(

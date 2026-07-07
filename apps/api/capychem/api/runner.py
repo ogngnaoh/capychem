@@ -409,13 +409,29 @@ class RunRegistry:
             t.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
 
-    async def _renew_lease_loop(self, run_id: int) -> None:
-        """Extend this worker's lease on `run_id` on a fixed interval, forever
-        — cancelled by _drive_with_lease once _drive returns or raises."""
+    async def _renew_lease_loop(self, handle: RunHandle) -> None:
+        """Extend this worker's lease on ``handle.run_id`` on a fixed interval,
+        forever — cancelled by _drive_with_lease once _drive returns or raises.
+
+        Stop-on-lost-lease (m08-02b, defense in depth against a revived
+        zombie): if a renewal ever fails to match a row, another worker has
+        already reclaimed this run (this worker's own event loop presumably
+        stalled past the lease TTL and lost the race). Set the cooperative-stop
+        signal so _drive exits at its next generation boundary instead of
+        continuing to drive a run it no longer owns, then stop renewing.
+        """
         while True:
             await asyncio.sleep(_LEASE_RENEW_INTERVAL_S)
             async with self._sm() as session:
-                await renew_lease(session, run_id, self.worker_id, LEASE_TTL_S)
+                renewed = await renew_lease(session, handle.run_id, self.worker_id, LEASE_TTL_S)
+            if not renewed:
+                logger.warning(
+                    "worker %s: lost lease on run %d (reclaimed elsewhere); stopping",
+                    self.worker_id,
+                    handle.run_id,
+                )
+                handle.cancel.set()
+                return
 
     async def _drive_with_lease(
         self, handle: RunHandle, progress: dict[str, Any] | None = None
@@ -436,7 +452,7 @@ class RunRegistry:
         reclaim path picks the run back up and resumes it via
         reconstruct_state — no separate boot-time sweep required.
         """
-        renew_task = asyncio.create_task(self._renew_lease_loop(handle.run_id))
+        renew_task = asyncio.create_task(self._renew_lease_loop(handle))
         try:
             await self._drive(handle, progress=progress)
         finally:
@@ -445,9 +461,11 @@ class RunRegistry:
                 await renew_task
         # Reached only if _drive returned normally (see the cancellation note
         # above) — by construction it has already finalized the row to a
-        # terminal status before returning.
+        # terminal status before returning. worker_id-scoped (m08-02b): a
+        # revived zombie whose finalize was fenced off (lease already
+        # reclaimed) must not clear the new owner's lease either.
         async with self._sm() as session:
-            await release_run(session, handle.run_id)
+            await release_run(session, handle.run_id, worker_id=self.worker_id)
 
     async def _drive(self, handle: RunHandle, progress: dict[str, Any] | None = None) -> None:
         cfg = handle.config
@@ -659,11 +677,15 @@ class RunRegistry:
             trace_url=config.trace_url(run_trace_id),
         )
         async with self._sm() as session:
+            # owner_worker_id fences this write (m08-02b): a revived zombie
+            # whose lease was reclaimed while it kept driving must not
+            # overwrite the reclaiming owner's terminal row.
             await finalize_run(
                 session,
                 handle.run_id,
                 {"stop_reason": status, "summary": summary},
                 manifest=manifest,
+                owner_worker_id=self.worker_id,
             )
         trace.flush()
         if handle.snapshot is not None:

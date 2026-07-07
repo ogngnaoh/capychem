@@ -13,7 +13,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, ForeignKey, Index, String, Text, func
+from sqlalchemy import JSON, ForeignKey, Index, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -71,7 +71,12 @@ class Run(Base):
 
 class Generation(Base):
     __tablename__ = "generations"
-    __table_args__ = (Index("ix_generation_run_index", "run_id", "index"),)
+    # UNIQUE, not just an index (m08-02b): a UniqueConstraint is index-backed, so
+    # lookups stay fast, but it also structurally rejects a duplicate (run_id,
+    # index) write -- the backstop against a revived-zombie worker (one whose
+    # lease expired and was reclaimed, but which kept driving and tried to
+    # persist the same generation index a new owner already wrote).
+    __table_args__ = (UniqueConstraint("run_id", "index", name="uq_generation_run_index"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     run_id: Mapped[int] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"))
