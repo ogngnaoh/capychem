@@ -30,6 +30,15 @@ their sections below. For the trace-level view of one run, see the [Langfuse wal
 *A finished run: the top-10 mean score climbs with each batch of oracle calls, the best molecules are listed
 with their scores, and every generation records the hypothesis the agent used to steer the next one.*
 
+> **Proof it runs live.** The tour above is a *deterministic* capture — reproducible and honest by construction.
+> Below is an **unedited real run**: DeepSeek proposing and analyzing live, the compute cost ticking up, and real
+> 2D structures + the score-vs-Graph-GA-baseline curve streaming in over a WebSocket (still honestly behind the
+> baseline mid-run). All in-silico.
+
+<p align="center">
+  <img src="docs/assets/live-run.gif" alt="An unedited live CapyChem run on the qed objective: the DeepSeek analyzer writes a real per-generation hypothesis, the compute cost ticks up, and real 2D structures plus the score-vs-Graph-GA-baseline curve stream in over a WebSocket — still honestly behind the baseline mid-run (in-silico)" width="820">
+</p>
+
 ---
 
 ## What it is (no chemistry required)

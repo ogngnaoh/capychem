@@ -60,6 +60,9 @@ README static stills (real RDKit structures, 1280px light, no h-scroll):
 - `pnpm --filter web exec playwright test e2e/readme-assets-shot.spec.ts` → `docs/assets/{launch,browse,compare,run-detail-full,run-detail-analyzer}.png`
 - Real molecule SVGs baked into fixtures via `uv run python scripts/gen_demo_molecule_svgs.py` → `apps/web/e2e/_molecule-svgs.generated.ts` (regenerate if the demo's molecules change)
 
+Live-run clip (`docs/assets/live-run.gif` — REAL backend, not a mock; proof-of-authenticity):
+- Boot the stack with `CAPYCHEM_PROPOSER_BACKEND=direct` + `CAPYCHEM_ANALYZER_BACKEND=direct` + `DEEPSEEK_API_KEY`; launch a short run; then `LIVE_RUN_ID=<id> pnpm --filter web exec playwright test e2e/live-run.spec.ts` (skip-guarded, never runs in CI) → ffmpeg → `docs/assets/live-run.gif`.
+
 Legacy harness (isolated uv env, Python 3.10):
 - `harness/.venv/bin/python harness/capychem_harness/score.py` — scores SMILES against a PyTDC oracle (reads JSON on stdin). Reproducing a Graph-GA baseline via `mol_opt` lands in milestone 01. Never `import` from harness; always shell out.
 
