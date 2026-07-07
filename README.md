@@ -15,6 +15,16 @@ molecule per hour of compute; it's the **best molecule per oracle call**.
 > and it is strictly upstream of any patient, wet-lab, or clinical use.
 
 <p align="center">
+  <img src="docs/assets/demo.gif" alt="CapyChem demo: launch a benchmark objective, watch the analyzer reason and the score climb live (honestly tracking the Graph-GA baseline), then a finished run beats the Graph-GA control head-to-head, compose a custom objective, bring your own seed molecules, and export lineage — all in-silico" width="820">
+</p>
+
+*A ~35-second tour (in-silico benchmark scores throughout): launch → the analyzer writes a hypothesis each
+generation and the score climbs live (still tracking the Graph-GA baseline mid-run) → a finished run beats the
+strong Graph-GA control on this objective → compose a custom multi-term objective (flagged **exploratory**, walled
+off from the benchmark claim) → bring your own seed molecules (RDKit validates each) → per-candidate quality
+read-out + lineage export. For the trace-level view of one run, see the [Langfuse walkthrough](docs/langfuse-walkthrough.md).*
+
+<p align="center">
   <img src="docs/assets/run-detail-full.png" alt="A completed CapyChem run: score-vs-oracle-calls curve, top molecules, and the analyzer's per-generation hypotheses" width="620">
 </p>
 
