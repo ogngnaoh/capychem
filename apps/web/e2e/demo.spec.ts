@@ -95,7 +95,10 @@ test("demo-clip-3-beat-graph-ga", async ({ page }) => {
   await page.getByText("Two runs, side by side").waitFor({ timeout: 15_000 });
   await page.getByText(/leads by/).waitFor({ timeout: 5_000 });
   await page.getByText("no analyzer step").waitFor({ timeout: 5_000 });
-  await dwell(page, 2600);
+  await dwell(page, 2200);
+  // Reveal the side-by-side molecules — real RDKit structures, LLM run vs GA control.
+  await page.evaluate(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }));
+  await dwell(page, 2800);
 });
 
 // ---- Clip 4: make it yours — compose a custom objective (exploratory) + bring your own seeds ----
@@ -133,5 +136,11 @@ test("demo-clip-5-quality-export", async ({ page }) => {
   await page.goto("/runs/271", { waitUntil: "networkidle" });
   await page.getByText("Analyzer reasoning").waitFor({ timeout: 15_000 });
   await page.getByRole("link", { name: /Download lineage \(CSV\)/ }).waitFor({ timeout: 5_000 });
-  await dwell(page, 3000);
+  await dwell(page, 1600);
+  // Scroll to the top molecules — real structures + per-candidate quality/trust chips.
+  await page.getByText("Top molecules").scrollIntoViewIfNeeded();
+  await dwell(page, 2800);
+  // Then the lineage export (CSV/SDF).
+  await page.getByRole("link", { name: /Download lineage \(CSV\)/ }).scrollIntoViewIfNeeded();
+  await dwell(page, 2200);
 });
