@@ -6,12 +6,9 @@
 // endpoints. Numbers are honest in-silico oracle scores (N6).
 
 import type { Page } from "@playwright/test";
+import { MOLECULE_SVG_BY_SMILES, MOLECULE_SVG_FALLBACK } from "./_molecule-svgs.generated";
 
 export const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
-// A tiny deterministic stand-in for the RDKit SVG (real structures come from GET
-// /molecule/svg server-side). Kept on-token-neutral so captures don't depend on RDKit.
-const MOLECULE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><polygon points="60,14 100,37 100,83 60,106 20,83 20,37" fill="none" stroke="#9a8d84" stroke-width="2.5"/><circle cx="60" cy="60" r="17" fill="none" stroke="#9a8d84" stroke-width="2.5"/><line x1="100" y1="37" x2="114" y2="30" stroke="#9a8d84" stroke-width="2.5"/></svg>`;
 
 // The full 23-task PMO catalog, mirroring the live GET /catalog
 // (apps/api/capychem/api/catalog.py) so captures read faithfully.
@@ -334,7 +331,7 @@ export const COMPARE_PAYLOAD = {
     top_k: [
       { smiles: "O=C(Nc1ccc(Cl)cc1)c1ccc2[nH]ncc2c1", score: 0.7719 },
       { smiles: "Cc1ccc(Nc2ncnc3sccc23)cc1", score: 0.7514 },
-      { smiles: "COc1ccc(Nc2ncnc3cccc23)cc1", score: 0.7331 },
+      { smiles: "COc1ccc(Nc2ncnc3ccccc23)cc1", score: 0.7331 },
     ],
     hypotheses: [],
   },
@@ -394,7 +391,9 @@ export async function mockApi(page: Page, opts: MockOpts = {}) {
     const req = route.request();
     const p = new URL(req.url()).pathname;
     if (p === "/molecule/svg") {
-      await route.fulfill({ status: 200, contentType: "image/svg+xml", body: MOLECULE_SVG });
+      const smiles = new URL(req.url()).searchParams.get("smiles") ?? "";
+      const body = MOLECULE_SVG_BY_SMILES[smiles] ?? MOLECULE_SVG_FALLBACK;
+      await route.fulfill({ status: 200, contentType: "image/svg+xml", body });
       return;
     }
     // Lineage exports (07-07) stream file bodies; the page uses plain anchors, but a
