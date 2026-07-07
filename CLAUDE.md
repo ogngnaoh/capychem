@@ -33,7 +33,7 @@ Test all:
 - `pnpm --filter web test`
 
 Test single:
-- `uv run pytest packages/core/tests/test_loop.py::test_invalid_smiles_falls_back -x`
+- `uv run pytest packages/core/tests/test_loop_fallback.py::test_fallback_backfills_gap_for_llm -x`
 - `pnpm --filter web test -- --runTestsByPath app/runs/[id]/page.test.tsx`
 
 Typecheck:
@@ -51,6 +51,10 @@ Format:
 Eval:
 - `uv run capychem-eval --task=qed --budget=10000 --seed=42` — single PMO task
 - `uv run capychem-eval --all --budget=10000` — full 23-task sweep (cost-bounded; confirm before invoking)
+
+Demo capture (deterministic, backend-free; regenerates `docs/assets/demo.gif`):
+- `pnpm --filter web exec playwright test e2e/demo.spec.ts` — records the video to `apps/web/test-results/**/video.webm`
+- Convert to GIF (two-pass palette, ~10fps, 880px): `WEBM=$(find apps/web/test-results -name '*.webm' | head -1); ffmpeg -y -i "$WEBM" -vf "fps=10,scale=880:-1:flags=lanczos,palettegen=stats_mode=diff" /tmp/pal.png; ffmpeg -y -i "$WEBM" -i /tmp/pal.png -filter_complex "fps=10,scale=880:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5" docs/assets/demo.gif`
 
 Legacy harness (isolated uv env, Python 3.10):
 - `harness/.venv/bin/python harness/capychem_harness/score.py` — scores SMILES against a PyTDC oracle (reads JSON on stdin). Reproducing a Graph-GA baseline via `mol_opt` lands in milestone 01. Never `import` from harness; always shell out.

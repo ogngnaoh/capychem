@@ -269,6 +269,41 @@ export const SNAPSHOT_RUNNING = {
   oracle_cost_usd: 0.2449,
 };
 
+// The starting frame for the deterministic "live" cockpit beat (demo.spec.ts): run 284 in
+// its cold state ("Waking the model ~30s"), socket open, no results in yet. Reuses the
+// exact cold-start field shape but fixes the task + Graph-GA baseline to match RUNS_LIST's
+// run 284, so the baseline delta renders honestly once the scripted climb begins.
+export const SNAPSHOT_REPLAY_START = {
+  ...SNAPSHOT_COLD,
+  task: "troglitazone_rediscovery",
+  graph_ga_baseline: 0.7712,
+};
+
+// A descending top-K whose leader equals the generation's best_score, so the tiles never
+// contradict the headline number as the run climbs.
+const replayTopK = (best: number) =>
+  SNAPSHOT_RUNNING.top_k.map((m, i) => ({ ...m, score: Number((best - i * 0.02).toFixed(4)) }));
+
+// Scripted RunEvents (shapes = lib/runEvents.ts RunEvent) replayed one per `stepMs` by
+// stubWebSocketReplay, so the cockpit visibly ticks: two analyzer hypotheses arrive live
+// and the curve climbs. Every score stays BELOW the Graph-GA baseline 0.7712 — the beat is
+// NOT claimed here (that lives in the Compare shot); the run is honestly still behind at
+// gen 10 with 5,800 calls left. Ends at the true SNAPSHOT_RUNNING state (0.7431 @ 4200).
+export const DEMO_REPLAY_EVENTS = [
+  { type: "generation.complete", generation_index: 1, best_score: 0.52, top10_mean: 0.52,
+    oracle_calls_used: 400, cost_so_far_usd: 0.14, top_k: replayTopK(0.52) },
+  { type: "analyzer.hypothesis", after_generation_index: 1, text: HYPS[0].text,
+    structured_json: HYPS[0].structured_json },
+  { type: "generation.complete", generation_index: 4, best_score: 0.66, top10_mean: 0.66,
+    oracle_calls_used: 1600, cost_so_far_usd: 0.52, top_k: replayTopK(0.66) },
+  { type: "generation.complete", generation_index: 6, best_score: 0.706, top10_mean: 0.706,
+    oracle_calls_used: 2800, cost_so_far_usd: 0.74, top_k: replayTopK(0.706) },
+  { type: "analyzer.hypothesis", after_generation_index: 8, text: HYPS[1].text,
+    structured_json: HYPS[1].structured_json },
+  { type: "generation.complete", generation_index: 10, best_score: 0.7431, top10_mean: 0.7431,
+    oracle_calls_used: 4200, cost_so_far_usd: 1.0362, top_k: replayTopK(0.7431) },
+];
+
 export const COMPARE_PAYLOAD = {
   a: {
     run_id: 281,
@@ -282,12 +317,15 @@ export const COMPARE_PAYLOAD = {
     top_k: TOP_K.slice(0, 4),
     hypotheses: HYPS,
   },
-  // b is exploratory and deliberately NOT run 268 (a benchmark row in RUNS_LIST) — a
-  // run_id must never appear with two different mode badges across the demo surfaces.
+  // b is run 268 — the same benchmark Graph-GA row that appears in RUNS_LIST (same mode
+  // badge everywhere, resolving the "no run_id with two mode badges" rule). Both runs are
+  // benchmark + same task, so Verdict draws the honest head-to-head: 281 (with an analyzer
+  // step) leads the GA control by 0.1095. The GA column shows "no analyzer step" because a
+  // Graph-GA run carries no hypotheses.
   b: {
-    run_id: 269,
+    run_id: 268,
     task: "troglitazone_rediscovery",
-    mode: "exploratory",
+    mode: "benchmark",
     status: "exhausted",
     best_score: 0.7719,
     oracle_calls: 10000,
@@ -340,6 +378,8 @@ export const RESOLUTION_NOMATCH = {
 type MockOpts = {
   runs?: unknown;
   snapshot?: unknown;
+  // Serve a different snapshot per run id (a single mockApi call across a multi-run video).
+  snapshotById?: Record<number, unknown>;
   compare?: unknown;
   resolution?: unknown;
   validate?: unknown;
@@ -382,7 +422,10 @@ export async function mockApi(page: Page, opts: MockOpts = {}) {
     else if (p === "/objective/validate") body = opts.validate ?? VALIDATE_RESPONSE;
     else if (p === "/compare") body = opts.compare ?? COMPARE_PAYLOAD;
     else if (/^\/runs\/\d+\/manifest$/.test(p)) body = opts.manifest ?? MANIFEST;
-    else if (/^\/runs\/\d+$/.test(p)) body = opts.snapshot ?? SNAPSHOT_COMPLETED;
+    else if (/^\/runs\/\d+$/.test(p)) {
+      const id = Number(p.split("/")[2]);
+      body = opts.snapshotById?.[id] ?? opts.snapshot ?? SNAPSHOT_COMPLETED;
+    }
     else if (p === "/runs" && req.method() === "POST") body = { run_id: 999 };
     else if (p === "/runs") body = opts.runs ?? RUNS_LIST;
     await route.fulfill({
@@ -440,6 +483,53 @@ export async function stubWebSocket(page: Page) {
     // @ts-expect-error override the global for the capture only
     window.WebSocket = Fake;
   });
+}
+
+// Like stubWebSocket, but replays a scripted event list on a timer so the cockpit ticks
+// deterministically with NO backend. Only the app's /ws/runs/ socket is faked; every other
+// WebSocket URL (Next HMR) delegates to native. Events serialize into the page via the
+// addInitScript arg. The first event fires after `stepMs`, leaving the cold-start frame
+// visible briefly before results arrive.
+export async function stubWebSocketReplay(page: Page, events: unknown[], stepMs = 1100) {
+  await page.addInitScript(
+    ({ events, stepMs }) => {
+      const Native = window.WebSocket;
+      function Fake(this: unknown, url: string, protocols?: string | string[]) {
+        if (typeof url === "string" && url.includes("/ws/runs/")) {
+          const ws = {
+            readyState: 1,
+            onopen: null as null | ((ev: Event) => void),
+            onmessage: null as null | ((ev: MessageEvent) => void),
+            onclose: null as null | ((ev: Event) => void),
+            onerror: null,
+            send() {},
+            close() {
+              (this as { readyState: number }).readyState = 3;
+            },
+            addEventListener() {},
+            removeEventListener() {},
+          };
+          setTimeout(() => ws.onopen?.(new Event("open")), 0);
+          (events as unknown[]).forEach((ev, i) => {
+            setTimeout(
+              () => ws.onmessage?.({ data: JSON.stringify(ev) } as MessageEvent),
+              (i + 1) * stepMs,
+            );
+          });
+          return ws;
+        }
+        return new Native(url, protocols);
+      }
+      Fake.CONNECTING = 0;
+      Fake.OPEN = 1;
+      Fake.CLOSING = 2;
+      Fake.CLOSED = 3;
+      Fake.prototype = Native.prototype;
+      // @ts-expect-error override the global for the capture only
+      window.WebSocket = Fake;
+    },
+    { events, stepMs },
+  );
 }
 
 // Like stubWebSocket, but the run socket OPENS then DROPS after a beat — driving the

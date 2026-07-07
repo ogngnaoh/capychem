@@ -12,6 +12,7 @@ import json
 import sys
 import time
 
+from capychem.env import load_local_env
 from capychem.eval.baselines import GRAPH_GA_AUC_TOP10, compare_to_baseline
 from capychem.eval.metric import top_auc
 from capychem.eval.runner import run_reproduction
@@ -19,6 +20,7 @@ from capychem.eval.trace import trace_to_dict
 
 
 def main(argv: list[str] | None = None) -> int:
+    load_local_env()  # .env.local → DEEPSEEK_API_KEY reaches an --mutation-strategy=llm eval
     p = argparse.ArgumentParser(
         prog="capychem-eval",
         description="Reproduce a PMO Graph-GA baseline (AUC top-10).",

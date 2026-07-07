@@ -314,6 +314,7 @@ source = { editable = "packages/core" }
 dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
+    { name = "httpx" },
     { name = "langfuse" },
     { name = "langgraph" },
     { name = "psycopg", extra = ["binary"] },
@@ -326,6 +327,7 @@ dependencies = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.13" },
     { name = "asyncpg", specifier = ">=0.29" },
+    { name = "httpx", specifier = ">=0.27" },
     { name = "langfuse", specifier = ">=2,<3" },
     { name = "langgraph", specifier = ">=0.2" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.1" },
@@ -346,7 +348,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "aiosqlite" },
-    { name = "httpx" },
     { name = "httpx-ws" },
     { name = "mypy" },
     { name = "pytest" },
@@ -363,7 +364,6 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "aiosqlite", specifier = ">=0.20" },
-    { name = "httpx", specifier = ">=0.27" },
     { name = "httpx-ws", specifier = ">=0.6" },
     { name = "mypy", specifier = ">=1.13" },
     { name = "pytest", specifier = ">=8" },
