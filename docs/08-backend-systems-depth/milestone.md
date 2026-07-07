@@ -26,8 +26,9 @@ Convert CapyChem's single-process, in-memory run execution into a durable Postgr
 
 ## Slices (execution order · single branch `m08-backend-systems-depth` · no per-agent worktrees)
 
-1. **01 green-on-clone + credibility** — `apps/api/tests/conftest.py` skip-guards; FIGURE-CANON results framing; GIF trim. *(S, independent)* — **planned**
-2. **02 durable queue + out-of-process worker** — lease/heartbeat/`SKIP LOCKED` claim/reclaim; `POST /runs` enqueues; new `apps/runner/` drives; DB is source of truth. *(L — the core)* — **planned** · **HARD GATE after**
+1. **01 green-on-clone + credibility** — `apps/api/tests/conftest.py` skip-guards; FIGURE-CANON results framing; GIF trim. *(S, independent)* — **shipped** (7cd100e)
+2. **02 durable queue + out-of-process worker** — lease/heartbeat/`SKIP LOCKED` claim/reclaim; `POST /runs` enqueues; new `apps/runner/` drives; DB is source of truth. *(L — the core)* — **shipped** (66e5764) · HARD GATE reviewed ✓
+2b. **02b lease fencing** (operator-approved at the S2 gate) — `UNIQUE(run_id, index)` structural backstop; `finalize_run`/`release_run` owner-fenced; `renew_lease` returns rowcount>0 → stop-on-lost-lease. *(S)* — **shipped** (a3f253d)
 3. **03 cross-process live events** — `LISTEN/NOTIFY`; WS subscribes; DB-snapshot path becomes normal. *(M, depends S2)* — **planned**
 4. **04 persistent shared oracle cache** — table + canonicalization + version invalidation + budget integration; **G1/eval path untouched**. *(M, depends S2)* — **planned**
 5. **05 backpressure + REST gaps** — concurrency caps, bounded pools, pagination, idempotency. *(M, depends S2)* — **planned**
