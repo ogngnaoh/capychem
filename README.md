@@ -18,11 +18,10 @@ molecule per hour of compute; it's the **best molecule per oracle call**.
   <img src="docs/assets/demo.gif" alt="CapyChem demo: launch a benchmark objective, watch the analyzer reason and the score climb live (honestly tracking the Graph-GA baseline), then a finished run beats the Graph-GA control head-to-head, compose a custom objective, bring your own seed molecules, and export lineage — all in-silico" width="820">
 </p>
 
-*A ~35-second tour (in-silico benchmark scores throughout): launch → the analyzer writes a hypothesis each
-generation and the score climbs live (still tracking the Graph-GA baseline mid-run) → a finished run beats the
-strong Graph-GA control on this objective → compose a custom multi-term objective (flagged **exploratory**, walled
-off from the benchmark claim) → bring your own seed molecules (RDKit validates each) → per-candidate quality
-read-out + lineage export. For the trace-level view of one run, see the [Langfuse walkthrough](docs/langfuse-walkthrough.md).*
+*A ~13-second tour (in-silico benchmark scores throughout): resolve a benchmark objective → the analyzer
+writes a hypothesis each generation and the score climbs live, still tracking the Graph-GA baseline mid-run →
+the finished run beats the strong Graph-GA control head-to-head. Focused clips of each capability are under
+their sections below. For the trace-level view of one run, see the [Langfuse walkthrough](docs/langfuse-walkthrough.md).*
 
 <p align="center">
   <img src="docs/assets/run-detail-full.png" alt="A completed CapyChem run: score-vs-oracle-calls curve, top molecules, and the analyzer's per-generation hypotheses" width="620">
@@ -90,6 +89,10 @@ Honest reading of that number:
 | Benchmark goal (bar) | ≥ 6 of 23 → **met** |
 | Full-sweep compute cost | **$18.94** (10k calls × ~21 tasks, under the $20 cap) |
 
+<p align="center">
+  <img src="docs/assets/clip-beat-graph-ga.gif" alt="A finished LLM+analyzer run compared head-to-head against the vanilla Graph-GA control on the same benchmark task: the analyzer run leads by +0.1095 AUC; the Graph-GA side has no analyzer step (in-silico)" width="820">
+</p>
+
 Decisive wins included `troglitazone` (+0.563), `mestranol` (+0.397), and `celecoxib` (+0.344). The full
 per-task verdict — every AUC, the baseline-reproduction gap, and the exclusion rationale — is committed at
 [`docs/04-compare-and-polish/g1-full23-10k-seed42.json`](docs/04-compare-and-polish/g1-full23-10k-seed42.json).
@@ -117,6 +120,14 @@ chemistry background:
   <img src="docs/assets/run-detail-analyzer.png" alt="The analyzer's hypothesis for each generation, with focus/avoid chips" width="560">
 </p>
 
+And the same loop in motion — the model wakes on a cold start, the analyzer writes a hypothesis each
+generation, and the top-10 mean score climbs while still honestly tracking (behind) the Graph-GA baseline
+mid-run:
+
+<p align="center">
+  <img src="docs/assets/clip-live-cockpit.gif" alt="The live cockpit on a running benchmark run: the model wakes, the analyzer writes a hypothesis each generation, and the top-10 mean score climbs — still honestly behind the Graph-GA baseline mid-run (in-silico)" width="820">
+</p>
+
 Every one of these steps is traced. From any run you can click **View trace** to open the full decision tree
 in Langfuse — see the [trace walkthrough](docs/langfuse-walkthrough.md) for a step-by-step read of one run.
 
@@ -136,6 +147,34 @@ closes:
 
 <p align="center">
   <img src="docs/assets/compare.png" alt="Compare view: overlaid AUC curves, side-by-side molecules, and analyzer hypotheses vs. none for the Graph-GA baseline" width="720">
+</p>
+
+### Launch & resolve
+
+Pick a benchmark objective from the catalog, or describe one in plain language — and when nothing in the
+23-task benchmark matches, the launcher **refuses and says why** rather than guessing (that refusal is a
+feature, not a failure):
+
+<p align="center">
+  <img src="docs/assets/clip-launch-resolve.gif" alt="Resolving a benchmark objective from the catalog, then a plain-language objective with no benchmark match being grounded and refused with an explanation (in-silico)" width="820">
+</p>
+
+### Make it your own
+
+Compose a custom multi-term objective (flagged **exploratory**, walled off from the benchmark claim) or bring
+your own seed molecules — RDKit validates every SMILES server-side before the run starts:
+
+<p align="center">
+  <img src="docs/assets/clip-make-it-yours.gif" alt="Composing a custom multi-term objective flagged exploratory, and pasting your own seed molecules which RDKit validates (in-silico)" width="820">
+</p>
+
+### Quality & lineage export
+
+Every candidate carries a quality/trust read-out (Lipinski, Veber, PAINS, Brenk), and the full lineage exports
+to CSV/SDF:
+
+<p align="center">
+  <img src="docs/assets/clip-quality-export.gif" alt="An exploratory run's per-candidate quality read-out and one-click lineage export to CSV/SDF (in-silico)" width="820">
 </p>
 
 ## Architecture
