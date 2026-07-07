@@ -578,3 +578,73 @@ export async function stubWebSocketDrop(page: Page) {
 export async function stabilizeForShot(page: Page) {
   await page.addStyleTag({ content: "header{position:static !important}" });
 }
+
+// A soft coral cursor + click ripple, injected for VIDEO captures only (Playwright
+// records no native cursor). pointer-events:none so it never intercepts a click; on-token
+// coral accent. Re-mounts on every navigation via addInitScript.
+export async function installCursor(page: Page) {
+  await page.addInitScript(() => {
+    const CORAL = "#d97757";
+    function mount() {
+      if (document.getElementById("__demo_cursor")) return;
+      const dot = document.createElement("div");
+      dot.id = "__demo_cursor";
+      Object.assign(dot.style, {
+        position: "fixed",
+        left: "0",
+        top: "0",
+        width: "18px",
+        height: "18px",
+        marginLeft: "-9px",
+        marginTop: "-9px",
+        borderRadius: "50%",
+        border: `2px solid ${CORAL}`,
+        background: "rgba(217,119,87,0.18)",
+        zIndex: "2147483647",
+        pointerEvents: "none",
+        opacity: "0",
+        transition: "opacity 120ms ease, transform 80ms ease",
+      });
+      document.body.appendChild(dot);
+      window.addEventListener(
+        "mousemove",
+        (e) => {
+          dot.style.opacity = "1";
+          dot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        },
+        { passive: true },
+      );
+      window.addEventListener(
+        "mousedown",
+        (e) => {
+          const r = document.createElement("div");
+          Object.assign(r.style, {
+            position: "fixed",
+            left: `${e.clientX}px`,
+            top: `${e.clientY}px`,
+            width: "10px",
+            height: "10px",
+            marginLeft: "-5px",
+            marginTop: "-5px",
+            borderRadius: "50%",
+            border: `2px solid ${CORAL}`,
+            zIndex: "2147483646",
+            pointerEvents: "none",
+            opacity: "0.9",
+            transform: "scale(1)",
+            transition: "transform 500ms ease-out, opacity 500ms ease-out",
+          });
+          document.body.appendChild(r);
+          requestAnimationFrame(() => {
+            r.style.transform = "scale(6)";
+            r.style.opacity = "0";
+          });
+          setTimeout(() => r.remove(), 520);
+        },
+        { passive: true },
+      );
+    }
+    if (document.body) mount();
+    else window.addEventListener("DOMContentLoaded", mount);
+  });
+}
