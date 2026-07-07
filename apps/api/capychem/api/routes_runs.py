@@ -26,7 +26,7 @@ from capychem.db.models import AnalyzerHypothesis, Candidate, Generation, Run, R
 from capychem.mode import derive_mode
 from capychem.objective import Objective
 from capychem.oracle import OracleResult, score_batch_async
-from capychem.run import RunConfig
+from capychem.run import RunConfig, create_run
 from fastapi import APIRouter, HTTPException, Request, Response
 from rdkit import Chem
 from sqlalchemy import select
@@ -155,8 +155,20 @@ async def create_run_endpoint(body: CreateRunRequest, request: Request) -> dict[
             constraints_json=body.constraints_json,
         ),
     )
-    run_id = await registry_of(request).start_run(cfg)
-    return {"run_id": run_id, "status": "running"}
+    # Enqueue only (milestone 08 slice 02): the request handler does not drive
+    # the loop itself — a worker's claim_next_run does, out of band. When the
+    # inline dev/test worker is enabled, register a pending handle + wake it so
+    # a WS/GET that arrives before the claim still finds a live handle (closing
+    # the async gap) and the claim happens promptly rather than on the next
+    # poll tick.
+    sm = sessionmaker_of(request)
+    async with sm() as session:
+        run_id = await create_run(session, cfg, status="queued")
+    registry = registry_of(request)
+    if request.app.state.inline_worker_enabled:
+        registry.register_pending(run_id, cfg)
+        registry.wake()
+    return {"run_id": run_id, "status": "queued"}
 
 
 @router.post("/objective/validate", response_model=ObjectiveValidateResponse)

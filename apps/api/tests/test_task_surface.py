@@ -1,10 +1,9 @@
 """Task-surface validation: jnk3 accepted alongside qed; unknown tasks refused
-(FR-015); launch config (task / mutation_strategy / plateau_window) reaches RunConfig.
-The mapping test stubs RunRegistry.start_run so no real loop runs."""
+(FR-015); launch config (task / mutation_strategy / plateau_window) reaches the
+persisted Run row. The mapping test disables the inline worker (m08-02) so
+POST /runs enqueues without driving a real loop."""
 
 from __future__ import annotations
-
-from typing import Any
 
 import httpx
 import pytest
@@ -37,15 +36,13 @@ def test_schema_accepts_full_pmo_surface() -> None:
 async def test_post_runs_maps_task_strategy_plateau_to_config(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from capychem.api import runner as runner_mod
+    from capychem.db.models import Run
 
-    captured: dict[str, Any] = {}
-
-    async def fake_start(self: Any, cfg: Any) -> int:
-        captured["cfg"] = cfg
-        return 4242
-
-    monkeypatch.setattr(runner_mod.RunRegistry, "start_run", fake_start)
+    # Disable the inline worker (m08-02): this test only checks that the
+    # launch config reaches the persisted Run row, not that the loop runs —
+    # a "jnk3"/"llm" run would otherwise actually get claimed and driven
+    # against real DeepSeek by the background worker.
+    monkeypatch.setenv("CAPYCHEM_INLINE_WORKER", "0")
     async with app.router.lifespan_context(app):
         async with httpx.AsyncClient(
             transport=ASGIWebSocketTransport(app), base_url="http://test"
@@ -53,11 +50,15 @@ async def test_post_runs_maps_task_strategy_plateau_to_config(
             body = {"task": "jnk3", "budget": 50, "mutation_strategy": "llm", "plateau_window": 7}
             r = await c.post("/runs", json=body)
             assert r.status_code == 201
-            assert r.json()["run_id"] == 4242
-    cfg = captured["cfg"]
-    assert cfg.task == "jnk3"
-    assert cfg.mutation_strategy == "llm"
-    assert cfg.plateau_window == 7
+            assert r.json()["status"] == "queued"
+            run_id = r.json()["run_id"]
+            async with app.state.sessionmaker() as session:
+                row = await session.get(Run, run_id)
+    assert row is not None
+    assert row.status == "queued"  # inline worker disabled -> never claimed
+    assert row.task == "jnk3"
+    assert row.mutation_strategy == "llm"
+    assert row.plateau_window == 7
 
 
 async def test_post_runs_rejects_unknown_task() -> None:

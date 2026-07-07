@@ -41,8 +41,16 @@ class RunConfig:
     constraints_json: dict[str, Any] | None = None
 
 
-async def create_run(session: AsyncSession, config: RunConfig) -> int:
-    """Insert a Run row (status='running') and return its id."""
+async def create_run(session: AsyncSession, config: RunConfig, *, status: str = "running") -> int:
+    """Insert a Run row and return its id.
+
+    ``status`` defaults to "running" (the CLI driver and RunRegistry.start_run's
+    single-shot self-claim both drive the run themselves immediately, so there
+    is no queued interval to represent). The producer path (POST /runs,
+    capychem.api.routes_runs.create_run_endpoint) passes status="queued": the
+    row sits in the durable queue until a worker's claim_next_run
+    (capychem.db.queue) picks it up (milestone 08 slice 02).
+    """
     row = Run(
         task=config.task,
         budget=config.budget,
@@ -53,7 +61,7 @@ async def create_run(session: AsyncSession, config: RunConfig) -> int:
         offspring=config.offspring,
         mutation_rate=config.mutation_rate,
         seed=config.seed,
-        status="running",
+        status=status,
         mode=config.mode,
         seed_smiles=config.seed_smiles,
         seed_source=config.seed_source,

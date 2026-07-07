@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "capychem-core",
     "capychem-api",
+    "capychem-runner",
 ]
 
 [tool.uv]
@@ -14,11 +15,12 @@ package = false
 # harness/ is deliberately NOT a member. It pins Python 3.10 + legacy PyTDC and is
 # reached only via subprocess (see packages/core/capychem/oracle.py). Never import it.
 [tool.uv.workspace]
-members = ["packages/core", "apps/api"]
+members = ["packages/core", "apps/api", "apps/runner"]
 
 [tool.uv.sources]
 capychem-core = { workspace = true }
 capychem-api = { workspace = true }
+capychem-runner = { workspace = true }
 
 [dependency-groups]
 dev = [

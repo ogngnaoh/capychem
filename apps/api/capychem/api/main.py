@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -14,14 +16,19 @@ from capychem.api.routes_runs import router as runs_router
 from capychem.api.runner import RunRegistry
 from capychem.api.ws_runs import router as ws_router
 from capychem.db.migrate import run_migrations
-from capychem.db.models import Run
 from capychem.db.session import make_engine, make_sessionmaker
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text, update
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 logger = logging.getLogger(__name__)
+
+# Same-process convenience worker (milestone 08 slice 02), on by default for
+# dev/test. Production (S6 compose) sets this "0" and runs a separate
+# `apps/runner` process as the only claimer, so the API process never drives a
+# loop itself.
+_INLINE_WORKER_ENV = "CAPYCHEM_INLINE_WORKER"
 
 
 @asynccontextmanager
@@ -34,20 +41,30 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.engine = engine
     app.state.sessionmaker = make_sessionmaker(engine)
     app.state.registry = RunRegistry(app.state.sessionmaker)
-    # Sweep rows stranded `running` by a previous process: a crash/restart skips
-    # finalize_run, so without this those rows claim "running" forever. Landed as
-    # "paused" (06-07), not "stopped" — a crashed run is resumable, its persisted
-    # generations replay via reconstruct_state. No auto-resume here: an operator
-    # must explicitly POST /runs/{id}/resume.
-    async with app.state.sessionmaker() as session:
-        res = await session.execute(
-            update(Run).where(Run.status == "running").values(status="paused")
+    inline_worker_enabled = os.environ.get(_INLINE_WORKER_ENV, "1") != "0"
+    app.state.inline_worker_enabled = inline_worker_enabled
+    worker_task: asyncio.Task[None] | None = None
+    if inline_worker_enabled:
+        # Claims + drives durable-queue rows via the IDENTICAL claim/lease/drive
+        # path a standalone apps/runner process uses (RunRegistry.run_worker_loop).
+        # There is no separate boot-time "stranded running" sweep: a row left
+        # "running" by a crashed process still carries an (eventually expiring)
+        # lease, and claim_next_run reclaims it on its own once that lease
+        # expires — self-healing, no sweep needed.
+        worker_task = asyncio.create_task(app.state.registry.run_worker_loop())
+    else:
+        logger.info(
+            "inline worker disabled (%s=0); a separate apps/runner process must "
+            "claim queued runs",
+            _INLINE_WORKER_ENV,
         )
-        await session.commit()
-        logger.info("paused %d stranded running row(s)", res.rowcount)
     try:
         yield
     finally:
+        if worker_task is not None:
+            worker_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await worker_task
         # Shut down driver tasks BEFORE disposing the engine: disposal must not
         # race in-flight drivers still holding connections.
         await app.state.registry.shutdown()

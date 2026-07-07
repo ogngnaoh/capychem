@@ -23,6 +23,9 @@ class Base(DeclarativeBase):
 
 class Run(Base):
     __tablename__ = "runs"
+    # Supports the durable-queue claim query (m08-02): "queued" rows, or "running"
+    # rows whose lease has expired, ordered oldest-first by claim_next_run.
+    __table_args__ = (Index("ix_run_status_lease", "status", "lease_expires_at"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     task: Mapped[str] = mapped_column(String(64))
@@ -56,6 +59,14 @@ class Run(Base):
     # Reproducibility manifest (07-06, OD-5): git SHA + model id + PyTDC pin + config +
     # trace URL, populated at finalize. Citable provenance for a run's result.
     manifest_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None)
+    # Durable-queue lease (m08-02): the worker id + lease expiry a claimer holds
+    # while driving this run, renewed on a heartbeat. All three are None for a
+    # freshly-queued or terminal row. capychem.db.queue.claim_next_run treats a
+    # "running" row whose lease_expires_at has passed as abandoned (its worker
+    # presumably crashed) and reclaims it.
+    lease_owner: Mapped[str | None] = mapped_column(String(128), default=None)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(default=None)
+    heartbeat_at: Mapped[datetime | None] = mapped_column(default=None)
 
 
 class Generation(Base):

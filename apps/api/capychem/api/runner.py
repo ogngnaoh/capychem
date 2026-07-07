@@ -9,9 +9,13 @@ cancel Event is set. The loop code itself is never modified — we only observe 
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
+import os
+import uuid
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
 from capychem import cost, proposer
@@ -22,7 +26,8 @@ from capychem.api.schemas import (
     RunCompleteEvent,
     TopMolecule,
 )
-from capychem.db.models import Run
+from capychem.db.models import Generation, Run
+from capychem.db.queue import claim_next_run, release_run, renew_lease
 from capychem.loop import trace
 from capychem.loop.graph import build_graph
 from capychem.loop.logic import build_summary, stop_reason
@@ -30,9 +35,18 @@ from capychem.loop.state import LoopState
 from capychem.oracle import HarnessError, pytdc_version
 from capychem.resume import reconstruct_state
 from capychem.run import RunConfig, build_manifest, create_run, finalize_run
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 logger = logging.getLogger(__name__)
+
+# Durable-queue lease duration (milestone 08 slice 02): how long a claimed run's
+# lease is held before it's considered abandoned. Overridable so a standalone
+# apps/runner deployment can tune it independently of this default. A lease is
+# renewed at 1/3 of this interval, giving 2 missed heartbeats of slack before
+# another worker can reclaim a still-live run.
+LEASE_TTL_S = int(os.environ.get("CAPYCHEM_LEASE_TTL_S", "60"))
+_LEASE_RENEW_INTERVAL_S = LEASE_TTL_S / 3
 
 
 def _git_sha() -> str | None:
@@ -76,6 +90,52 @@ def _snapshot_from_state(run_id: int, cfg: RunConfig, state: dict[str, Any]) -> 
     }
 
 
+def _local_lease_fields(worker_id: str, lease_ttl_s: int) -> dict[str, Any]:
+    """lease_owner/lease_expires_at/heartbeat_at computed from THIS process's
+    wall clock, for the single-process self-claim paths (start_run,
+    resume_run) — as opposed to capychem.db.queue's DB-clock (func.now())
+    arithmetic, which is what the real multi-worker claim/renew/release
+    protocol needs to stay skew-proof across hosts.
+
+    A single process claiming, renewing, and releasing its OWN run never
+    contends with another host's clock, so the simpler application-clock
+    value is safe here — and, unlike a SQL-side ``func.now() + interval``
+    expression, it round-trips correctly through SQLite too (some tests drive
+    RunRegistry against an in-memory sqlite DB with a stubbed graph; SQLite
+    has no native interval arithmetic, so a server-side expression stores a
+    non-datetime value there). Naive UTC, matching every other datetime
+    column on Run (started_at/ended_at), which are also naive.
+    """
+    now = datetime.now(UTC).replace(tzinfo=None)
+    return {
+        "lease_owner": worker_id,
+        "lease_expires_at": now + timedelta(seconds=lease_ttl_s),
+        "heartbeat_at": now,
+    }
+
+
+def _config_from_row(row: Run) -> RunConfig:
+    """Reconstruct a RunConfig from a persisted Run row -- the shape a claimed
+    run needs when this process didn't already know it via a pending handle
+    (a crash-reclaim of a DIFFERENT worker's run, or a manual /resume)."""
+    return RunConfig(
+        task=row.task,
+        budget=row.budget,
+        seed=row.seed,
+        pop_size=row.pop_size,
+        offspring=row.offspring,
+        mutation_rate=row.mutation_rate,
+        plateau_window=row.plateau_window,
+        max_generations=row.max_generations,
+        mutation_strategy=row.mutation_strategy,
+        mode=row.mode,  # a reclaimed/resumed run keeps its mode (baseline gate stays correct)
+        seed_smiles=row.seed_smiles,  # provenance only; gen-0 is bypassed once gen_index > 0
+        seed_source=row.seed_source,
+        objective_json=row.objective_json,
+        constraints_json=row.constraints_json,
+    )
+
+
 @dataclass
 class RunHandle:
     run_id: int
@@ -103,14 +163,121 @@ class RunRegistry:
         # run_ids with a resume in flight — guards the check-then-flip against a
         # concurrent double-resume (added synchronously before any await).
         self._resuming: set[int] = set()
+        # Identifies THIS registry's claims in the durable queue (m08-02) —
+        # distinct per RunRegistry instance, so two registries against the same
+        # DB (two API processes, or a standalone apps/runner) never collide.
+        self.worker_id = f"registry-{uuid.uuid4().hex[:8]}"
+        # Set by create_run_endpoint right after enqueuing, to make
+        # run_worker_loop attempt a claim immediately instead of waiting out its
+        # poll interval.
+        self._wake: asyncio.Event = asyncio.Event()
 
     async def start_run(self, config: RunConfig) -> int:
+        """Insert a Run row and immediately self-claim + drive it in THIS
+        process — a convenience for direct/CLI-style callers (and the test
+        suite) that want a run driven without going through the durable queue.
+        Sets the SAME lease columns claim_next_run sets, but via a targeted
+        single-row claim (not the generic scan), so it can never accidentally
+        pick up an unrelated queued row sitting in a shared dev DB.
+
+        The producer HTTP path (routes_runs.create_run_endpoint) does NOT call
+        this — it only enqueues (status="queued"); a worker's claim_next_run /
+        run_worker_loop is what actually drives the row."""
         async with self._sm() as session:
-            run_id = await create_run(session, config)
-        handle = RunHandle(run_id=run_id, config=config)
+            run_id = await create_run(session, config)  # status="running" (default)
+            await session.execute(
+                update(Run)
+                .where(Run.id == run_id)
+                .values(**_local_lease_fields(self.worker_id, LEASE_TTL_S))
+            )
+            await session.commit()
+        handle = self._runs.get(run_id) or RunHandle(run_id=run_id, config=config)
         self._runs[run_id] = handle
-        handle.task = asyncio.create_task(self._drive(handle))
+        handle.task = asyncio.create_task(self._drive_with_lease(handle))
         return run_id
+
+    def register_pending(self, run_id: int, config: RunConfig) -> RunHandle:
+        """Pre-register a handle for a just-enqueued run, so the WS/snapshot
+        layer treats it as live (``is_live`` True) immediately — before any
+        worker has claimed it. This closes the async gap between "POST /runs
+        enqueues" and "a worker claims + starts driving it": a subscriber that
+        connects into that gap still attaches to the SAME handle object the
+        eventual driver broadcasts through, so it sees every event regardless
+        of exactly when the claim happens. Idempotent: returns the existing
+        handle if this run_id is already registered."""
+        handle = self._runs.get(run_id)
+        if handle is None:
+            handle = RunHandle(run_id=run_id, config=config)
+            self._runs[run_id] = handle
+        return handle
+
+    def wake(self) -> None:
+        """Nudge run_worker_loop to attempt a claim now rather than waiting
+        out its poll interval. Called by create_run_endpoint right after
+        enqueuing (when the inline worker is enabled)."""
+        self._wake.set()
+
+    async def claim_and_drive_once(self) -> int | None:
+        """Claim exactly one durable-queue-eligible run (a fresh "queued" row,
+        or an abandoned "running" row whose lease expired) and drive it to
+        completion in this process. Returns the claimed run_id, or None if
+        nothing was claimable right now.
+
+        This is THE shared claim/lease/drive entry point: apps/runner's
+        standalone worker process and the API's inline dev/test worker
+        (run_worker_loop, called from both) reach the loop through here.
+
+        Reuses a pending handle's config (attached via register_pending) when
+        this process already knows about the run, so the producer's exact
+        RunConfig survives without a lossy DB round-trip; otherwise (a
+        crash-reclaim of a DIFFERENT worker's run, or rediscovering a stray
+        queued row after a restart) reconstructs RunConfig from the persisted
+        row. A run with existing Generation rows (a reclaim mid-flight)
+        resumes from reconstruct_state's replayed progress instead of a fresh
+        gen 0 — the SAME replay path a manual /resume uses (G6)."""
+        async with self._sm() as session:
+            run_id = await claim_next_run(
+                session, worker_id=self.worker_id, lease_ttl_s=LEASE_TTL_S
+            )
+            if run_id is None:
+                return None
+            handle = self._runs.get(run_id)
+            if handle is not None:
+                cfg = handle.config
+            else:
+                row = await session.get(Run, run_id)
+                assert row is not None  # just claimed it inside this same transaction
+                cfg = _config_from_row(row)
+                handle = RunHandle(run_id=run_id, config=cfg)
+                self._runs[run_id] = handle
+            has_progress = (
+                await session.scalar(
+                    select(Generation.id).where(Generation.run_id == run_id).limit(1)
+                )
+            ) is not None
+            progress = await reconstruct_state(session, run_id) if has_progress else None
+        handle.task = asyncio.create_task(self._drive_with_lease(handle, progress=progress))
+        return run_id
+
+    async def run_worker_loop(self, *, poll_interval_s: float = 2.0) -> None:
+        """Poll the durable queue forever: drain every currently claimable run,
+        then wait for either the poll interval or a producer's wake() signal,
+        whichever comes first. The SAME loop apps/runner's standalone process
+        (capychem_runner) and the API's inline dev/test worker (main.py
+        lifespan, gated by CAPYCHEM_INLINE_WORKER) run — one implementation,
+        not two parallel copies. Runs until its task is cancelled; a single
+        failed claim attempt is logged and does not kill the loop."""
+        while True:
+            try:
+                while await self.claim_and_drive_once() is not None:
+                    pass
+            except Exception:
+                logger.exception("worker %s: claim attempt failed", self.worker_id)
+            try:
+                await asyncio.wait_for(self._wake.wait(), timeout=poll_interval_s)
+            except TimeoutError:
+                pass
+            self._wake.clear()
 
     async def resume_run(self, run_id: int) -> str:
         """Continue a paused run (06-07) from its persisted progress — the SAME
@@ -135,22 +302,7 @@ class RunRegistry:
                 if row is None or row.status != "paused":
                     raise ValueError(f"Run {run_id} is not resumable")
                 progress = await reconstruct_state(session, run_id)
-                cfg = RunConfig(
-                    task=row.task,
-                    budget=row.budget,
-                    seed=row.seed,
-                    pop_size=row.pop_size,
-                    offspring=row.offspring,
-                    mutation_rate=row.mutation_rate,
-                    plateau_window=row.plateau_window,
-                    max_generations=row.max_generations,
-                    mutation_strategy=row.mutation_strategy,
-                    mode=row.mode,  # a resumed run keeps its mode (baseline gate stays correct)
-                    seed_smiles=row.seed_smiles,  # provenance only; gen-0 is bypassed on resume
-                    seed_source=row.seed_source,
-                    objective_json=row.objective_json,  # a resumed run keeps its objective
-                    constraints_json=row.constraints_json,
-                )
+                cfg = _config_from_row(row)
                 # Already-terminal guard: a run swept to "paused" after a crash in
                 # the window between its last generation's persist and finalize may
                 # have ALREADY satisfied a stop condition. Finalize it with that
@@ -179,6 +331,14 @@ class RunRegistry:
                     )
                 else:
                     row.status = "running"
+                    # Set the SAME lease columns start_run/claim_next_run set
+                    # (m08-02): a resumed run must also be reclaimable if this
+                    # process dies mid-drive, or it would be stranded "running"
+                    # forever now that the boot-time blanket sweep is gone (see
+                    # main.py).
+                    lease_fields = _local_lease_fields(self.worker_id, LEASE_TTL_S)
+                    for field_name, value in lease_fields.items():
+                        setattr(row, field_name, value)
                     await session.commit()
             if terminal_reason is not None:
                 # Finalized above without driving. Register a handle carrying the
@@ -193,7 +353,7 @@ class RunRegistry:
                 return terminal_reason
             handle = RunHandle(run_id=run_id, config=cfg)
             self._runs[run_id] = handle
-            handle.task = asyncio.create_task(self._drive(handle, progress=progress))
+            handle.task = asyncio.create_task(self._drive_with_lease(handle, progress=progress))
             return "running"
         finally:
             # Registered above: subsequent resumes now hit the live-task check.
@@ -248,6 +408,46 @@ class RunRegistry:
         for t in tasks:
             t.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def _renew_lease_loop(self, run_id: int) -> None:
+        """Extend this worker's lease on `run_id` on a fixed interval, forever
+        — cancelled by _drive_with_lease once _drive returns or raises."""
+        while True:
+            await asyncio.sleep(_LEASE_RENEW_INTERVAL_S)
+            async with self._sm() as session:
+                await renew_lease(session, run_id, self.worker_id, LEASE_TTL_S)
+
+    async def _drive_with_lease(
+        self, handle: RunHandle, progress: dict[str, Any] | None = None
+    ) -> None:
+        """Wrap _drive with the durable-queue lease protocol (m08-02): renew
+        the lease on a heartbeat while driving, then release it once _drive
+        reaches a terminal state.
+
+        Deliberately does NOT release the lease if _drive is interrupted by
+        cancellation (a graceful process shutdown — main.py's lifespan cancels
+        every handle.task before disposing the engine): _drive's own
+        try/except only reaches finalize_run on its happy/fault paths, never
+        on CancelledError, so an interrupted run's row is still "running", not
+        terminal. Releasing the lease here would set lease_expires_at to NULL,
+        which can never satisfy claim_next_run's ``< now()`` comparison —
+        stranding the row unclaimable forever. Leaving the (unexpired) lease
+        in place instead lets it time out naturally, after which the normal
+        reclaim path picks the run back up and resumes it via
+        reconstruct_state — no separate boot-time sweep required.
+        """
+        renew_task = asyncio.create_task(self._renew_lease_loop(handle.run_id))
+        try:
+            await self._drive(handle, progress=progress)
+        finally:
+            renew_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await renew_task
+        # Reached only if _drive returned normally (see the cancellation note
+        # above) — by construction it has already finalized the row to a
+        # terminal status before returning.
+        async with self._sm() as session:
+            await release_run(session, handle.run_id)
 
     async def _drive(self, handle: RunHandle, progress: dict[str, Any] | None = None) -> None:
         cfg = handle.config

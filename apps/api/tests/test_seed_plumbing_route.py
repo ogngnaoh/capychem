@@ -1,33 +1,34 @@
 """Slice 07-02: the /runs boundary validates operator seed SMILES (a client can
 POST directly, so this validation is authoritative — not the intent preview) and
 a custom seed forces mode=exploratory without touching the integer RNG seed.
+
+POST /runs only enqueues (m08-02): create_run_endpoint persists the Run row
+itself rather than delegating to the registry, so these tests read the row
+back from a real (in-memory sqlite) session instead of stubbing
+RunRegistry.start_run to capture an in-memory RunConfig.
 """
 
 from __future__ import annotations
 
 import httpx
 from capychem.api.routes_runs import router
-from capychem.run import RunConfig
+from capychem.db.models import Base, Run
 from fastapi import FastAPI
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 
-class _CaptureRegistry:
-    """Records the RunConfig create_run_endpoint builds, without driving a loop."""
-
-    def __init__(self) -> None:
-        self.cfg: RunConfig | None = None
-
-    async def start_run(self, cfg: RunConfig) -> int:
-        self.cfg = cfg
-        return 123
-
-
-def _app() -> tuple[FastAPI, _CaptureRegistry]:
+async def _app() -> tuple[FastAPI, async_sessionmaker[AsyncSession]]:
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    sm = async_sessionmaker(engine, expire_on_commit=False)
     app = FastAPI()
     app.include_router(router)
-    reg = _CaptureRegistry()
-    app.state.registry = reg
-    return app, reg
+    app.state.sessionmaker = sm
+    app.state.registry = None  # inline_worker_enabled=False below -> never touched
+    app.state.inline_worker_enabled = False
+    return app, sm
 
 
 def _client(app: FastAPI) -> httpx.AsyncClient:
@@ -38,44 +39,55 @@ _BODY = {"task": "qed", "budget": 40, "seed": 42, "pop_size": 20, "offspring": 1
 
 
 async def test_custom_seed_is_exploratory_custom_and_preserves_rng_seed() -> None:
-    app, reg = _app()
+    app, sm = await _app()
     async with _client(app) as c:
         r = await c.post("/runs", json={**_BODY, "seed_smiles": ["CCO", "CCN"]})
         assert r.status_code == 201
-    assert reg.cfg is not None
-    assert reg.cfg.seed_smiles == ["CCO", "CCN"]
-    assert reg.cfg.seed_source == "custom"
-    assert reg.cfg.mode == "exploratory"
-    assert reg.cfg.seed == 42  # the integer RNG seed is untouched (G6)
+        run_id = r.json()["run_id"]
+    async with sm() as s:
+        row = await s.get(Run, run_id)
+    assert row is not None
+    assert row.seed_smiles == ["CCO", "CCN"]
+    assert row.seed_source == "custom"
+    assert row.mode == "exploratory"
+    assert row.seed == 42  # the integer RNG seed is untouched (G6)
 
 
 async def test_no_seed_is_benchmark_default() -> None:
-    app, reg = _app()
+    app, sm = await _app()
     async with _client(app) as c:
         r = await c.post("/runs", json=_BODY)
         assert r.status_code == 201
-    assert reg.cfg is not None
-    assert reg.cfg.seed_smiles is None
-    assert reg.cfg.seed_source == "default"
-    assert reg.cfg.mode == "benchmark"
+        run_id = r.json()["run_id"]
+    async with sm() as s:
+        row = await s.get(Run, run_id)
+    assert row is not None
+    assert row.seed_smiles is None
+    assert row.seed_source == "default"
+    assert row.mode == "benchmark"
 
 
 async def test_empty_seed_list_stays_benchmark() -> None:
-    app, reg = _app()
+    app, sm = await _app()
     async with _client(app) as c:
         r = await c.post("/runs", json={**_BODY, "seed_smiles": []})
         assert r.status_code == 201
-    assert reg.cfg is not None
-    assert reg.cfg.mode == "benchmark"  # [] is "no custom input" (derive_mode)
-    assert reg.cfg.seed_source == "default"
+        run_id = r.json()["run_id"]
+    async with sm() as s:
+        row = await s.get(Run, run_id)
+    assert row is not None
+    assert row.mode == "benchmark"  # [] is "no custom input" (derive_mode)
+    assert row.seed_source == "default"
 
 
 async def test_invalid_seed_smiles_rejected_at_boundary() -> None:
-    app, reg = _app()
+    app, sm = await _app()
     async with _client(app) as c:
         r = await c.post("/runs", json={**_BODY, "seed_smiles": ["CCO", "not-a-smiles"]})
         assert r.status_code == 422
-    assert reg.cfg is None  # never reached the registry
+    async with sm() as s:
+        rows = (await s.execute(select(Run))).scalars().all()
+    assert rows == []  # never reached create_run
 
 
 async def test_seeded_run_reaches_gen0_population_end_to_end() -> None:
