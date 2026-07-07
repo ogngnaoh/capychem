@@ -3,7 +3,6 @@ silently fall back to the stub when the key lives only in .env.local (a fresh-fo
 footgun; the API lifespan and capychem-run already do this)."""
 
 import pytest
-
 from capychem.eval import cli
 
 
