@@ -70,37 +70,36 @@ uses to compare sample-efficient optimizers. The metric is **AUC of the top-10 m
 under a **10,000-oracle-call budget** — it rewards getting good *early*, not just eventually. The baseline is
 **vanilla Graph-GA**, a strong classical genetic algorithm (not a trivial one).
 
-**With its analyzer loop, CapyChem beat or matched vanilla Graph-GA on all 21 reproducible PMO tasks
-(single seed, 10k-call budget) — by a decisive margin (~0.1 AUC or more) on 9 of them.** The bar for this
-project's benchmark goal was ≥ 6 of 23; it cleared that at 21.
+**CapyChem beats or matches Graph-GA on all 21 comparable PMO tasks · decisive on 9 · 2 of 23 excluded for cause (defective oracles, not losses) · bar >=6/23.**
 
-Honest reading of that number:
-
-- **Denominator is 23.** **2 tasks are excluded for cause** — not because CapyChem lost, but because their
-  oracle is defective in the pinned legacy benchmark environment:
-  - `sitagliptin_mpo` — the oracle emits scores outside `[0, 1]`, which the metric can't compare.
-  - `valsartan_smarts` — the Graph-GA control scores **0.757** where the published PMO value is **0.000**; the
-    pinned oracle rewards a molecule pocket the canonical task doesn't, so the task isn't faithfully reproduced
-    here. (These were caught by a baseline-reproduction check, and excluded, not silently kept.)
-- **Single seed.** One seed per task, not an averaged multi-seed study.
-- **Thin margins on 4 tasks** (within single-seed noise, `< 0.03` AUC): `qed` (+0.005), `deco_hop` (+0.009),
-  `zaleplon_mpo` (+0.018), `drd2` (+0.024). We report them as ties, not wins.
-- **No SOTA claim.** State-of-the-art on PMO is a non-LLM method (Genetic GFN). The value here is the
-  **closed analysis loop, flexibility, and explainability** under a hard oracle budget — not topping a
-  leaderboard.
+> **Caveats, in one place.**
+> - **Comparable set is 21 of 23.** `sitagliptin_mpo` and `valsartan_smarts` are excluded for cause, not
+>   counted as losses: the former's oracle emits scores outside `[0, 1]` (incomparable by the metric); the
+>   latter's Graph-GA control scores **0.757** where the published PMO value is **0.000** — the pinned legacy
+>   oracle isn't faithfully reproducing that task here. Both were caught by a baseline-reproduction check and
+>   excluded, not silently kept.
+> - **Single seed per task**, not an averaged multi-seed study.
+> - Of the 21 comparable tasks, **9 are decisive** (~0.1 AUC or more); **4 are within single-seed noise**
+>   (< 0.03 AUC) and reported as ties, not wins: `qed` (+0.005), `deco_hop` (+0.009), `zaleplon_mpo` (+0.018),
+>   `drd2` (+0.024).
+> - **No SOTA claim.** State-of-the-art on PMO is a non-LLM method (Genetic GFN). The value here is the
+>   closed analysis loop, flexibility, and explainability under a hard oracle budget — not topping a
+>   leaderboard.
 
 | | |
 |---|---|
-| Beat-or-matched (comparable tasks) | **21 / 21** |
+| Comparable PMO tasks (of 23) | **21** |
 | Decisive wins (~0.1 AUC or more) | **9** |
-| Ties (< 0.03 AUC) | 4 |
 | Excluded for cause (oracle defects) | 2 of 23 |
 | Benchmark goal (bar) | ≥ 6 of 23 → **met** |
 | Full-sweep compute cost | **$18.94** (10k calls × ~21 tasks, under the $20 cap) |
 
+<details>
+<summary>▶ Watch: a finished LLM+analyzer run beats a vanilla Graph-GA run head-to-head (GIF)</summary>
 <p align="center">
   <img src="docs/assets/clip-beat-graph-ga.gif" alt="A finished LLM+analyzer run compared head-to-head against the vanilla Graph-GA control on the same benchmark task: the analyzer run leads by +0.1095 AUC; the Graph-GA side has no analyzer step (in-silico)" width="820">
 </p>
+</details>
 
 Decisive wins included `troglitazone` (+0.563), `mestranol` (+0.397), and `celecoxib` (+0.344). The full
 per-task verdict — every AUC, the baseline-reproduction gap, and the exclusion rationale — is committed at
@@ -133,9 +132,12 @@ And the same loop in motion — the model wakes on a cold start, the analyzer wr
 generation, and the top-10 mean score climbs while still honestly tracking (behind) the Graph-GA baseline
 mid-run:
 
+<details>
+<summary>▶ Watch: the loop live — cold start, per-generation hypotheses, climbing score (GIF)</summary>
 <p align="center">
   <img src="docs/assets/clip-live-cockpit.gif" alt="The live cockpit on a running benchmark run: the model wakes, the analyzer writes a hypothesis each generation, and the top-10 mean score climbs — still honestly behind the Graph-GA baseline mid-run (in-silico)" width="820">
 </p>
+</details>
 
 Every one of these steps is traced. From any run you can click **View trace** to open the full decision tree
 in Langfuse — see the [trace walkthrough](docs/langfuse-walkthrough.md) for a step-by-step read of one run.
@@ -164,27 +166,36 @@ Pick a benchmark objective from the catalog, or describe one in plain language �
 23-task benchmark matches, the launcher **refuses and says why** rather than guessing (that refusal is a
 feature, not a failure):
 
+<details>
+<summary>▶ Watch: resolving a benchmark objective, and a refused plain-language mismatch (GIF)</summary>
 <p align="center">
   <img src="docs/assets/clip-launch-resolve.gif" alt="Resolving a benchmark objective from the catalog, then a plain-language objective with no benchmark match being grounded and refused with an explanation (in-silico)" width="820">
 </p>
+</details>
 
 ### Make it your own
 
 Compose a custom multi-term objective (flagged **exploratory**, walled off from the benchmark claim) or bring
 your own seed molecules — RDKit validates every SMILES server-side before the run starts:
 
+<details>
+<summary>▶ Watch: composing a custom objective and pasting your own seed molecules (GIF)</summary>
 <p align="center">
   <img src="docs/assets/clip-make-it-yours.gif" alt="Composing a custom multi-term objective flagged exploratory, and pasting your own seed molecules which RDKit validates (in-silico)" width="820">
 </p>
+</details>
 
 ### Quality & lineage export
 
 Every candidate carries a quality/trust read-out (Lipinski, Veber, PAINS, Brenk), and the full lineage exports
 to CSV/SDF:
 
+<details>
+<summary>▶ Watch: per-candidate quality read-out and one-click lineage export (GIF)</summary>
 <p align="center">
   <img src="docs/assets/clip-quality-export.gif" alt="An exploratory run's per-candidate quality read-out and one-click lineage export to CSV/SDF (in-silico)" width="820">
 </p>
+</details>
 
 ## Architecture
 
@@ -259,9 +270,10 @@ Copy `.env.example` → `.env.local` and adjust (`make setup` does this for you)
 deterministic network-free stub; set `CAPYCHEM_PROPOSER_BACKEND=direct` + `DEEPSEEK_API_KEY` to use the real
 DeepSeek model. There is **no auth or hosting** — this is a single-user tool you fork and run locally.
 
-> Running the test suite? `uv run pytest` ("Test all") needs a running Postgres **and** the harness venv —
-> some API tests error rather than skip without them. For the full dev loop, the CI checks, and the project
-> invariants, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+> Running the test suite? `uv run pytest` ("Test all") is green on a bare clone — the `apps/api` integration
+> tests **skip** (not error) when Postgres or the harness venv isn't reachable, and run + pass once both are
+> present. For the full dev loop, the CI checks, and the project invariants, see
+> [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Repository map
 
