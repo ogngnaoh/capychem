@@ -29,10 +29,10 @@ Convert CapyChem's single-process, in-memory run execution into a durable Postgr
 1. **01 green-on-clone + credibility** — `apps/api/tests/conftest.py` skip-guards; FIGURE-CANON results framing; GIF trim. *(S, independent)* — **shipped** (7cd100e)
 2. **02 durable queue + out-of-process worker** — lease/heartbeat/`SKIP LOCKED` claim/reclaim; `POST /runs` enqueues; new `apps/runner/` drives; DB is source of truth. *(L — the core)* — **shipped** (66e5764) · HARD GATE reviewed ✓
 2b. **02b lease fencing** (operator-approved at the S2 gate) — `UNIQUE(run_id, index)` structural backstop; `finalize_run`/`release_run` owner-fenced; `renew_lease` returns rowcount>0 → stop-on-lost-lease. *(S)* — **shipped** (a3f253d)
-3. **03 cross-process live events** — `LISTEN/NOTIFY`; WS subscribes; DB-snapshot path becomes normal. *(M, depends S2)* — **planned**
-4. **04 persistent shared oracle cache** — table + canonicalization + version invalidation + budget integration; **G1/eval path untouched**. *(M, depends S2)* — **planned**
-5. **05 backpressure + REST gaps** — concurrency caps, bounded pools, pagination, idempotency. *(M, depends S2)* — **planned**
-6. **06 ops** — Dockerfile(s) + compose + `/readyz` + `pool_pre_ping`. *(S–M, depends S2–S5)* — **planned** · **HARD GATE after (before S7)**
+3. **03 cross-process live events** — `LISTEN/NOTIFY` (one `run_events` channel, pointer payload); WS subscribes; DB-snapshot path becomes normal. *(M)* — **shipped** (9b73a1c)
+4. **04 persistent shared oracle cache** — table + canonicalization + version invalidation; **exploratory-mode-only** so G1/eval path byte-identical. *(M)* — **shipped** (b1e83da) · known edge: exploratory cache-hit budget diverges on resume (documented, deferred — see log.md)
+5. **05 backpressure + REST gaps** — concurrency cap, bounded pools, backward-compat keyset pagination, TOCTOU-safe idempotency. *(M)* — **shipped** (6762185)
+6. **06 ops** — multi-target Dockerfile + compose + `/readyz` + `pool_pre_ping`. *(S–M)* — **shipped** (907189d) · HARD GATE reviewed ✓
 7. **07 reframe & docs** — README lead-with-backend + ELI5; `docs/architecture.md` + hard-problems narrative. *(S–M, depends all)* — **planned**
 8. **08 docking on the worker pool** — STRETCH, uncommitted, DO NOT BUILD without operator re-approval.
 
