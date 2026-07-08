@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 from capychem import proposer
 from capychem.proposer import (
@@ -294,3 +296,36 @@ async def test_direct_backend_missing_key_raises(monkeypatch):
     monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
     with pytest.raises(ProposerError, match="DEEPSEEK_API_KEY"):
         await propose_batch_async("p", 1)
+
+
+def test_proposer_concurrency_reads_env(monkeypatch):
+    monkeypatch.setenv("CAPYCHEM_PROPOSER_CONCURRENCY", "3")
+    assert proposer.proposer_concurrency() == 3
+    monkeypatch.delenv("CAPYCHEM_PROPOSER_CONCURRENCY", raising=False)
+    assert proposer.proposer_concurrency() == 8  # the documented default
+
+
+async def test_direct_backend_bounds_concurrent_requests(monkeypatch):
+    """A large batch must never fan out more than proposer_concurrency() DeepSeek
+    requests at once (milestone 08 slice 05 backpressure)."""
+    monkeypatch.setenv("CAPYCHEM_PROPOSER_BACKEND", "direct")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
+    monkeypatch.setenv("CAPYCHEM_PROPOSER_CONCURRENCY", "2")
+
+    lock = asyncio.Lock()
+    state = {"active": 0, "peak": 0}
+
+    async def slow_row(prompt, *, temperature, seed, api_key):
+        async with lock:
+            state["active"] += 1
+            state["peak"] = max(state["peak"], state["active"])
+        await asyncio.sleep(0.05)
+        async with lock:
+            state["active"] -= 1
+        return {"raw": f"CCO{seed}", "tokens_in": 1, "tokens_out": 1}
+
+    monkeypatch.setattr(proposer, "_one_proposal_row", slow_row)
+    out = await propose_batch_async("prompt", 8, seed=0)
+    assert len(out) == 8
+    assert state["peak"] <= 2
+    assert state["peak"] > 0

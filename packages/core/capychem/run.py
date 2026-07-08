@@ -42,7 +42,13 @@ class RunConfig:
     constraints_json: dict[str, Any] | None = None
 
 
-async def create_run(session: AsyncSession, config: RunConfig, *, status: str = "running") -> int:
+async def create_run(
+    session: AsyncSession,
+    config: RunConfig,
+    *,
+    status: str = "running",
+    idempotency_key: str | None = None,
+) -> int:
     """Insert a Run row and return its id.
 
     ``status`` defaults to "running" (the CLI driver and RunRegistry.start_run's
@@ -51,6 +57,11 @@ async def create_run(session: AsyncSession, config: RunConfig, *, status: str = 
     capychem.api.routes_runs.create_run_endpoint) passes status="queued": the
     row sits in the durable queue until a worker's claim_next_run
     (capychem.db.queue) picks it up (milestone 08 slice 02).
+
+    ``idempotency_key`` (m08-05) is None for every caller except POST /runs's
+    Idempotency-Key header path; the unique constraint on the column is what
+    makes a second insert of the SAME key raise IntegrityError (the caller's
+    race-loser path), not this function.
     """
     row = Run(
         task=config.task,
@@ -68,6 +79,7 @@ async def create_run(session: AsyncSession, config: RunConfig, *, status: str = 
         seed_source=config.seed_source,
         objective_json=config.objective_json,
         constraints_json=config.constraints_json,
+        idempotency_key=idempotency_key,
     )
     session.add(row)
     await session.commit()

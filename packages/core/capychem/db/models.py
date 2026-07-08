@@ -67,6 +67,12 @@ class Run(Base):
     lease_owner: Mapped[str | None] = mapped_column(String(128), default=None)
     lease_expires_at: Mapped[datetime | None] = mapped_column(default=None)
     heartbeat_at: Mapped[datetime | None] = mapped_column(default=None)
+    # Idempotency key (m08-05, SPEC §6.3 POST /runs): a client-supplied
+    # ``Idempotency-Key`` header, unique when present. A retried POST with the
+    # SAME key returns the existing row instead of minting a second Run; None
+    # (no key given) is the unchanged prior behavior -- Postgres allows any
+    # number of NULLs under a unique constraint.
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), default=None, unique=True)
 
 
 class Generation(Base):

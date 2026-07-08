@@ -8,7 +8,13 @@ path is untouched; descriptor terms score locally for free.
 
 from __future__ import annotations
 
+import asyncio
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
+from capychem import objective as objective_mod
 from capychem.objective import Objective, ObjectiveSpec, apply_transform
 from capychem.oracle import OracleResult
 
@@ -112,3 +118,44 @@ def test_objective_json_round_trips() -> None:
         "aggregator": "weighted_product",
     }
     assert Objective.from_json(spec_json).to_json() == spec_json
+
+
+# --- descriptor-oracle scoring routes through a bounded executor (m08-05) -----
+
+
+async def test_descriptor_term_uses_bounded_executor(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A burst of concurrent evaluate_async calls scoring a descriptor term must
+    never exceed the injected executor's max_workers."""
+    pool = ThreadPoolExecutor(max_workers=2)
+    monkeypatch.setattr(objective_mod, "oracle_executor", lambda: pool)
+
+    lock = threading.Lock()
+    state = {"active": 0, "peak": 0}
+
+    class SlowOracle:
+        def score(self, smiles: list[str]) -> list[float]:
+            with lock:
+                state["active"] += 1
+                state["peak"] = max(state["peak"], state["active"])
+            time.sleep(0.05)
+            with lock:
+                state["active"] -= 1
+            return [0.5] * len(smiles)
+
+    monkeypatch.setattr(objective_mod, "get_oracle", lambda name, **kw: SlowOracle())
+
+    objective = Objective.from_json(
+        {"terms": [{"oracle": "qed", "weight": 1.0, "transform": {"kind": "identity"}}]}
+    )
+
+    async def stub_pmo(smiles: list[str], task: str) -> list[OracleResult]:
+        raise AssertionError("no pmo term in this objective")
+
+    try:
+        await asyncio.gather(
+            *(objective.evaluate_async(["CCO"], pmo_scorer=stub_pmo) for _ in range(6))
+        )
+    finally:
+        pool.shutdown(wait=True)
+    assert state["peak"] <= 2
+    assert state["peak"] > 0

@@ -49,6 +49,16 @@ logger = logging.getLogger(__name__)
 LEASE_TTL_S = int(os.environ.get("CAPYCHEM_LEASE_TTL_S", "60"))
 _LEASE_RENEW_INTERVAL_S = LEASE_TTL_S / 3
 
+# Backpressure (milestone 08 slice 05): the max number of runs THIS worker
+# process (an apps/runner instance, or the API's inline dev/test worker --
+# both are a RunRegistry) drives concurrently. Chosen over a 429 at POST
+# /runs: the queue already models "not yet started" as a durable "queued" row,
+# so a full worker simply refuses to claim more -- the row stays queued and is
+# picked up by this worker once a slot frees, or by another worker/replica.
+# POST /runs always returns "queued" either way; the cap is invisible to the
+# producer. A plain constant (not re-read per call), matching LEASE_TTL_S.
+MAX_CONCURRENT_RUNS = int(os.environ.get("CAPYCHEM_MAX_CONCURRENT_RUNS", "4"))
+
 
 def _git_sha() -> str | None:
     """Best-effort current commit SHA for the manifest (07-06). None if not a git
@@ -237,11 +247,19 @@ class RunRegistry:
         enqueuing (when the inline worker is enabled)."""
         self._wake.set()
 
+    def _active_run_count(self) -> int:
+        """How many runs this registry is CURRENTLY driving (a live, not-yet-
+        finished handle.task) — the backpressure cap's live counter."""
+        return sum(1 for h in self._runs.values() if h.task is not None and not h.task.done())
+
     async def claim_and_drive_once(self) -> int | None:
         """Claim exactly one durable-queue-eligible run (a fresh "queued" row,
         or an abandoned "running" row whose lease expired) and drive it to
         completion in this process. Returns the claimed run_id, or None if
-        nothing was claimable right now.
+        nothing was claimable right now (including: this worker is already at
+        MAX_CONCURRENT_RUNS — checked FIRST, before touching the DB, so a
+        worker at cap never claims a row it isn't about to drive; the row
+        stays "queued" for this worker's next slot or another worker).
 
         This is THE shared claim/lease/drive entry point: apps/runner's
         standalone worker process and the API's inline dev/test worker
@@ -255,6 +273,15 @@ class RunRegistry:
         row. A run with existing Generation rows (a reclaim mid-flight)
         resumes from reconstruct_state's replayed progress instead of a fresh
         gen 0 — the SAME replay path a manual /resume uses (G6)."""
+        active = self._active_run_count()
+        if active >= MAX_CONCURRENT_RUNS:
+            logger.debug(
+                "worker %s: at capacity (%d/%d active) — refusing to claim, row(s) stay queued",
+                self.worker_id,
+                active,
+                MAX_CONCURRENT_RUNS,
+            )
+            return None
         async with self._sm() as session:
             run_id = await claim_next_run(
                 session, worker_id=self.worker_id, lease_ttl_s=LEASE_TTL_S
@@ -286,7 +313,14 @@ class RunRegistry:
         (capychem_runner) and the API's inline dev/test worker (main.py
         lifespan, gated by CAPYCHEM_INLINE_WORKER) run — one implementation,
         not two parallel copies. Runs until its task is cancelled; a single
-        failed claim attempt is logged and does not kill the loop."""
+        failed claim attempt is logged and does not kill the loop.
+
+        The inner drain loop naturally implements backpressure: once this
+        worker hits MAX_CONCURRENT_RUNS, claim_and_drive_once starts
+        returning None (without touching the DB), so the drain exits and the
+        loop falls through to waiting out poll_interval_s — a burst of many
+        queued rows never spins up more than MAX_CONCURRENT_RUNS concurrent
+        drives in this process; the rest stay queued until a slot frees."""
         while True:
             try:
                 while await self.claim_and_drive_once() is not None:

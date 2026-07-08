@@ -21,7 +21,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from capychem.oracle import OracleResult
+from capychem.oracle import OracleResult, oracle_executor
 from capychem.oracle.registry import available_oracles, get_oracle
 
 PmoScorer = Callable[[list[str], str], Awaitable[list[OracleResult]]]
@@ -197,7 +197,11 @@ class Objective:
                 costs = [r.cost_usd for r in results]
             else:
                 oracle = get_oracle(term.oracle, **term.oracle_kwargs)
-                raw = await asyncio.to_thread(oracle.score, smiles)
+                # Bounded pool (m08-05), shared with score_batch_async's harness
+                # dispatch — a burst of concurrent evaluate_async calls can never
+                # spin up more than CAPYCHEM_ORACLE_THREAD_POOL_SIZE OS threads.
+                loop = asyncio.get_running_loop()
+                raw = await loop.run_in_executor(oracle_executor(), oracle.score, smiles)
                 costs = [0.0] * n
             per_term_scores.append(
                 [None if v is None else apply_transform(term.transform, v) for v in raw]

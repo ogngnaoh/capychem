@@ -57,10 +57,19 @@ _MAX_OUTPUT_TOKENS = 128
 _MODAL_APP = "capychem-worker"
 _MODAL_FN = "propose"
 _DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
+# Bounds the direct backend's per-proposal request fan-out (milestone 08 slice
+# 05): DeepSeek allows only n=1 per request, so _direct_propose fans out one
+# request per proposal; without a cap, a large batch (offspring/pop_size) would
+# open that many concurrent HTTP connections at once.
+_DEFAULT_PROPOSER_CONCURRENCY = 8
 
 
 def _proposer_backend() -> str:
     return os.environ.get("CAPYCHEM_PROPOSER_BACKEND", "stub")
+
+
+def proposer_concurrency() -> int:
+    return int(os.environ.get("CAPYCHEM_PROPOSER_CONCURRENCY", str(_DEFAULT_PROPOSER_CONCURRENCY)))
 
 
 def llm_usd_per_1k_in() -> float:
@@ -271,17 +280,24 @@ async def _direct_propose(
     prompt: str, n: int, *, temperature: float, seed: int
 ) -> list[ProposalResult]:
     """Call DeepSeek directly (no Modal). DeepSeek allows only n=1 per request, so
-    fan out n single-choice requests concurrently, each with a per-index seed
-    (seed+i) for distinct-yet-deterministic samples. Each request reports its own
+    fan out n single-choice requests, each with a per-index seed (seed+i) for
+    distinct-yet-deterministic samples, bounded to proposer_concurrency() in
+    flight at once (milestone 08 slice 05 — an unbounded gather would open n
+    concurrent HTTP requests for a large batch). Each request reports its own
     token usage; rows flow through _rows_to_results for cleaning + cost."""
     import asyncio
 
     api_key = _deepseek_api_key()
+    semaphore = asyncio.Semaphore(proposer_concurrency())
+
+    async def _bounded_row(i: int) -> dict[str, Any]:
+        async with semaphore:
+            return await _one_proposal_row(
+                prompt, temperature=temperature, seed=seed + i, api_key=api_key
+            )
+
     results = await asyncio.gather(
-        *(
-            _one_proposal_row(prompt, temperature=temperature, seed=seed + i, api_key=api_key)
-            for i in range(n)
-        ),
+        *(_bounded_row(i) for i in range(n)),
         return_exceptions=True,
     )
     rows: list[Any] = []
