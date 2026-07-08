@@ -20,6 +20,7 @@ from typing import Any, cast
 
 from capychem import cost, proposer
 from capychem.api import config
+from capychem.api.events import EventKind, notify_run_event
 from capychem.api.schemas import (
     AnalyzerHypothesisEvent,
     GenerationCompleteEvent,
@@ -61,6 +62,25 @@ def _git_sha() -> str | None:
     except (OSError, subprocess.SubprocessError):
         return None
     return out.stdout.strip() if out.returncode == 0 and out.stdout.strip() else None
+
+
+async def _notify_best_effort(
+    session: AsyncSession, run_id: int, kind: EventKind, index: int | None = None
+) -> None:
+    """pg_notify a just-persisted event, tolerating failure (m08-03).
+
+    LISTEN/NOTIFY delivery is inherently best-effort — the DB row a receiver
+    re-reads is always the source of truth, and a dropped notify is recovered
+    by the WS's DB-snapshot catch-up on the next connect/reconnect (see
+    ws_runs.py) — so a notify failure must never abort the drive. This also
+    keeps fast SQLite-backed unit tests (test_runner.py's fake-graph tests,
+    which never touch Postgres) working: ``pg_notify`` doesn't exist on
+    SQLite, and the notify there simply no-ops instead of erroring the run.
+    """
+    try:
+        await notify_run_event(session, run_id, kind, index)
+    except Exception:
+        logger.warning("run %d: failed to notify %s (non-fatal)", run_id, kind, exc_info=True)
 
 
 def _snapshot_from_state(run_id: int, cfg: RunConfig, state: dict[str, Any]) -> dict[str, Any]:
@@ -553,6 +573,16 @@ class RunRegistry:
                                 structured_json=rec["structured_json"],
                             ).model_dump()
                         )
+                        # Cross-process fan-out (m08-03): the hypothesis row already
+                        # committed inside the graph's analyze node, before this state
+                        # was yielded — notify AFTER that persistence, never before.
+                        async with self._sm() as session:
+                            await _notify_best_effort(
+                                session,
+                                handle.run_id,
+                                "analyzer.hypothesis",
+                                index=rec["after_generation_index"],
+                            )
                     last_hyp_len = len(hyps)
                 if len(state.get("auc_curve", [])) > last_curve_len:
                     last_curve_len = len(state["auc_curve"])
@@ -568,6 +598,15 @@ class RunRegistry:
                             session, handle.run_id, oracle, llm_usd=llm
                         )
                         total = row.total_usd
+                        # Cross-process fan-out (m08-03): notify AFTER the RunCost
+                        # upsert (and the generation's Candidates/OracleCalls, already
+                        # committed by the graph's persist node) are durable.
+                        await _notify_best_effort(
+                            session,
+                            handle.run_id,
+                            "generation.complete",
+                            index=snap["generation_index"],
+                        )
                     snap["cost_so_far_usd"] = total
                     handle.broadcast(
                         GenerationCompleteEvent(
@@ -687,6 +726,11 @@ class RunRegistry:
                 manifest=manifest,
                 owner_worker_id=self.worker_id,
             )
+            # Cross-process fan-out (m08-03): notify unconditionally, even if the
+            # write above was fenced off as a no-op (a revived zombie racing a
+            # reclaiming owner) — a receiver re-reads whichever row is now
+            # current, so a redundant notify from the losing side is harmless.
+            await _notify_best_effort(session, handle.run_id, "run.complete")
         trace.flush()
         if handle.snapshot is not None:
             handle.snapshot["status"] = status  # terminal status for a post-completion GET

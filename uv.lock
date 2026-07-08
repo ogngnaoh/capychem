@@ -294,6 +294,7 @@ name = "capychem-api"
 version = "0.0.0"
 source = { editable = "apps/api" }
 dependencies = [
+    { name = "asyncpg" },
     { name = "capychem-core" },
     { name = "fastapi" },
     { name = "modal" },
@@ -302,6 +303,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "asyncpg", specifier = ">=0.29" },
     { name = "capychem-core", editable = "packages/core" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "modal", specifier = ">=0.64" },

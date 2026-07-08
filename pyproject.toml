@@ -67,3 +67,10 @@ follow_imports_for_stubs = true
 [[tool.mypy.overrides]]
 module = ["modal", "modal.*"]
 ignore_missing_imports = true
+
+# asyncpg ships no py.typed marker (milestone 08 slice 03: the raw LISTEN/NOTIFY
+# connection in capychem.api.events). Symbols become Any; correctness is covered
+# by the integration tests exercising the real listener against real Postgres.
+[[tool.mypy.overrides]]
+module = ["asyncpg", "asyncpg.*"]
+ignore_missing_imports = true
