@@ -1,6 +1,29 @@
-# CapyChem run-state database (Postgres 16).
-# Slice 1 (walking skeleton) only proves connectivity; the schema lands in slice 2.
-# Usage: docker compose -f infra/compose.yml up -d
+# CapyChem: Postgres + the containerized API + the containerized out-of-process
+# runner (milestone 08 slice 06 — ops maturity). All three together are the
+# full ALL-POSTGRES system: the API enqueues a run (a durable "queued" row);
+# the `runner` service is the only thing that claims and drives it
+# (CAPYCHEM_INLINE_WORKER=0 below turns off the API's own inline dev/test
+# worker, per apps/api/capychem/api/main.py); cross-process live events ride
+# Postgres LISTEN/NOTIFY (capychem.api.events) — no Redis/broker/Celery/k8s.
+#
+# Oracle scoring in-container: both `api` and `runner` bake in the SAME
+# isolated harness/ env (Python 3.10, pinned PyTDC 0.3.6) the repo ships —
+# see infra/Dockerfile's header comment for exactly what that does and does
+# not cover. It is in-silico PMO/TDC benchmark scoring only (N6, non-goal N2).
+#
+# Usage:
+#   docker compose -f infra/compose.yml up --build
+#   curl http://localhost:8000/healthz   # liveness: Postgres reachable
+#   curl http://localhost:8000/readyz    # readiness: + the queue's claim query works
+#   curl -X POST http://localhost:8000/runs -H 'content-type: application/json' \
+#     -d '{"task":"qed","budget":40,"seed":42,"pop_size":20,"offspring":10,"max_generations":50}'
+#   # the containerized `runner` service claims + drives the enqueued run —
+#   # docker compose logs -f runner
+#
+# DEEPSEEK_API_KEY is passed through only if already set in the host shell —
+# unset is fine for the default graph_ga demo above, which needs no LLM call;
+# it is required only to drive an llm/llm_ga mutation-strategy run (never
+# baked into the image or committed — env var only, per CLAUDE.md).
 services:
   postgres:
     image: postgres:16
@@ -19,6 +42,53 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: api
+    container_name: capychem-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      CAPYCHEM_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-capychem}:${POSTGRES_PASSWORD:-capychem}@postgres:5432/${POSTGRES_DB:-capychem}
+      # The standalone `runner` service below is the only claimer/driver — the
+      # API process itself must never also drive a run (would double-claim
+      # nothing, since claim_next_run is SKIP LOCKED-safe, but would defeat the
+      # point of a dedicated runner service).
+      CAPYCHEM_INLINE_WORKER: "0"
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request as u,sys; sys.exit(0 if u.urlopen('http://localhost:8000/healthz',timeout=3).status==200 else 1)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  runner:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: runner
+    container_name: capychem-runner
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      CAPYCHEM_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-capychem}:${POSTGRES_PASSWORD:-capychem}@postgres:5432/${POSTGRES_DB:-capychem}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
 
 volumes:
   capychem-pg:

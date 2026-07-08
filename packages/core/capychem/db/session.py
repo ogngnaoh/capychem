@@ -27,7 +27,13 @@ def database_url() -> str:
 
 
 def make_engine(url: str | None = None) -> AsyncEngine:
-    return create_async_engine(url or database_url(), future=True)
+    # pool_pre_ping=True (S6): a managed Postgres (Neon/Supabase, SPEC §5) drops
+    # idle connections; pre_ping issues a cheap SELECT 1 before handing a pooled
+    # connection out and transparently reconnects on failure, instead of the
+    # caller hitting a stale-connection error on its first real query. Adds one
+    # round-trip per checkout, not per query, and is a no-op difference for the
+    # in-memory-sqlite fast tests.
+    return create_async_engine(url or database_url(), future=True, pool_pre_ping=True)
 
 
 async def init_schema(engine: AsyncEngine) -> None:

@@ -17,10 +17,11 @@ from capychem.api.routes_runs import router as runs_router
 from capychem.api.runner import RunRegistry
 from capychem.api.ws_runs import router as ws_router
 from capychem.db.migrate import run_migrations
+from capychem.db.models import Run
 from capychem.db.session import database_url, make_engine, make_sessionmaker
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 logger = logging.getLogger(__name__)
@@ -95,7 +96,50 @@ app.include_router(molecule_router)
 
 @app.get("/healthz")
 async def healthz(request: Request) -> dict[str, str]:
+    """Liveness: is this process up and able to reach Postgres at all."""
     engine: AsyncEngine = request.app.state.engine
     async with engine.connect() as conn:
         await conn.execute(text("select 1"))
+    return {"status": "ok"}
+
+
+async def _check_ready(engine: AsyncEngine) -> None:
+    """Raise iff the API is not ready to serve traffic.
+
+    Distinct from /healthz's bare ``SELECT 1``: readiness additionally proves
+    the durable-queue claim query (S6, mirroring capychem.db.queue.claim_next_run's
+    predicate) executes cleanly against the ``runs`` table -- i.e. Postgres is
+    reachable AND the schema the queue/API depend on is actually there and
+    queryable, not just that the socket connects. Read-only: never claims or
+    mutates a row.
+    """
+    async with engine.connect() as conn:
+        await conn.execute(text("select 1"))
+        await conn.execute(
+            select(Run.id)
+            .where(
+                or_(
+                    Run.status == "queued",
+                    (Run.status == "running") & (Run.lease_expires_at < func.now()),
+                )
+            )
+            .limit(1)
+        )
+
+
+@app.get("/readyz")
+async def readyz(request: Request) -> dict[str, str]:
+    """Readiness: Postgres reachable AND the queue's claim query works.
+
+    A managed Postgres can drop idle connections (see pool_pre_ping on
+    make_engine) or be mid-failover while the process itself is still up and
+    would happily answer /healthz's liveness check -- /readyz is what an
+    orchestrator's readiness probe should gate traffic/queue-claiming on.
+    """
+    engine: AsyncEngine = request.app.state.engine
+    try:
+        await _check_ready(engine)
+    except Exception:
+        logger.warning("readyz check failed", exc_info=True)
+        raise HTTPException(status_code=503, detail="not ready") from None
     return {"status": "ok"}
