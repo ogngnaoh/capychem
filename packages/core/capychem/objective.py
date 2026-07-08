@@ -14,6 +14,8 @@ regardless of term count.
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
 import math
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -26,6 +28,17 @@ PmoScorer = Callable[[list[str], str], Awaitable[list[OracleResult]]]
 
 _AGGREGATORS = ("weighted_sum", "weighted_product")
 _TRANSFORM_KINDS = ("identity", "sigmoid", "reverse_sigmoid", "double_sigmoid", "value_map")
+
+
+def stable_hash(spec: dict[str, Any]) -> str:
+    """A stable SHA-256 hex digest of a JSON-serializable objective spec.
+
+    Key order never affects the digest (``sort_keys=True``), so the same objective
+    always hashes the same way -- the composed-objective half of the persistent
+    oracle-score cache key (milestone 08 slice 04, ``capychem.cache.objective_key``).
+    """
+    canonical = json.dumps(spec, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode()).hexdigest()
 
 
 def _clamp(x: float) -> float:

@@ -131,6 +131,33 @@ class RunCost(Base):
     total_usd: Mapped[float] = mapped_column(default=0.0)
 
 
+class OracleScoreCache(Base):
+    """Persistent, cross-run oracle-score cache (milestone 08 slice 04).
+
+    Keyed on (oracle_key, objective_key, canonical_smiles) -> score. A hit means
+    some run already scored this exact molecule under this exact oracle version +
+    objective, so the real compute is skippable. Exploratory-mode-only (see
+    capychem.cache / the score node in loop/graph.py) -- the benchmark path and the
+    eval harness (packages/core/capychem/eval/runner.py) never touch this table, so
+    the committed G1 numbers are unaffected by its existence.
+    """
+
+    __tablename__ = "oracle_score_cache"
+    __table_args__ = (
+        UniqueConstraint(
+            "oracle_key", "objective_key", "canonical_smiles", name="uq_oracle_score_cache_key"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    oracle_key: Mapped[str] = mapped_column(String(64))  # oracle name + version (invalidation)
+    objective_key: Mapped[str] = mapped_column(String(128))  # task name, or a composed-obj hash
+    canonical_smiles: Mapped[str] = mapped_column(String(512))
+    score: Mapped[float]
+    wall_ms: Mapped[int]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
 class AnalyzerHypothesis(Base):
     __tablename__ = "analyzer_hypotheses"
     __table_args__ = (Index("ix_analyzerhyp_run_after", "run_id", "after_generation_index"),)

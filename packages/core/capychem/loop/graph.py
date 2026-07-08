@@ -10,10 +10,12 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import logging
 from collections.abc import Callable
 from dataclasses import replace
 from typing import Any, cast
 
+from capychem import cache as cache_mod
 from capychem import proposer
 from capychem.constraints import Constraints
 from capychem.db.models import AnalyzerHypothesis, Candidate, Generation, OracleCall
@@ -30,10 +32,12 @@ from capychem.loop.state import HypothesisRecord, LoopState, Scored
 from capychem.objective import Objective
 from capychem.oracle import HarnessError, OracleResult, score_batch_async
 from capychem.quality import molecule_quality
-from capychem.validate import validate_batch_with_stats
+from capychem.validate import ValidCandidate, validate_batch_with_stats
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+logger = logging.getLogger(__name__)
 
 # Bounded retry for a transient harness-subprocess blip (a timeout, a flaky spawn).
 # Absorbs the blip without pausing the run; a sustained outage still exhausts the
@@ -188,12 +192,66 @@ async def _with_harness_retry(call: Callable[[], Any]) -> Any:
     raise last_exc
 
 
-async def score(state: LoopState) -> dict[str, Any]:
+async def _cache_lookup(
+    sessionmaker: async_sessionmaker[AsyncSession] | None,
+    mode: str | None,
+    task: str,
+    objective_json: dict[str, Any] | None,
+    candidates: list[ValidCandidate],
+) -> tuple[list[tuple[ValidCandidate, float, float]], list[ValidCandidate], str, str]:
+    """Consult the persistent oracle-score cache (m08-04), exploratory-mode only.
+
+    Returns ``(cache_hits, remaining, oracle_key, objective_key)``: ``cache_hits`` is
+    ready to fold straight into ``_scored`` (cost 0.0, free); ``remaining`` is
+    ``candidates`` minus the hits, still needing a real oracle call. A no-op
+    (``cache_hits=[]``, ``remaining=candidates``) outside exploratory mode or without
+    a sessionmaker (a direct unit-test call to ``score()``), so the benchmark path
+    never touches this table — G1/G6 stay byte-identical.
+    """
+    if mode != "exploratory" or sessionmaker is None:
+        return [], candidates, "", ""
+    okey = cache_mod.oracle_key()
+    ojkey = cache_mod.objective_key(task=task, objective_json=objective_json)
+    if not candidates:
+        return [], candidates, okey, ojkey
+    async with sessionmaker() as session:
+        hits = await cache_mod.lookup_many(session, okey, ojkey, [c.smiles for c in candidates])
+    if not hits:
+        return [], candidates, okey, ojkey
+    cache_hits = [(c, hits[c.smiles][0], 0.0) for c in candidates if c.smiles in hits]
+    remaining = [c for c in candidates if c.smiles not in hits]
+    return cache_hits, remaining, okey, ojkey
+
+
+async def _cache_write(
+    sessionmaker: async_sessionmaker[AsyncSession] | None,
+    mode: str | None,
+    oracle_key_: str,
+    objective_key_: str,
+    scored: list[tuple[ValidCandidate, float, float]],
+) -> None:
+    """Best-effort write of freshly-computed scores back to the shared cache
+    (m08-04) — exploratory mode only, no-op otherwise (see ``_cache_lookup``)."""
+    if mode != "exploratory" or sessionmaker is None or not scored:
+        return
+    async with sessionmaker() as session:
+        await cache_mod.record_many(
+            session, oracle_key_, objective_key_, [(c.smiles, sc, 0) for c, sc, _ in scored]
+        )
+
+
+async def score(
+    state: LoopState, sessionmaker: async_sessionmaker[AsyncSession] | None = None
+) -> dict[str, Any]:
+    """``sessionmaker`` (optional) backs the persistent oracle-score cache (m08-04);
+    the built graph's node always supplies it (see ``build_graph``), while direct unit
+    tests calling ``score(state)`` naturally skip the cache (mode never reaches
+    "exploratory" without it, or the None default no-ops it below)."""
     with trace.span(
         "node:score",
         trace_id=state.get("run_trace_id"),
         parent_observation_id=state.get("gen_span_id"),
-    ):
+    ) as score_span_id:
         candidates = [*state["validated"], *state.get("_fallback_validated", [])]
         # Hard constraints (07-04b): a constraint-failing candidate is treated like an
         # invalid one — dropped before scoring, so no budget is spent on it. A generation
@@ -211,22 +269,28 @@ async def score(state: LoopState) -> dict[str, Any]:
         # already scored is a cache hit — not re-scored, not counted, not persisted.
         # The budget counts UNIQUE oracle calls (FR-002), unifying with eval/runner.py.
         unseen = [c for c in candidates if c.smiles not in buffer]
+
+        mode = state.get("mode")
+        obj_json = state.get("objective_json")
+        # Persistent cross-run cache (m08-04): a hit is FREE and, in exploratory mode,
+        # UNCOUNTED against the run's oracle-call budget (spec 5.3) — it doesn't touch
+        # mol_buffer/calls_used. Gated to exploratory mode only; the benchmark branch
+        # below is untouched byte-identical code whether this table exists or not.
+        cache_hits, unseen, okey, ojkey = await _cache_lookup(
+            sessionmaker, mode, state["task"], obj_json, unseen
+        )
+
         room = max(state["budget"] - len(buffer), 0)  # remaining unique headroom
         batch = unseen[:room]
-        if not batch:
-            return {
-                "_scored": [],
-                "calls_used": len(buffer),
-                "mol_buffer": buffer,
-                "_constraint_starved": starved,
-            }
-        smis = [c.smiles for c in batch]
-        obj_json = state.get("objective_json")
         scored: list[tuple[Any, float, float]]
-        if obj_json:
+        if not batch:
+            scored = []
+        elif obj_json:
             # Composed exploratory objective (07-04): PMO terms reuse the SAME
             # retry-wrapped harness path below, so cost/backend are preserved; the
             # budget still counts one call per unique candidate (OD-2), not per term.
+            smis = [c.smiles for c in batch]
+
             async def _pmo_scorer(s: list[str], task: str) -> list[OracleResult]:
                 return cast(
                     "list[OracleResult]",
@@ -243,15 +307,26 @@ async def score(state: LoopState) -> dict[str, Any]:
             ]
         else:
             # Benchmark path — unchanged, byte-identical.
+            smis = [c.smiles for c in batch]
             results = await _with_harness_retry(lambda: score_batch_async(smis, task=state["task"]))
             scored = [
                 (c, r.score, r.cost_usd)
                 for c, r in zip(batch, results, strict=True)
                 if r.valid and r.score is not None
             ]
+        await _cache_write(sessionmaker, mode, okey, ojkey, scored)
+        if cache_hits or scored:
+            total = len(cache_hits) + len(scored)
+            logger.info(
+                "run %s gen %s: oracle-cache hit-rate %d/%d",
+                state.get("run_id"), state.get("gen_index"), len(cache_hits), total,
+            )
+            trace.update_span(
+                score_span_id, cache_hits=len(cache_hits), cache_misses=len(scored)
+            )
         new_buffer = buffer | {c.smiles for c, _, _ in scored}
         return {
-            "_scored": scored,
+            "_scored": [*cache_hits, *scored],
             "calls_used": len(new_buffer),
             "mol_buffer": new_buffer,
             "_constraint_starved": starved,
@@ -440,7 +515,11 @@ def _route(state: LoopState) -> str:
 def build_graph(
     sessionmaker: async_sessionmaker[AsyncSession],
 ) -> CompiledStateGraph[Any, Any, Any, Any]:
-    """Compile the loop graph. ``sessionmaker`` is captured by the persist node."""
+    """Compile the loop graph. ``sessionmaker`` is captured by the persist, analyze,
+    and score (m08-04 oracle-score cache) nodes."""
+
+    async def score_node(state: LoopState) -> dict[str, Any]:
+        return await score(state, sessionmaker)
 
     async def persist(state: LoopState) -> dict[str, Any]:
         return await _persist(state, sessionmaker)
@@ -452,7 +531,7 @@ def build_graph(
     builder.add_node("propose", propose)
     builder.add_node("validate", validate)
     builder.add_node("fallback", fallback)
-    builder.add_node("score", score)
+    builder.add_node("score", score_node)
     builder.add_node("persist", persist)
     builder.add_node("analyze", analyze)
     builder.add_node("stop_check", stop_check)

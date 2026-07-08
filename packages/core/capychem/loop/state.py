@@ -66,6 +66,10 @@ class LoopState(TypedDict, total=False):
     plateau_window: int
     max_generations: int
     mutation_strategy: str
+    # benchmark|exploratory (07-01, server-derived); gates the persistent oracle-score
+    # cache (m08-04) -- the score node only consults/writes it in exploratory mode, so
+    # the benchmark path is byte-identical whether the cache exists or not (G1/G6).
+    mode: str
     # Operator bring-your-own starting compounds (07-02, FR-001); None -> the shipped
     # starting pool. Present only for a fresh run's gen 0 (a resume rebuilds the
     # population from persisted rows, bypassing the gen-0 branch). Distinct from the

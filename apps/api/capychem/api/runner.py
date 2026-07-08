@@ -514,6 +514,10 @@ class RunRegistry:
             "plateau_window": cfg.plateau_window,
             "max_generations": cfg.max_generations,
             "mutation_strategy": cfg.mutation_strategy,
+            # benchmark|exploratory (07-01): gates the persistent oracle-score cache
+            # (m08-04) in the score node. Static per run -- carried directly from cfg,
+            # not from `prog`, so a resume keeps the same mode a fresh run would.
+            "mode": cfg.mode,
             # Operator bring-your-own compounds (07-02): used only at a fresh run's
             # gen 0. On a resume, gen_index > 0 bypasses the gen-0 branch, so this is
             # inert there (cfg.seed_smiles is carried for provenance only).
