@@ -2,13 +2,49 @@
 
 [![CI](https://github.com/ogngnaoh/capychem/actions/workflows/ci.yml/badge.svg)](https://github.com/ogngnaoh/capychem/actions/workflows/ci.yml)
 
-**A closed-loop agent for sample-efficient black-box optimization over chemical space.**
+**A durable, Postgres-backed job-processing engine for sample-efficient optimization — demonstrated on
+molecular optimization.**
 
-CapyChem searches for high-scoring molecules against a fixed, expensive scoring budget by running a
-tight **design → score → analyze → redesign** loop: a language model proposes candidate molecules, each
-is scored by a benchmark oracle, and — the part most systems skip — the model then *reasons over what
-just worked* and conditions its next round of proposals on that hypothesis. The goal is not the best
-molecule per hour of compute; it's the **best molecule per oracle call**.
+**In one breath:** you hand the system an expensive-to-call scoring function (here: a chemistry
+benchmark scoring how "good" a candidate molecule is) and a hard budget on how many times you're allowed
+to call it. It runs many rounds of *propose → score → learn → propose again*, spending that budget as
+wisely as it can. Chemistry is just the workload here — the engineering that matters is how reliably and
+cheaply the system schedules, executes, caches, and recovers that expensive work.
+
+### Backend engineering, up front
+
+- **Producer → durable queue → worker pool.** `POST /runs` only enqueues a row; a separate worker
+  process (one or several) claims it with `SELECT … FOR UPDATE SKIP LOCKED` and drives it to completion.
+  Postgres *is* the queue — no Redis, no broker, no Celery, no k8s.
+- **Lease, heartbeat, reclaim.** Each claimed run holds a time-boxed lease the worker renews on a
+  heartbeat; if a worker crashes, the lease expires and any live worker reclaims and resumes the run from
+  its last persisted generation. A `UNIQUE(run_id, index)` constraint plus owner-fenced writes close the
+  double-execution gap a merely-*stalled* ("zombie") worker could otherwise reopen.
+- **Cross-process live events.** Postgres `LISTEN/NOTIFY` fans generation/analyzer/completion events out
+  to every API process's WebSocket clients, so live updates keep working even when a *different* process
+  is driving the run.
+- **A persistent, cross-run oracle-score cache.** RDKit-canonicalized, oracle-version-scoped; a hit costs
+  $0 of real compute and, in exploratory mode, doesn't spend the run's oracle-call budget.
+- **Backpressure + idempotency.** Bounded per-worker concurrency, keyset-paginated `GET /runs`, and a
+  TOCTOU-safe `Idempotency-Key` on `POST /runs`.
+- **Durable resume.** A crash, an oracle-worker outage, or hitting the cost cap all replay cleanly from
+  persisted state to the same terminal result — no lost work.
+- **A hard subprocess isolation boundary.** The legacy scoring stack (pinned PyTDC/RDKit) runs in its own
+  environment, reached only through a typed subprocess + JSON contract — never imported.
+- **A real CI gate.** Ruff + mypy (strict) + the full pytest suite (Postgres- and harness-backed) run on
+  every push.
+
+The full run lifecycle, the queue/lease/fencing protocol, the cache design, and the hard problems (plus
+two honestly-documented known limitations) solved along the way are in
+[`docs/architecture.md`](docs/architecture.md).
+
+---
+
+The single workload this backend demonstrates on, end to end, is a closed-loop molecular optimization
+agent: a language model proposes candidate molecules, each is scored by a benchmark oracle, and — the
+part most systems skip — the model then *reasons over what just worked* and conditions its next round of
+proposals on that hypothesis. The goal is not the best molecule per hour of compute; it's the **best
+molecule per oracle call**.
 
 > **In-silico only.** Every score in this project is a standardized in-silico benchmark-oracle score. CapyChem
 > optimizes those scores and reports them as such. It makes **no claim of real-world drug-discovery efficacy**,
@@ -202,31 +238,38 @@ to CSV/SDF:
 ```mermaid
 flowchart TB
     W["Next.js web app<br/>launch · watch-live · browse · compare"]
-    API["FastAPI + LangGraph loop runtime"]
-    PG[("Postgres<br/>run state")]
+    API["FastAPI<br/>REST + WebSocket"]
+    PG[("Postgres<br/>durable queue · run state · oracle cache")]
+    RUN["apps/runner worker(s)<br/>SKIP LOCKED claim · lease/heartbeat · LangGraph loop"]
     LLM["DeepSeek-v4-pro<br/>(propose + analyze)"]
     OR["PMO oracle<br/>PyTDC harness (subprocess)"]
     LF["Langfuse<br/>(every loop decision traced)"]
 
     W -->|"REST + WebSocket"| API
-    API --> PG
-    API -->|"propose / analyze"| LLM
-    API -->|"score"| OR
-    API -->|"spans"| LF
+    API -->|"enqueue (POST /runs)"| PG
+    RUN -->|"claim / lease / persist"| PG
+    PG -.->|"LISTEN/NOTIFY"| API
+    RUN -->|"propose / analyze"| LLM
+    RUN -->|"score"| OR
+    RUN -->|"spans"| LF
     W -.->|"View trace"| LF
 ```
 
-A few decisions worth calling out:
+`POST /runs` only enqueues a row — the request handler never drives a loop itself. A separate `apps/runner`
+worker process (or the API's own inline dev/test worker) claims and drives it; the API process serving a
+WebSocket client may not be the one driving the run at all, which is exactly what Postgres `LISTEN/NOTIFY`
+is for. Full protocol + design rationale: [`docs/architecture.md`](docs/architecture.md). A few decisions
+worth calling out here:
 
 - **The oracle bridge is a hard isolation boundary.** The PMO benchmark pins a legacy stack (PyTDC 0.3.6,
   Python 3.10). That lives in a separate `harness/` environment; modern code never imports it — it shells out
   via a typed JSON subprocess. This keeps the reproducible-benchmark contract intact without dragging old
   dependencies into the app.
-- **Backend posture: built for expensive oracles, demonstrated on cheap ones.** The scored resource is
-  *oracle calls*, so the backend treats them as first-class: a **unique-call budget** (memoized scoring so a
-  re-proposed molecule never burns a second call), a **per-run cost ledger** (LLM + oracle summed, with a hard
-  cost gate), and async batched scoring. The PMO oracles here are CPU-cheap; the same layer is what would carry
-  an expensive docking oracle.
+- **The queue and the cache are both just Postgres.** No Redis, no broker, no Celery, no k8s: a durable
+  `SELECT ... FOR UPDATE SKIP LOCKED` queue with lease/heartbeat/reclaim (plus structural fencing against a
+  stalled-then-revived worker) and a persistent, RDKit-canonicalized, oracle-version-scoped oracle-score
+  cache — exploratory-mode-only, so the benchmark/eval path stays byte-identical. A cache hit is $0 and
+  uncounted against the run's oracle budget.
 - **Observability is the source of truth.** Every LangGraph node (`propose`, `validate`, `score`, `analyze`,
   `fallback`, `stop_check`) emits a Langfuse span nested under a per-run trace, so "what did the agent decide,
   and why?" is auditable step by step.
@@ -280,11 +323,12 @@ DeepSeek model. There is **no auth or hosting** — this is a single-user tool y
 | Path | What's there |
 |---|---|
 | `apps/web/` | Next.js operator UI (launch / watch-live / browse / compare) |
-| `apps/api/` | FastAPI REST + WebSocket + the LangGraph loop runtime |
-| `packages/core/` | `capychem` core: the loop, proposer, analyzer, fallback, oracle adapter, eval harness |
+| `apps/api/` | FastAPI REST + WebSocket; enqueues runs and hosts the durable-queue event bus |
+| `apps/runner/` | Standalone out-of-process worker: claims durable-queue rows and drives the LangGraph loop |
+| `packages/core/` | `capychem` core: the loop, proposer, analyzer, fallback, oracle adapter, cache, eval harness |
 | `harness/` | Isolated legacy PMO/PyTDC env (never imported — subprocess bridge only) |
 | `apps/worker/` | Modal app (LLM endpoint + oracle worker pool) |
-| `docs/` | Milestones, per-slice design docs, and the [trace walkthrough](docs/langfuse-walkthrough.md) |
+| `docs/` | Milestones, per-slice design docs, [`architecture.md`](docs/architecture.md), and the [trace walkthrough](docs/langfuse-walkthrough.md) |
 
 ## What this project is (and isn't)
 
