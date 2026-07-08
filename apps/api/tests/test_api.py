@@ -4,9 +4,12 @@ Real app lifespan, real Postgres, real QED scoring via the harness subprocess �
 slow (~10-60 s per run) by design; httpx's ASGI WebSocket transport drives both
 HTTP and WS against the in-process app.
 
-Shared-DB caveat: each test's lifespan sweep marks stranded `running` rows
-`paused` in the shared dev DB — don't run the suite while a dev server has an
-active run.
+Shared-DB caveat: each test's lifespan starts its own inline worker
+(CAPYCHEM_INLINE_WORKER, m08-02) polling the SAME shared dev DB — don't run
+the suite while a dev server has an active run, and don't run this file
+concurrently with itself (e.g. via pytest-xdist): two inline workers racing
+the same queue is harmless (claim_next_run's SKIP LOCKED guarantees exactly
+one drives any given row) but makes timing less predictable.
 """
 
 from __future__ import annotations

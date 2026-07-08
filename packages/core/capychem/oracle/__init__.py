@@ -15,6 +15,7 @@ import functools
 import json
 import os
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -219,6 +220,39 @@ def oracle_usd_per_sec() -> float:
     return float(os.environ.get("CAPYCHEM_ORACLE_USD_PER_SEC", _DEFAULT_ORACLE_USD_PER_SEC))
 
 
+# --- bounded thread pool for blocking oracle calls (milestone 08 slice 05) --
+#
+# asyncio.to_thread runs on the loop's DEFAULT executor, which is an unbounded-
+# by-default (but sizable, min(32, cpu_count+4)) thread pool shared with
+# everything else on the loop. A burst of many concurrent runs, each scoring a
+# batch (score_smiles shells out to the harness subprocess and blocks), could
+# otherwise pile up an unobservable, untunable number of OS threads. This pool
+# is explicit, sized, and shared by every blocking oracle call in this process
+# — score_smiles here AND the descriptor-oracle path in capychem.objective —
+# so a burst can never exceed CAPYCHEM_ORACLE_THREAD_POOL_SIZE concurrent
+# blocking calls, regardless of how many runs are driving at once.
+
+_DEFAULT_ORACLE_THREAD_POOL_SIZE = 8
+_executor: ThreadPoolExecutor | None = None
+
+
+def oracle_thread_pool_size() -> int:
+    return int(
+        os.environ.get("CAPYCHEM_ORACLE_THREAD_POOL_SIZE", str(_DEFAULT_ORACLE_THREAD_POOL_SIZE))
+    )
+
+
+def oracle_executor() -> ThreadPoolExecutor:
+    """The process-wide bounded pool backing every blocking oracle call. Built
+    once, lazily, on first use (sized from the env at that point)."""
+    global _executor
+    if _executor is None:
+        _executor = ThreadPoolExecutor(
+            max_workers=oracle_thread_pool_size(), thread_name_prefix="capychem-oracle"
+        )
+    return _executor
+
+
 def _modal_score_fn() -> Any:
     """Look up the deployed/serving Modal worker function. Imported lazily so the
     ``local`` backend (CI) never needs ``modal`` and never imports it at module load."""
@@ -232,7 +266,8 @@ async def score_batch_async(smiles: list[str], task: str) -> list[OracleResult]:
     subprocess in a thread (non-blocking); ``modal`` awaits the worker."""
     backend = _oracle_backend()
     if backend == "local":
-        return await asyncio.to_thread(score_smiles, smiles, task)
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(oracle_executor(), score_smiles, smiles, task)
     if backend == "modal":
         rate = oracle_usd_per_sec()
         rows = await _modal_score_fn().remote.aio(smiles, task)

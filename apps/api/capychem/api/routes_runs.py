@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import base64
 import csv
 import io
+import json
 from collections.abc import Mapping
 from typing import Any
 
@@ -26,10 +28,11 @@ from capychem.db.models import AnalyzerHypothesis, Candidate, Generation, Run, R
 from capychem.mode import derive_mode
 from capychem.objective import Objective
 from capychem.oracle import OracleResult, score_batch_async
-from capychem.run import RunConfig
-from fastapi import APIRouter, HTTPException, Request, Response
+from capychem.run import RunConfig, create_run
+from fastapi import APIRouter, Header, HTTPException, Request, Response
 from rdkit import Chem
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from starlette.requests import HTTPConnection
 
@@ -126,8 +129,55 @@ def build_run_list(
     return sorted(items, key=lambda i: i.started_at, reverse=reverse)
 
 
+# --- GET /runs pagination (m08-05) -------------------------------------------
+#
+# Keyset (seek), not offset: the cursor encodes the LAST item's run_id from the
+# previous page and is resolved by IDENTITY (not array position) in the
+# freshly sorted+filtered list. A run inserted anywhere else in the list
+# before the next page is fetched never shifts, duplicates, or skips an
+# already-issued page -- unlike an offset/limit scheme, which drifts under
+# concurrent inserts. ``limit=None`` (the default) returns every item with no
+# cursor, byte-identical to the pre-pagination response -- existing clients
+# (apps/web) that never pass cursor/limit see unchanged behavior.
+
+
+def _encode_cursor(run_id: int) -> str:
+    return base64.urlsafe_b64encode(json.dumps({"last_id": run_id}).encode()).decode()
+
+
+def _decode_cursor(raw: str) -> int:
+    try:
+        data = json.loads(base64.urlsafe_b64decode(raw.encode()).decode())
+        return int(data["last_id"])
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail="Invalid cursor") from exc
+
+
+def paginate_run_list(
+    items: list[RunListItem], *, cursor: str | None, limit: int | None
+) -> tuple[list[RunListItem], str | None]:
+    """Slice an already sorted+filtered list into one page. Returns (page,
+    next_cursor); next_cursor is None once the last page is reached (or
+    pagination wasn't requested). If the cursor's run_id is no longer present
+    (e.g. the run was deleted between pages), starts over from the top rather
+    than erroring."""
+    if limit is None:
+        return items, None
+    start = 0
+    if cursor is not None:
+        last_id = _decode_cursor(cursor)
+        start = next((i + 1 for i, it in enumerate(items) if it.run_id == last_id), 0)
+    page = items[start : start + limit]
+    has_more = bool(page) and start + limit < len(items)
+    return page, (_encode_cursor(page[-1].run_id) if has_more else None)
+
+
 @router.post("/runs", status_code=201)
-async def create_run_endpoint(body: CreateRunRequest, request: Request) -> dict[str, Any]:
+async def create_run_endpoint(
+    body: CreateRunRequest,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+) -> dict[str, Any]:
     cfg = RunConfig(
         task=body.task,
         budget=body.budget,
@@ -155,8 +205,45 @@ async def create_run_endpoint(body: CreateRunRequest, request: Request) -> dict[
             constraints_json=body.constraints_json,
         ),
     )
-    run_id = await registry_of(request).start_run(cfg)
-    return {"run_id": run_id, "status": "running"}
+    sm = sessionmaker_of(request)
+    # Idempotency-Key (m08-05, SPEC §6.3): a retried POST carrying the SAME key
+    # returns the existing run instead of minting a second one. No header ->
+    # idempotency_key stays None -> unchanged prior always-enqueue behavior.
+    if idempotency_key is not None:
+        async with sm() as session:
+            existing = await session.scalar(
+                select(Run).where(Run.idempotency_key == idempotency_key)
+            )
+            if existing is not None:
+                return {"run_id": existing.id, "status": existing.status}
+    # Enqueue only (milestone 08 slice 02): the request handler does not drive
+    # the loop itself — a worker's claim_next_run does, out of band. When the
+    # inline dev/test worker is enabled, register a pending handle + wake it so
+    # a WS/GET that arrives before the claim still finds a live handle (closing
+    # the async gap) and the claim happens promptly rather than on the next
+    # poll tick.
+    async with sm() as session:
+        try:
+            run_id = await create_run(
+                session, cfg, status="queued", idempotency_key=idempotency_key
+            )
+        except IntegrityError:
+            # Lost a race with a concurrent request carrying the SAME key (both
+            # passed the pre-check above before either committed): roll back
+            # this insert and return the winner's row rather than erroring or
+            # minting a second run.
+            await session.rollback()
+            async with sm() as session2:
+                winner = await session2.scalar(
+                    select(Run).where(Run.idempotency_key == idempotency_key)
+                )
+            assert winner is not None, "IntegrityError on idempotency_key implies a winner row"
+            return {"run_id": winner.id, "status": winner.status}
+    registry = registry_of(request)
+    if request.app.state.inline_worker_enabled:
+        registry.register_pending(run_id, cfg)
+        registry.wake()
+    return {"run_id": run_id, "status": "queued"}
 
 
 @router.post("/objective/validate", response_model=ObjectiveValidateResponse)
@@ -186,21 +273,32 @@ async def validate_objective_endpoint(body: ObjectiveValidateRequest) -> Objecti
 @router.get("/runs", response_model=list[RunListItem])
 async def list_runs_endpoint(
     request: Request,
+    response: Response,
     status: str | None = None,
     task: str | None = None,
     sort: str = "started_at",
     order: str = "desc",
+    cursor: str | None = None,
+    limit: int | None = None,
 ) -> list[RunListItem]:
     if sort not in _SORT_KEYS:
         raise HTTPException(status_code=422, detail=f"sort must be one of {_SORT_KEYS}")
     if order not in ("asc", "desc"):
         raise HTTPException(status_code=422, detail="order must be 'asc' or 'desc'")
+    if limit is not None and limit <= 0:
+        raise HTTPException(status_code=422, detail="limit must be positive")
     sm = sessionmaker_of(request)
     registry = registry_of(request)
     async with sm() as session:
         rows = list((await session.execute(select(Run))).scalars().all())
     live_by_id = {row.id: registry.snapshot(row.id) for row in rows}
-    return build_run_list(rows, live_by_id, status=status, task=task, sort=sort, order=order)
+    items = build_run_list(rows, live_by_id, status=status, task=task, sort=sort, order=order)
+    # Pagination is opt-in (m08-05): no cursor/limit -> the full list, no header,
+    # byte-identical to the pre-pagination response (apps/web never sends these).
+    page, next_cursor = paginate_run_list(items, cursor=cursor, limit=limit)
+    if next_cursor is not None:
+        response.headers["X-Next-Cursor"] = next_cursor
+    return page
 
 
 async def _hypotheses_for(session: AsyncSession, run_id: int) -> list[AnalyzerHypothesisOut]:

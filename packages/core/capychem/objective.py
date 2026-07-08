@@ -14,18 +14,31 @@ regardless of term count.
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
 import math
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from capychem.oracle import OracleResult
+from capychem.oracle import OracleResult, oracle_executor
 from capychem.oracle.registry import available_oracles, get_oracle
 
 PmoScorer = Callable[[list[str], str], Awaitable[list[OracleResult]]]
 
 _AGGREGATORS = ("weighted_sum", "weighted_product")
 _TRANSFORM_KINDS = ("identity", "sigmoid", "reverse_sigmoid", "double_sigmoid", "value_map")
+
+
+def stable_hash(spec: dict[str, Any]) -> str:
+    """A stable SHA-256 hex digest of a JSON-serializable objective spec.
+
+    Key order never affects the digest (``sort_keys=True``), so the same objective
+    always hashes the same way -- the composed-objective half of the persistent
+    oracle-score cache key (milestone 08 slice 04, ``capychem.cache.objective_key``).
+    """
+    canonical = json.dumps(spec, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode()).hexdigest()
 
 
 def _clamp(x: float) -> float:
@@ -184,7 +197,11 @@ class Objective:
                 costs = [r.cost_usd for r in results]
             else:
                 oracle = get_oracle(term.oracle, **term.oracle_kwargs)
-                raw = await asyncio.to_thread(oracle.score, smiles)
+                # Bounded pool (m08-05), shared with score_batch_async's harness
+                # dispatch — a burst of concurrent evaluate_async calls can never
+                # spin up more than CAPYCHEM_ORACLE_THREAD_POOL_SIZE OS threads.
+                loop = asyncio.get_running_loop()
+                raw = await loop.run_in_executor(oracle_executor(), oracle.score, smiles)
                 costs = [0.0] * n
             per_term_scores.append(
                 [None if v is None else apply_transform(term.transform, v) for v in raw]

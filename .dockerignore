@@ -1,0 +1,50 @@
+# Keeps the build context small for infra/Dockerfile (milestone 08 slice 06).
+# Mirrors .gitignore; additionally excludes VCS history and things a container
+# build never needs (docs, the Next.js frontend, already-built local venvs).
+
+.git/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+harness/.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+
+# Node / frontend (the API + runner images never need apps/web)
+node_modules/
+apps/web/
+.next/
+.turbo/
+out/
+*.tsbuildinfo
+
+# uv / Modal caches
+.uv/
+.modal/
+.modal_cache/
+
+# PyTDC oracle model cache (downloaded to repo root on first ML-oracle run)
+/oracle/
+
+# Env / secrets — never baked into an image; passed at `docker run`/compose time
+.env
+.env.local
+.env.*.local
+
+# OS / editor / logs / coverage / docs
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.log
+logs/
+.coverage
+coverage/
+htmlcov/
+docs/

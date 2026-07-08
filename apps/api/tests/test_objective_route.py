@@ -1,30 +1,33 @@
 """Slice 07-04: a composed objective at the /runs boundary forces exploratory, and
 POST /objective/validate previews the composite (structural 422 on a bad spec).
+
+POST /runs only enqueues (m08-02): create_run_endpoint persists the Run row
+itself rather than delegating to the registry, so the run-creating tests read
+the row back from a real (in-memory sqlite) session instead of stubbing
+RunRegistry.start_run to capture an in-memory RunConfig.
 """
 
 from __future__ import annotations
 
 import httpx
 from capychem.api.routes_runs import router
-from capychem.run import RunConfig
+from capychem.db.models import Base, Run
 from fastapi import FastAPI
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 
-class _CaptureRegistry:
-    def __init__(self) -> None:
-        self.cfg: RunConfig | None = None
-
-    async def start_run(self, cfg: RunConfig) -> int:
-        self.cfg = cfg
-        return 55
-
-
-def _app() -> tuple[FastAPI, _CaptureRegistry]:
+async def _app() -> tuple[FastAPI, async_sessionmaker[AsyncSession]]:
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    sm = async_sessionmaker(engine, expire_on_commit=False)
     app = FastAPI()
     app.include_router(router)
-    reg = _CaptureRegistry()
-    app.state.registry = reg
-    return app, reg
+    app.state.sessionmaker = sm
+    app.state.registry = None  # inline_worker_enabled=False below -> never touched
+    app.state.inline_worker_enabled = False
+    return app, sm
 
 
 def _client(app: FastAPI) -> httpx.AsyncClient:
@@ -40,26 +43,31 @@ _QED_OBJECTIVE = {
 
 
 async def test_objective_run_is_exploratory() -> None:
-    app, reg = _app()
+    app, sm = await _app()
     async with _client(app) as c:
         r = await c.post("/runs", json={**_BODY, "objective_json": _QED_OBJECTIVE})
         assert r.status_code == 201
-    assert reg.cfg is not None
-    assert reg.cfg.objective_json == _QED_OBJECTIVE
-    assert reg.cfg.mode == "exploratory"
+        run_id = r.json()["run_id"]
+    async with sm() as s:
+        row = await s.get(Run, run_id)
+    assert row is not None
+    assert row.objective_json == _QED_OBJECTIVE
+    assert row.mode == "exploratory"
 
 
 async def test_invalid_objective_rejected_at_runs_boundary() -> None:
-    app, reg = _app()
+    app, sm = await _app()
     bad = {"terms": [{"oracle": "nonexistent", "weight": 1.0}], "aggregator": "weighted_sum"}
     async with _client(app) as c:
         r = await c.post("/runs", json={**_BODY, "objective_json": bad})
         assert r.status_code == 422
-    assert reg.cfg is None
+    async with sm() as s:
+        rows = (await s.execute(select(Run))).scalars().all()
+    assert rows == []  # never reached create_run
 
 
 async def test_objective_validate_previews_composite() -> None:
-    app, _ = _app()
+    app, _ = await _app()
     async with _client(app) as c:
         r = await c.post(
             "/objective/validate", json={"spec": _QED_OBJECTIVE, "smiles": ["CCO", "not-a-smiles"]}
@@ -73,7 +81,7 @@ async def test_objective_validate_previews_composite() -> None:
 
 
 async def test_objective_validate_rejects_bad_spec() -> None:
-    app, _ = _app()
+    app, _ = await _app()
     async with _client(app) as c:
         r = await c.post(
             "/objective/validate",

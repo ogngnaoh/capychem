@@ -8,6 +8,11 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
     "modal>=0.64",
+    # LISTEN/NOTIFY (milestone 08 slice 03): a raw asyncpg connection for the
+    # WS cross-process event bus (SQLAlchemy's async engine has no clean LISTEN
+    # API). Already a transitive dep via capychem-core; declared directly here
+    # too since apps/api imports it directly (capychem.api.events).
+    "asyncpg>=0.29",
 ]
 
 [build-system]

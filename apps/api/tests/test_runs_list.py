@@ -12,7 +12,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from capychem.api.routes_runs import _db_fields, build_run_list, run_list_item
+from capychem.api.routes_runs import _db_fields, build_run_list, paginate_run_list, run_list_item
 from capychem.api.schemas import RunListItem
 from capychem.db.models import Run
 
@@ -195,3 +195,78 @@ def test_live_overlay_merges_into_list() -> None:
     assert (by_id[1].best_score, by_id[1].oracle_calls) == (0.6, 150)  # from live
     assert (by_id[2].best_score, by_id[2].oracle_calls) == (0.4, 80)  # from summary_json
     assert _ids(out) == [1, 2]  # 0.6 > 0.4
+
+
+# --- pagination (m08-05): cursor + limit, opt-in ------------------------------
+
+
+def _items(n: int) -> list[RunListItem]:
+    rows = [make_run(i, started_at=datetime(2026, 6, 30, i, 0, 0)) for i in range(1, n + 1)]
+    return build_run_list(rows, {}, status=None, task=None, sort="started_at", order="desc")
+
+
+def test_paginate_no_limit_returns_full_list_unchanged() -> None:
+    items = _items(5)
+    page, next_cursor = paginate_run_list(items, cursor=None, limit=None)
+    assert page == items  # byte-identical to the pre-pagination response shape
+    assert next_cursor is None
+
+
+def test_paginate_first_page_carries_a_next_cursor() -> None:
+    items = _items(5)  # desc by started_at -> [5,4,3,2,1]
+    page, next_cursor = paginate_run_list(items, cursor=None, limit=2)
+    assert _ids(page) == [5, 4]
+    assert next_cursor is not None
+
+
+def test_paginate_last_page_has_no_next_cursor() -> None:
+    items = _items(3)
+    page1, cursor1 = paginate_run_list(items, cursor=None, limit=2)
+    assert _ids(page1) == [3, 2]
+    page2, cursor2 = paginate_run_list(items, cursor=cursor1, limit=2)
+    assert _ids(page2) == [1]
+    assert cursor2 is None
+
+
+def test_paginate_cursor_stable_across_a_concurrent_insert() -> None:
+    """A new run landing between two page fetches must not shift, duplicate, or
+    skip a row already committed to by the first page's cursor."""
+    items = _items(5)  # [5,4,3,2,1]
+    page1, cursor = paginate_run_list(items, cursor=None, limit=2)
+    assert _ids(page1) == [5, 4]
+
+    # A NEW run (id=6) inserted with the newest started_at sorts FIRST in desc
+    # order -- the position every later row shifts by is exactly the scenario a
+    # naive offset/limit scheme would get wrong.
+    new_row = make_run(6, started_at=datetime(2026, 6, 30, 23, 0, 0))
+    older_rows = [make_run(i, started_at=datetime(2026, 6, 30, i, 0, 0)) for i in range(1, 6)]
+    items2 = build_run_list(
+        [new_row, *older_rows], {}, status=None, task=None, sort="started_at", order="desc"
+    )
+    assert _ids(items2) == [6, 5, 4, 3, 2, 1]
+
+    page2, _ = paginate_run_list(items2, cursor=cursor, limit=2)
+    assert _ids(page2) == [3, 2]  # neither duplicated (4) nor skipped (3)
+
+
+def test_paginate_stale_cursor_run_falls_back_to_the_top() -> None:
+    # A well-formed cursor whose run_id no longer exists (e.g. the run was
+    # deleted between pages) degrades to page 1 rather than raising.
+    from capychem.api.routes_runs import _encode_cursor
+
+    items = _items(3)
+    stale = _encode_cursor(999)
+    page, _ = paginate_run_list(items, cursor=stale, limit=1)
+    assert _ids(page) == [3]
+
+
+def test_paginate_malformed_cursor_raises_422() -> None:
+    from fastapi import HTTPException
+
+    items = _items(3)
+    try:
+        paginate_run_list(items, cursor="not-a-real-cursor", limit=1)
+    except HTTPException as exc:
+        assert exc.status_code == 422
+    else:
+        raise AssertionError("expected an HTTPException for a malformed cursor")

@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "capychem-core",
     "capychem-api",
+    "capychem-runner",
 ]
 
 [tool.uv]
@@ -14,11 +15,12 @@ package = false
 # harness/ is deliberately NOT a member. It pins Python 3.10 + legacy PyTDC and is
 # reached only via subprocess (see packages/core/capychem/oracle.py). Never import it.
 [tool.uv.workspace]
-members = ["packages/core", "apps/api"]
+members = ["packages/core", "apps/api", "apps/runner"]
 
 [tool.uv.sources]
 capychem-core = { workspace = true }
 capychem-api = { workspace = true }
+capychem-runner = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -64,4 +66,11 @@ follow_imports_for_stubs = true
 
 [[tool.mypy.overrides]]
 module = ["modal", "modal.*"]
+ignore_missing_imports = true
+
+# asyncpg ships no py.typed marker (milestone 08 slice 03: the raw LISTEN/NOTIFY
+# connection in capychem.api.events). Symbols become Any; correctness is covered
+# by the integration tests exercising the real listener against real Postgres.
+[[tool.mypy.overrides]]
+module = ["asyncpg", "asyncpg.*"]
 ignore_missing_imports = true
