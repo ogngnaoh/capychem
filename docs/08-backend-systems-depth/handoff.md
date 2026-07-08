@@ -1,14 +1,14 @@
-# Handoff — Milestone 08 (backend systems depth + reframe)
+# Handoff — Milestone 08 (backend systems depth + reframe) — SHIPPED
 
 ## Next session start here
-Run the final slice **S7 (reframe & docs)**: resume `Workflow({scriptPath: "<session>/workflows/scripts/m08-backend-depth-wf_9c57625c-d94.js", resumeFromRunId: "wf_9c57625c-d94"})` (S1–S6 replay from cache; S7 runs live; it's the last slice so the Workflow returns done). Then operator reviews the README/architecture framing before merge to `main`.
+Milestone 08 is **shipped and merged to `main`** (2026-07-07). No active milestone. If starting new work, pick the next milestone from `docs/milestones.md` and synthesize its folder per `~/.claude/CLAUDE.md`. The most likely next threads (all optional): the deferred cache-resume fix below, or the S8 docking stretch (needs re-scoping/approval).
 
 ## Current state
-- Branch `m08-backend-systems-depth`. **S1, S2, S2b, S3, S4, S5, S6 all shipped + gate-reviewed + committed** (7cd100e, 66e5764, a3f253d, 9b73a1c, b1e83da, 6762185, 907189d). Full suite **438 passed**; ruff/mypy clean (73 files) — independently re-verified.
-- The system is now genuinely distributed-on-Postgres: `POST /runs` enqueues → SKIP-LOCKED lease/heartbeat/reclaim worker (inline for dev, standalone `apps/runner` for prod) with fencing → cross-process `LISTEN/NOTIFY` live events → persistent exploratory oracle cache → backpressure + pagination + idempotency → Dockerized compose with `/readyz`.
-- Migrations head `9fa6b5f041b2` (lease cols → unique gen → oracle cache → idempotency key), applied.
+- Branch `m08-backend-systems-depth` merged into `main`. All 7 slices shipped (S1, S2, S2b, S3, S4, S5, S6, S7). Full suite **438 passed**; ruff/mypy clean (73 files).
+- The engine is now durable + distributed-on-Postgres: `POST /runs` enqueues → SKIP-LOCKED lease/heartbeat/reclaim worker (inline for dev, standalone `apps/runner` for prod) with fencing → cross-process `LISTEN/NOTIFY` events → persistent exploratory oracle cache → backpressure + pagination + idempotency → Dockerized compose (`infra/Dockerfile`, `infra/compose.yml`) with `/readyz`. README leads with the backend; `docs/architecture.md` is the deep reference.
+- Migrations head `9fa6b5f041b2`. Not pushed to any remote (local merge only) — push when ready.
 
-## Active concerns
-- **S7 must (a) lead with the backend + ELI5 the domain, (b) write `docs/architecture.md` (lifecycle, queue/lease/fencing protocol, cache design, cost gate, hard-problems), (c) preserve FIGURE CANON verbatim + N6, (d) NOT claim docking exists.** The S7 contract in the Workflow script was extended to require documenting two known limitations honestly: the lease-fencing residual race AND the exploratory-cache↔resume budget divergence (operator-approved deferral).
-- **Deferred follow-up (post-milestone):** fix the exploratory cache-hit ↔ resume `calls_used` divergence (distinguish cache-hit candidates on resume). Non-corrupting, exploratory-only, benchmark/G1 safe.
-- On S7 done: gate-green, merge to `main`, mark milestone shipped in `milestones.md`, write the next handoff.
+## Active concerns / deferred follow-ups
+- **Deferred (operator-approved):** exploratory cache-hit ↔ resume `calls_used` divergence — a resumed exploratory run that had cache hits over-counts budget vs the live run. Non-corrupting, exploratory-only, benchmark/G1 safe. Fix: distinguish cache-hit candidates on resume (e.g. don't write an OracleCall for a hit + derive `calls_used` from real calls in `reconstruct_state`). Documented in `docs/architecture.md` §7.5.
+- **Known residual (documented):** lease-fencing zombie-revival race can yield a spurious retryable `errored` on the legit owner (never corruption). `docs/architecture.md` §7.4. Closing it needs core-loop write-fencing — deliberately not done.
+- **S8 docking** remains an uncommitted stretch; do not build without re-approval.

@@ -33,10 +33,12 @@ Convert CapyChem's single-process, in-memory run execution into a durable Postgr
 4. **04 persistent shared oracle cache** — table + canonicalization + version invalidation; **exploratory-mode-only** so G1/eval path byte-identical. *(M)* — **shipped** (b1e83da) · known edge: exploratory cache-hit budget diverges on resume (documented, deferred — see log.md)
 5. **05 backpressure + REST gaps** — concurrency cap, bounded pools, backward-compat keyset pagination, TOCTOU-safe idempotency. *(M)* — **shipped** (6762185)
 6. **06 ops** — multi-target Dockerfile + compose + `/readyz` + `pool_pre_ping`. *(S–M)* — **shipped** (907189d) · HARD GATE reviewed ✓
-7. **07 reframe & docs** — README lead-with-backend + ELI5; `docs/architecture.md` + hard-problems narrative. *(S–M, depends all)* — **planned**
+7. **07 reframe & docs** — README lead-with-backend + ELI5; `docs/architecture.md` + hard-problems narrative (incl. both documented limitations). *(S–M)* — **shipped** (f1a273f) · framing operator-approved
 8. **08 docking on the worker pool** — STRETCH, uncommitted, DO NOT BUILD without operator re-approval.
 
-Each slice is built by the dynamic Workflow (`Builder → Evaluator → repair-once-on-FAIL → re-verify`); the orchestrator owns these milestone doc writes at each gate and independently re-verifies every Builder claim.
+**All 7 slices shipped → milestone complete (2026-07-07).** Built via an autonomous dynamic Workflow with adversarial per-slice gates + two hard human gates (after S2, before S7); operator decisions at the gates: lease fencing hardened (S2b), inline-worker split accepted, exploratory-cache↔resume edge documented + deferred. Deferred follow-up: distinguish cache-hit candidates on resume.
+
+Each slice was built by the dynamic Workflow (`Builder → Evaluator → repair-once-on-FAIL → re-verify`); the orchestrator owned these milestone doc writes at each gate and independently re-verified every Builder claim.
 
 ## Integration notes (cross-slice coupling, by path — corrected against the code)
 
