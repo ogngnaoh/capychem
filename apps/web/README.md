@@ -36,7 +36,7 @@ it is deliberately **not** proxied through Next.js middleware (App Router WS qui
 | `pnpm --filter web lint` | ESLint |
 | `pnpm --filter web typecheck` | `tsc --noEmit` |
 | `pnpm --filter web test` | Vitest component/logic tests |
-| `pnpm --filter web exec playwright test` | Playwright e2e (visual-regression shots; an axe-core a11y gate is being added in the accessibility slice) |
+| `pnpm --filter web exec playwright test` | Playwright e2e (visual-regression shots + an axe-core a11y gate enforced in CI across all routes) |
 
 ## Layout
 
@@ -47,13 +47,12 @@ it is deliberately **not** proxied through Next.js middleware (App Router WS qui
 | `components/workbench/` | The persistent shell, cockpit, and shared presentational components |
 | `components/ui/` | shadcn/ui primitives |
 | `lib/api.ts` | Typed REST client + WebSocket URL helpers |
-| `e2e/` | Playwright specs (visual-regression shots today; an accessibility gate lands in the a11y slice) |
+| `e2e/` | Playwright specs — visual-regression shots + `a11y.spec.ts` (the axe-core accessibility gate, enforced in CI) |
 
 ## Accessibility
 
-The workbench is being brought to WCAG AA at the 1280px demo viewport. The
-remediation — sufficient text/focus contrast, an `aria-live` region announcing
-live-run progress, `role="alert"` on async errors, a skip-to-content link, per-route
-titles, and `aria-sort` on the runs table — plus an axe-core Playwright gate across
-all routes in light and dark, land in the milestone-06 accessibility slices
-(`06-03`, `06-04`). Once the gate is in, keep it green.
+The workbench targets WCAG AA at the 1280px demo viewport. The remediation — sufficient
+text/focus contrast, an `aria-live` region announcing live-run progress, `role="alert"`
+on async errors, a skip-to-content link, per-route titles, and `aria-sort` on the runs
+table — shipped in the milestone-06 accessibility slices (`06-03`, `06-04`), and an
+axe-core Playwright gate runs in CI across all routes in light and dark. Keep it green.

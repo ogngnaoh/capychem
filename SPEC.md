@@ -3,7 +3,6 @@
 **Status:** Draft
 **Last updated:** 2026-05-26
 **Related PRD:** ./PRD.md
-**Related context bundle:** ./PROJECT.md
 
 ## 1. TL;DR
 
@@ -11,9 +10,9 @@ CapyChem is an autonomous closed-loop molecular optimization agent: design → s
 
 ## 2. Context
 
-Greenfield 16-week build by a solo developer with strong SWE skills, multi-framework agentic experience, and no chemistry background. The framing audience is drug-discovery scientists (the PRD persona); the substantive audience is BigTech SWE+AI/ML internship recruiters reading the GitHub repo and writeup. The PRD's user stories are honest for the framing audience; the engineering decisions below optimize for both: defensible chemistry-domain story AND legible system design without chemistry knowledge.
+Greenfield 16-week build by a solo developer with strong SWE skills, multi-framework agentic experience, and no chemistry background. The audience is drug-discovery scientists (the PRD persona). The PRD's user stories are honest for that persona; the engineering decisions below optimize for both a defensible chemistry-domain story AND legible system design that stands on its own without chemistry knowledge.
 
-The reference architecture is MOLLEO (LLM-as-mutation operator inside Graph-GA). MOLLEO has no analyze step — that's the gap CapyChem closes and the basis for both the "closed-loop" and "agentic depth" claims. The Week-1 differentiator-confirm task in PROJECT.md §11 reads MOLLEO's source to verify this narrative.
+The reference architecture is MOLLEO (LLM-as-mutation operator inside Graph-GA). MOLLEO has no analyze step — that's the gap CapyChem closes and the basis for both the "closed-loop" and "agentic depth" claims. A Week-1 differentiator-confirm task reads MOLLEO's source to verify this narrative.
 
 ## 3. Goals
 
@@ -130,7 +129,7 @@ Client subscribes on opening a run-detail or live view; server replays the last 
 
 **(b) Analyze step (the differentiator).** After every generation ≥1, the analyzer receives a compact JSON summary: top-k candidates with scores, bottom-k with scores, recent score deltas, the prior hypothesis (if any). It returns prose + a structured JSON hypothesis (e.g., `{"focus": "increase logP", "avoid": ["phenol groups"]}`). The next generation's proposer prompt is templated with the hypothesis text and the structured fields. The hypothesis is persisted to Postgres and emitted over WS. If the analyzer output fails structural parsing, the system uses the prior good hypothesis with a "no new signal" note (FR-007, edge case 3).
 
-**(c) Graph-GA invalid-fallback.** When `llm.propose` returns an invalid SMILES, the system attempts up to *N* retries on that batch slot; if still invalid, the slot is filled by a deterministic graph-edit mutation on a parent from the current top-K. This guarantees full-throughput generations even if the LLM degrades (FR-005, NFR reliability, kill-switch §9 of PROJECT.md).
+**(c) Graph-GA invalid-fallback.** When `llm.propose` returns an invalid SMILES, the system attempts up to *N* retries on that batch slot; if still invalid, the slot is filled by a deterministic graph-edit mutation on a parent from the current top-K. This guarantees full-throughput generations even if the LLM degrades (FR-005, NFR reliability, the fallback kill-switch).
 
 **(d) Compare runs.** `GET /compare?a={id}&b={id}` returns both runs' top-K, AUC time series (resampled to a common x-axis of oracle calls), hypothesis sequences, and cost. The web view overlays the AUC curves and presents top-K side by side.
 
@@ -140,7 +139,7 @@ The genuine load-bearing section of this SPEC.
 
 ### Alt A — MOLLEO-faithful clone (no analyze step)
 **Decision:** rejected.
-LLM-as-mutation inside Graph-GA, no analyze loop. Cheaper to build, fewer moving parts, no hypothesis-management code. But it strips the differentiator: a MOLLEO clone is not a portfolio piece — the closest reference architecture is already public and read-only (PROJECT.md §5). Without the analyze step, the "closed loop" and "agentic depth" claims both collapse.
+LLM-as-mutation inside Graph-GA, no analyze loop. Cheaper to build, fewer moving parts, no hypothesis-management code. But it strips the differentiator: a MOLLEO clone adds nothing distinctive — the closest reference architecture is already public and read-only. Without the analyze step, the "closed loop" and "agentic depth" claims both collapse.
 
 ### Alt B — One-shot tool-use agent (ChemCrow-style)
 **Decision:** rejected.
@@ -152,14 +151,14 @@ Three specialist agents (planner, executor, critic) coordinated by a router. Str
 
 ### Alt D — Skip Modal, use a paid LLM API
 **Decision:** rejected.
-GPT-4o or Claude over the public API would skip the Modal serving infrastructure. Faster to wire; no GPU cold-start surprises. But (1) DeepSeek-v4-pro is the chosen model — Modal-served inference is the realistic path for it; (2) per-token cost at 10,000 oracle calls easily blows past the ~$50/run gate (PROJECT.md §9); (3) loses the backend depth that the web-first surface justifies. The Modal LLM + Modal oracle workers + WebSocket-driven UI together carry real engineering load even though the *narrative* headline is agentic+eval.
+GPT-4o or Claude over the public API would skip the Modal serving infrastructure. Faster to wire; no GPU cold-start surprises. But (1) DeepSeek-v4-pro is the chosen model — Modal-served inference is the realistic path for it; (2) per-token cost at 10,000 oracle calls easily blows past the ~$50/run gate; (3) loses the backend depth that the web-first surface justifies. The Modal LLM + Modal oracle workers + WebSocket-driven UI together carry real engineering load even though the *narrative* headline is agentic+eval.
 
 ### Alt E — SQLite + LiteFS instead of managed Postgres
 **Decision:** rejected.
-Simpler ops, single-file portability, no managed-service dependency. But the web view reads while a worker writes — concurrent-write awkwardness is real once we have a live run + a browse session at once. Postgres also keeps doors open for `pgvector`-backed memory-of-past-mutations (PROJECT.md §8 stretch). Operational cost of managed Postgres is rounding-error inside the $50/run cost gate.
+Simpler ops, single-file portability, no managed-service dependency. But the web view reads while a worker writes — concurrent-write awkwardness is real once we have a live run + a browse session at once. Postgres also keeps doors open for `pgvector`-backed memory-of-past-mutations (a documented stretch). Operational cost of managed Postgres is rounding-error inside the $50/run cost gate.
 
 ### "Do nothing" baseline
-Keep working on assorted demos. No portfolio anchor, no closed-loop optimization learnings, no answer to "show me one substantial thing you built end to end" in internship interviews. The dual audience (chemist framing + recruiter substance) is the entire point of this project; the do-nothing baseline doesn't serve either.
+Keep working on assorted demos. No anchor project, no closed-loop optimization learnings, no single substantial thing built end to end. A coherent, honestly-benchmarked closed-loop system is the entire point of this project; the do-nothing baseline doesn't serve it.
 
 ## 8. Cross-cutting concerns
 
@@ -186,12 +185,12 @@ Keep working on assorted demos. No portfolio anchor, no closed-loop optimization
 
 ## 9. Rollout & migration
 
-No migration — greenfield. The 16-week build runs in four phases (kill-switch gates from PROJECT.md §9 attached):
+No migration — greenfield. The 16-week build runs in four phases (kill-switch gates attached):
 
 - **Phase 1 (weeks 1–3) — harness reproducibility & loop spike.** Stand up the isolated `harness/` uv env (PyTDC 0.3.6, Python 3.10); reproduce one Graph-GA PMO result. Wire LangGraph + Langfuse around a trivial `LLM → TDC oracle → log` loop. Measure valid-SMILES rate. **Kill-switch:** <80% valid SMILES or harness won't reproduce → fix before proceeding.
 - **Phase 2 (weeks 4–7) — end-to-end loop on one PMO task with web shell.** Modal LLM endpoint + Modal oracle worker pool; FastAPI REST + WS skeleton; Postgres schema; minimal Next.js launch + watch-live view on one PMO task; first ≥6/23 beat-Graph-GA attempt on a single task. **Kill-switch:** can't reproduce MOLLEO-like beat on a single task by week 7 → narrow scope before scaling.
-- **Phase 3 (weeks 8–12) — analyzer agent + full benchmark surface.** Implement the analyzer step (the differentiator); roll out across all 23 PMO tasks; cost gate checks. **Kill-switch (the PROJECT.md §9 Week-8 bar):** beat Graph-GA on ≥3 of 23 tasks → on track; <3 → **pivot to analyzer-only narrative**, not abandon.
-- **Phase 4 (weeks 13–16) — compare view + polish + Langfuse-driven writeup.** Compare-runs flow; web app polish; README + Langfuse trace walkthroughs that are recruiter-legible without chemistry knowledge.
+- **Phase 3 (weeks 8–12) — analyzer agent + full benchmark surface.** Implement the analyzer step (the differentiator); roll out across all 23 PMO tasks; cost gate checks. **Kill-switch (the Week-8 bar):** beat Graph-GA on ≥3 of 23 tasks → on track; <3 → **pivot to analyzer-only narrative**, not abandon.
+- **Phase 4 (weeks 13–16) — compare view + polish + Langfuse-driven writeup.** Compare-runs flow; web app polish; README + Langfuse trace walkthroughs that are legible without chemistry knowledge.
 
 Deployment: containerized FastAPI + Postgres + Langfuse via Docker Compose for local dev; Modal handles its own deployment via the `modal deploy` command. The web app deploys statically (Vercel or Cloudflare Pages — picker at deployment time).
 
@@ -208,12 +207,12 @@ Deployment: containerized FastAPI + Postgres + Langfuse via Docker Compose for l
 
 **Risks:**
 
-- **Dependency-surface isolation.** `mol_opt` pins PyTDC 0.3.6 / Python 3.10. Modern code MUST NOT share env. Mitigation: subprocess + JSON bridge; CLAUDE.md gotcha; isolated `harness/` directory. *(PROJECT.md §5 hazard, week-one focus.)*
-- **LLM cost overrun.** A 10,000-call run with a costly LLM blows the $50/run gate. Mitigation: per-run cost tracking with hard cap (§8.3 cost-budget enforcement); fallback to a smaller-context prompt or a smaller open model (PROJECT.md §9 cost gate). *(PROJECT.md §9.)*
+- **Dependency-surface isolation.** `mol_opt` pins PyTDC 0.3.6 / Python 3.10. Modern code MUST NOT share env. Mitigation: subprocess + JSON bridge; CLAUDE.md gotcha; isolated `harness/` directory. *(A week-one focus.)*
+- **LLM cost overrun.** A 10,000-call run with a costly LLM blows the $50/run gate. Mitigation: per-run cost tracking with hard cap (§8.3 cost-budget enforcement); fallback to a smaller-context prompt or a smaller open model (the cost gate).
 - **Valid-SMILES rate from chosen LLM.** If DeepSeek-v4-pro's valid-SMILES rate is <80% in early spikes, the loop wastes oracle budget on fallback. Mitigation: Week-1 gate + few-shot prompt engineering + structured output enforcement.
 - **Modal cold-start latency in WS UX.** First-token from a cold model can be ~30 s; the WebSocket layer must buffer client events through it without disconnecting. Mitigation: WS heartbeat ping; loading-state UX; warm pool on Modal for active runs.
 - **Next.js ↔ FastAPI WebSocket proxying.** App Router has historically had quirks proxying WS through middleware. Mitigation: WS endpoint served from an absolute URL (the FastAPI origin), no proxying through Next.
-- **Analyzer reasoning may not actually help.** Per kill-switch, if the analyzer doesn't deliver value, pivot to analyzer-only narrative (PROJECT.md §9 Week-8 fallback) rather than abandon.
+- **Analyzer reasoning may not actually help.** Per kill-switch, if the analyzer doesn't deliver value, pivot to analyzer-only narrative (the Week-8 fallback) rather than abandon.
 
 **Open questions:**
 

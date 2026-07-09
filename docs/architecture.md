@@ -13,9 +13,9 @@ the run store and the queue, by design (see §7.1).
 
 **Scope note (N6):** every "score" anywhere in this system is an in-silico PMO/TDC benchmark-oracle
 score. Nothing here does or claims real-world drug-discovery efficacy, wet-lab work, or docking — the
-architecture is a job-processing/optimization engine that happens to be demonstrated on molecular
-scoring. Docking is a documented, uncommitted stretch (milestone 08 slice 08); it is not implemented and
-nothing below should be read as claiming it is.
+molecular-optimization objective is real and foregrounded, but the numbers are benchmark scores, not
+biological or clinical claims. Docking is a documented, uncommitted stretch (milestone 08 slice 08); it is
+not implemented and nothing below should be read as claiming it is.
 
 ---
 
@@ -324,7 +324,7 @@ A proper fix needs a way to distinguish cache-hit candidates from freshly-scored
 and back out through `reconstruct_state` (e.g. a `from_cache: bool` column, or a distinct
 `OracleCall.compute_cost_usd == 0.0 AND cache hit` marker plumbed through resume's replay). The operator
 reviewed this at the milestone's S6 gate and chose to document it here and defer the fix rather than gate
-the milestone on it — recorded as a deferred follow-up in `docs/08-backend-systems-depth/log.md`.
+the milestone on it — an accepted, documented follow-up.
 
 ---
 

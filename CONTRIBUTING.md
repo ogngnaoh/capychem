@@ -1,6 +1,6 @@
 # Contributing to CapyChem
 
-CapyChem is a single-developer portfolio build, but it is structured to be
+CapyChem is a single-developer project, but it is structured to be
 **forked and run locally**. This guide is what you need to get a dev loop going
 and the invariants you must not break.
 
@@ -50,7 +50,7 @@ uv run pytest                          # API tests need a local Postgres (infra/
 pnpm --filter web lint
 pnpm --filter web typecheck
 pnpm --filter web test
-pnpm --filter web exec playwright test  # visual-regression shots; axe-core a11y gate lands in 06-04
+pnpm --filter web exec playwright test  # visual-regression shots + the axe-core a11y gate (also enforced in CI)
 ```
 
 ## Invariants (do not break these)
@@ -62,10 +62,10 @@ pnpm --filter web exec playwright test  # visual-regression shots; axe-core a11y
 - **Figure canon.** The benchmark result is "beats/matches vanilla Graph-GA on all
   **21 comparable** PMO tasks (seed 42, 10k budget); **2 of 23 excluded for cause**."
   Never write "21/23", and never claim SOTA.
-- **Benchmark vs. exploratory mode.** (Landing in milestone 07.) Any custom seed,
-  custom oracle, composed objective, or constraint makes a run `exploratory` — it must
-  never be tagged `benchmark` or feed the committed G1 numbers. This is enforced in
-  code + tests, not just docs.
+- **Benchmark vs. exploratory mode.** Any custom seed, custom oracle, composed
+  objective, or constraint makes a run `exploratory` — it must never be tagged
+  `benchmark` or feed the committed G1 numbers. This is enforced in code + tests,
+  not just docs.
 - **Never import from `harness/`.** The legacy PMO/PyTDC stack is pinned and isolated;
   modern code talks to it only via the JSON subprocess bridge in
   `packages/core/capychem/oracle.py`.
@@ -77,8 +77,8 @@ pnpm --filter web exec playwright test  # visual-regression shots; axe-core a11y
 ## Project layout
 
 See the "Repository map" in the root [`README.md`](README.md). Work is organized as
-milestones (`docs/NN-<name>/`) containing vertical slices; the active milestone is
-marked in `docs/milestones.md`.
+milestones (indexed in `docs/milestones.md`) containing vertical slices; the detailed
+per-milestone process docs (`docs/NN-<name>/`) are kept locally and not published.
 
 ## Secrets
 

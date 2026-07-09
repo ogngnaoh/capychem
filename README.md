@@ -2,49 +2,25 @@
 
 [![CI](https://github.com/ogngnaoh/capychem/actions/workflows/ci.yml/badge.svg)](https://github.com/ogngnaoh/capychem/actions/workflows/ci.yml)
 
-**A durable, Postgres-backed job-processing engine for sample-efficient optimization — demonstrated on
-molecular optimization.**
+**An agentic molecular-optimization system.**
+A closed-loop LLM agent that reasons over each generation to design better molecules under a fixed budget of
+expensive scoring calls.
 
-**In one breath:** you hand the system an expensive-to-call scoring function (here: a chemistry
-benchmark scoring how "good" a candidate molecule is) and a hard budget on how many times you're allowed
-to call it. It runs many rounds of *propose → score → learn → propose again*, spending that budget as
-wisely as it can. Chemistry is just the workload here — the engineering that matters is how reliably and
-cheaply the system schedules, executes, caches, and recovers that expensive work.
+Matches or beats a strong classical baseline on all 21 comparable benchmark tasks (2 of 23 excluded for
+cause) — on a durable Postgres system with crash-recovery and full tracing. In-silico only.
 
-### Backend engineering, up front
+The goal is not the best molecule per hour of compute; it's the **best molecule per oracle call**.
 
-- **Producer → durable queue → worker pool.** `POST /runs` only enqueues a row; a separate worker
-  process (one or several) claims it with `SELECT … FOR UPDATE SKIP LOCKED` and drives it to completion.
-  Postgres *is* the queue — no Redis, no broker, no Celery, no k8s.
-- **Lease, heartbeat, reclaim.** Each claimed run holds a time-boxed lease the worker renews on a
-  heartbeat; if a worker crashes, the lease expires and any live worker reclaims and resumes the run from
-  its last persisted generation. A `UNIQUE(run_id, index)` constraint plus owner-fenced writes close the
-  double-execution gap a merely-*stalled* ("zombie") worker could otherwise reopen.
-- **Cross-process live events.** Postgres `LISTEN/NOTIFY` fans generation/analyzer/completion events out
-  to every API process's WebSocket clients, so live updates keep working even when a *different* process
-  is driving the run.
-- **A persistent, cross-run oracle-score cache.** RDKit-canonicalized, oracle-version-scoped; a hit costs
-  $0 of real compute and, in exploratory mode, doesn't spend the run's oracle-call budget.
-- **Backpressure + idempotency.** Bounded per-worker concurrency, keyset-paginated `GET /runs`, and a
-  TOCTOU-safe `Idempotency-Key` on `POST /runs`.
-- **Durable resume.** A crash, an oracle-worker outage, or hitting the cost cap all replay cleanly from
-  persisted state to the same terminal result — no lost work.
-- **A hard subprocess isolation boundary.** The legacy scoring stack (pinned PyTDC/RDKit) runs in its own
-  environment, reached only through a typed subprocess + JSON contract — never imported.
-- **A real CI gate.** Ruff + mypy (strict) + the full pytest suite (Postgres- and harness-backed) run on
-  every push.
-
-The full run lifecycle, the queue/lease/fencing protocol, the cache design, and the hard problems (plus
-two honestly-documented known limitations) solved along the way are in
-[`docs/architecture.md`](docs/architecture.md).
-
----
-
-The single workload this backend demonstrates on, end to end, is a closed-loop molecular optimization
-agent: a language model proposes candidate molecules, each is scored by a benchmark oracle, and — the
-part most systems skip — the model then *reasons over what just worked* and conditions its next round of
-proposals on that hypothesis. The goal is not the best molecule per hour of compute; it's the **best
-molecule per oracle call**.
+**The problem.** Many of the most valuable objectives can only be measured by a *scoring function that's
+expensive to run* — in molecular design, a lab assay, a docking simulation, a costly model that takes real
+time and money per candidate — so the game isn't "search harder," it's spending a tiny, fixed budget of
+evaluations as wisely as possible. **CapyChem** is a closed-loop agent for exactly this: it proposes candidate
+molecules, scores them against an expensive benchmark oracle, and — unlike prior LLM-in-the-loop approaches —
+*analyzes* what scored well versus poorly each round, writes an explicit hypothesis, and conditions its next
+proposals on it. On the field's standard molecular-optimization benchmark (PMO/TDC), it matches or beats a
+strong classical baseline (Graph-GA) on **all 21 comparable tasks (2 of 23 excluded for cause, not losses)**
+under a fixed 10,000-call budget — every number an in-silico benchmark score, no real-world efficacy claimed.
+The same closed-loop approach generalizes to any objective where each evaluation is expensive.
 
 > **In-silico only.** Every score in this project is a standardized in-silico benchmark-oracle score. CapyChem
 > optimizes those scores and reports them as such. It makes **no claim of real-world drug-discovery efficacy**,
@@ -58,6 +34,9 @@ molecule per oracle call**.
 writes a hypothesis each generation and the score climbs live, still tracking the Graph-GA baseline mid-run →
 the finished run beats the strong Graph-GA control head-to-head. Focused clips of each capability are under
 their sections below. For the trace-level view of one run, see the [Langfuse walkthrough](docs/langfuse-walkthrough.md).*
+
+> **Reviewing the engineering?** Start with [`docs/architecture.md`](docs/architecture.md) — the run lifecycle,
+> the durable-queue claim/lease/reclaim/fence protocol, and the hard problems (and honest limitations) solved.
 
 <p align="center">
   <img src="docs/assets/run-detail-full.png" alt="A completed CapyChem run: score-vs-oracle-calls curve, top molecules, and the analyzer's per-generation hypotheses" width="620">
@@ -103,7 +82,8 @@ what makes CapyChem an *agent that reasons about its own progress* rather than a
 
 CapyChem was measured on **PMO** (Practical Molecular Optimization), the standard 23-task benchmark the field
 uses to compare sample-efficient optimizers. The metric is **AUC of the top-10 mean score vs. oracle calls**
-under a **10,000-oracle-call budget** — it rewards getting good *early*, not just eventually. The baseline is
+under a **10,000-oracle-call budget** — it rewards getting good *early*, not just eventually. *(In plain terms:
+how good your best molecules are, for how few expensive scoring calls you spent.)* The baseline is
 **vanilla Graph-GA**, a strong classical genetic algorithm (not a trivial one).
 
 **CapyChem beats or matches Graph-GA on all 21 comparable PMO tasks · decisive on 9 · 2 of 23 excluded for cause (defective oracles, not losses) · bar >=6/23.**
@@ -112,7 +92,8 @@ under a **10,000-oracle-call budget** — it rewards getting good *early*, not j
 > - **Comparable set is 21 of 23.** `sitagliptin_mpo` and `valsartan_smarts` are excluded for cause, not
 >   counted as losses: the former's oracle emits scores outside `[0, 1]` (incomparable by the metric); the
 >   latter's Graph-GA control scores **0.757** where the published PMO value is **0.000** — the pinned legacy
->   oracle isn't faithfully reproducing that task here. Both were caught by a baseline-reproduction check and
+>   oracle isn't faithfully reproducing that task here. Both were caught by automated QA — an out-of-range
+>   oracle-output guard (`sitagliptin_mpo`) and the baseline-reproduction check (`valsartan_smarts`) — and
 >   excluded, not silently kept.
 > - **Single seed per task**, not an averaged multi-seed study.
 > - Of the 21 comparable tasks, **9 are decisive** (~0.1 AUC or more); **4 are within single-seed noise**
@@ -138,7 +119,8 @@ under a **10,000-oracle-call budget** — it rewards getting good *early*, not j
 </details>
 
 Decisive wins included `troglitazone` (+0.563), `mestranol` (+0.397), and `celecoxib` (+0.344). The full
-per-task verdict — every AUC, the baseline-reproduction gap, and the exclusion rationale — is committed at
+per-task verdict — every comparable task's AUC and the baseline-reproduction gap behind the `valsartan_smarts`
+exclusion — is committed at
 [`docs/04-compare-and-polish/g1-full23-10k-seed42.json`](docs/04-compare-and-polish/g1-full23-10k-seed42.json).
 
 ## How the closed loop works
@@ -157,8 +139,10 @@ flowchart LR
 ```
 
 The dashed arrow is the loop that MOLLEO lacks: the analyzer's hypothesis flows forward into the next
-proposal prompt. Below, the analyzer's actual per-generation reasoning from a real run — legible without any
-chemistry background:
+proposal prompt. And it measurably earns its place: in a controlled on/off ablation on the `jnk3` task,
+conditioning the next generation's proposals on the analyzer's hypothesis lifted top-10 AUC by **+0.090**
+(seed 42) and **+0.108** (seed 7) — the analyze step is a real optimizer, not decoration. Below, the analyzer's actual per-generation reasoning from a real
+run — legible without any chemistry background:
 
 <p align="center">
   <img src="docs/assets/run-detail-analyzer.png" alt="The analyzer's hypothesis for each generation, with focus/avoid chips" width="560">
@@ -177,6 +161,37 @@ mid-run:
 
 Every one of these steps is traced. From any run you can click **View trace** to open the full decision tree
 in Langfuse — see the [trace walkthrough](docs/langfuse-walkthrough.md) for a step-by-step read of one run.
+
+## Built to run it reliably
+
+The agent is the hero; underneath it is a production-grade durable system I built so a full 10,000-call run
+survives crashes, worker deaths, oracle outages, and cost caps without losing work — all on Postgres, with no
+Redis, no broker, and no k8s.
+
+- **Producer → durable queue → worker pool.** `POST /runs` only enqueues a row; a separate worker
+  process (one or several) claims it with `SELECT … FOR UPDATE SKIP LOCKED` and drives it to completion.
+  Postgres *is* the queue — no Redis, no broker, no Celery, no k8s.
+- **Lease, heartbeat, reclaim.** Each claimed run holds a time-boxed lease the worker renews on a
+  heartbeat; if a worker crashes, the lease expires and any live worker reclaims and resumes the run from
+  its last persisted generation. A `UNIQUE(run_id, index)` constraint plus owner-fenced writes close the
+  double-execution gap a merely-*stalled* ("zombie") worker could otherwise reopen.
+- **Cross-process live events.** Postgres `LISTEN/NOTIFY` fans generation/analyzer/completion events out
+  to every API process's WebSocket clients, so live updates keep working even when a *different* process
+  is driving the run.
+- **A persistent, cross-run oracle-score cache.** RDKit-canonicalized, oracle-version-scoped; a hit costs
+  $0 of real compute and, in exploratory mode, doesn't spend the run's oracle-call budget.
+- **Backpressure + idempotency.** Bounded per-worker concurrency, keyset-paginated `GET /runs`, and a
+  TOCTOU-safe `Idempotency-Key` on `POST /runs`.
+- **Durable resume.** A crash, an oracle-worker outage, or hitting the cost cap all replay cleanly from
+  persisted state to the same terminal result — no lost work.
+- **A hard subprocess isolation boundary.** The legacy scoring stack (pinned PyTDC/RDKit) runs in its own
+  environment, reached only through a typed subprocess + JSON contract — never imported.
+- **A real CI gate.** Ruff + mypy (strict) + the full pytest suite (Postgres- and harness-backed) run on
+  every push.
+
+The full run lifecycle, the queue/lease/fencing protocol, the cache design, and the hard problems (plus
+two honestly-documented known limitations) solved along the way are in
+[`docs/architecture.md`](docs/architecture.md).
 
 ## The operator surface
 
@@ -261,18 +276,18 @@ WebSocket client may not be the one driving the run at all, which is exactly wha
 is for. Full protocol + design rationale: [`docs/architecture.md`](docs/architecture.md). A few decisions
 worth calling out here:
 
-- **The oracle bridge is a hard isolation boundary.** The PMO benchmark pins a legacy stack (PyTDC 0.3.6,
-  Python 3.10). That lives in a separate `harness/` environment; modern code never imports it — it shells out
-  via a typed JSON subprocess. This keeps the reproducible-benchmark contract intact without dragging old
-  dependencies into the app.
-- **The queue and the cache are both just Postgres.** No Redis, no broker, no Celery, no k8s: a durable
-  `SELECT ... FOR UPDATE SKIP LOCKED` queue with lease/heartbeat/reclaim (plus structural fencing against a
-  stalled-then-revived worker) and a persistent, RDKit-canonicalized, oracle-version-scoped oracle-score
-  cache — exploratory-mode-only, so the benchmark/eval path stays byte-identical. A cache hit is $0 and
-  uncounted against the run's oracle budget.
-- **Observability is the source of truth.** Every LangGraph node (`propose`, `validate`, `score`, `analyze`,
-  `fallback`, `stop_check`) emits a Langfuse span nested under a per-run trace, so "what did the agent decide,
-  and why?" is auditable step by step.
+*(The queue/lease/reclaim, cache, and isolation mechanics are spelled out under
+[Built to run it reliably](#built-to-run-it-reliably); here is why each is shaped the way it is.)*
+
+- **Why the oracle bridge is a separate process.** The PMO benchmark pins a legacy stack (PyTDC 0.3.6,
+  Python 3.10). Reaching it only through a typed JSON subprocess keeps the reproducible-benchmark contract
+  intact without dragging old dependencies into the modern app.
+- **Why the queue and cache are both just Postgres.** For single-digit concurrent runs, one store is enough —
+  a durable queue *and* the oracle-score cache in one system means one operational surface, no Redis/broker/k8s
+  to run. The cache is exploratory-mode-only, so the benchmark/eval path stays byte-identical.
+- **Why every node is traced.** "What did the agent decide, and why?" has to be answerable step by step, so
+  each LangGraph node (`propose`, `validate`, `score`, `analyze`, `fallback`, `stop_check`) emits a Langfuse
+  span nested under a per-run trace.
 
 ## Quickstart
 
@@ -328,12 +343,15 @@ DeepSeek model. There is **no auth or hosting** — this is a single-user tool y
 | `packages/core/` | `capychem` core: the loop, proposer, analyzer, fallback, oracle adapter, cache, eval harness |
 | `harness/` | Isolated legacy PMO/PyTDC env (never imported — subprocess bridge only) |
 | `apps/worker/` | Modal app (LLM endpoint + oracle worker pool) |
-| `docs/` | Milestones, per-slice design docs, [`architecture.md`](docs/architecture.md), and the [trace walkthrough](docs/langfuse-walkthrough.md) |
+| `docs/` | Milestones index, [`architecture.md`](docs/architecture.md), and the [trace walkthrough](docs/langfuse-walkthrough.md) |
 
 ## What this project is (and isn't)
 
-CapyChem is a portfolio-scale engineering build: an autonomous agent loop, a rigorous benchmark harness with
+CapyChem is an end-to-end engineering build: an autonomous agent loop, a rigorous benchmark harness with
 committed baselines, a full-stack operator surface, and end-to-end observability. It reimplements a published
 reference architecture (MOLLEO) and adds a closed analysis loop on top. It is **not** a novel ML-architecture
 contribution, a chemistry-expertise product, or a claim about real-world molecules — see the in-silico note at
 the top.
+
+**Roadmap:** cross-run memory over past successful edits — today each run learns only within itself; persisting
+what worked across runs, so the agent gets sharper the more objectives it sees, is the next step.

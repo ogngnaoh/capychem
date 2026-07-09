@@ -5,7 +5,6 @@ CapyChem is an autonomous closed-loop molecular optimization agent. Start every 
 ## Pointers
 - @PRD.md
 - @SPEC.md
-- @PROJECT.md
 - @docs/milestones.md — milestone index; the one marked `← active` is current.
 - Active milestone: load `docs/<NN>-<name>/milestone.md` and `docs/<NN>-<name>/handoff.md` per `~/.claude/CLAUDE.md`. Synthesize those files when work on a milestone starts; do not pre-create.
 
