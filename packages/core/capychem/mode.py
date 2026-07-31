@@ -1,7 +1,7 @@
 """Run mode: the benchmark/exploratory invariant (milestone 07 slice 01).
 
 Every run carries a ``mode``. Only ``benchmark`` runs feed the committed G1
-numbers (§8, PROJECT.md thesis); the moment a run uses ANY custom input — an
+numbers; the moment a run uses ANY custom input — an
 operator seed population, a pluggable/composed objective, or a constraint set —
 it is ``exploratory`` and is never presented as benchmark-comparable.
 

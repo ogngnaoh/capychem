@@ -2,7 +2,7 @@
 
 Names are the exact PyTDC oracle names (``Oracle(name=task)``), in NeurIPS 2022 PMO
 Table 2 row order. Order is cosmetic (UI dropdown + sweep-row order only). Source:
-agent_docs/pmo-auc-and-baselines.md. Every score these tasks produce is an in-silico
+the PMO paper (arXiv:2206.12411) Table 2. Every score these tasks produce is an in-silico
 oracle score (PRD N6).
 """
 

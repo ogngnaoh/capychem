@@ -77,8 +77,7 @@ pnpm --filter web exec playwright test  # visual-regression shots + the axe-core
 ## Project layout
 
 See the "Repository map" in the root [`README.md`](README.md). Work is organized as
-milestones (indexed in `docs/milestones.md`) containing vertical slices; the detailed
-per-milestone process docs (`docs/NN-<name>/`) are kept locally and not published.
+milestones containing vertical slices, indexed in `docs/milestones.md`.
 
 ## Secrets
 

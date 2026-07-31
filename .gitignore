@@ -49,21 +49,3 @@ htmlcov/
 
 # Harness env (isolated uv venv at harness/.venv — covered by .venv/ above; never committed)
 harness/__pycache__/
-
-# Internal process docs + scoping bundle — kept locally, not published.
-# The public docs/ tree keeps only: architecture.md, langfuse-walkthrough.md, assets/, milestones.md,
-# plus the committed G1 benchmark verdict (force-tracked below).
-/PROJECT.md
-/agent_docs/
-/docs/superpowers/
-/docs/00-walking-skeleton/
-/docs/01-harness-reproducibility/
-/docs/02-end-to-end-loop/
-/docs/03-analyzer-and-scale/
-/docs/05-operator-workbench/
-/docs/06-production-hardening/
-/docs/07-objective-ownership/
-/docs/08-backend-systems-depth/
-# docs/04: ignore the folder's contents but keep the committed G1 full-sweep verdict tracked.
-/docs/04-compare-and-polish/*
-!/docs/04-compare-and-polish/g1-full23-10k-seed42.json

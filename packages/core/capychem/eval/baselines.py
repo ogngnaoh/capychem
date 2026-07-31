@@ -1,5 +1,5 @@
 """Published PMO Graph-GA AUC-top-10 baselines (NeurIPS 2022 Table 2) and the
-reproduction tolerance. Source: agent_docs/pmo-auc-and-baselines.md."""
+reproduction tolerance. Source: the PMO paper (arXiv:2206.12411) Table 2."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from dataclasses import dataclass
 # Published Graph-GA AUC top-10, mean over 5 seeds (PMO paper Table 2). Sum = 13.751.
 # These are a single-vs-5-seed SANITY REFERENCE only: every head-to-head / verdict
 # decision uses our own same-seed Graph-GA control, never the published number as the
-# comparator. Source: agent_docs/pmo-auc-and-baselines.md.
+# comparator. Source: PMO paper (arXiv:2206.12411) Table 2.
 GRAPH_GA_AUC_TOP10: dict[str, float] = {
     "qed": 0.940,
     "zaleplon_mpo": 0.346,

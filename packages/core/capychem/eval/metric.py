@@ -1,7 +1,7 @@
 """The single authoritative AUC-of-top-10 metric.
 
-Faithful port of PMO ``main/optimizer.py::top_auc`` (see
-agent_docs/pmo-auc-and-baselines.md for the verbatim source). This is the
+Faithful port of PMO ``main/optimizer.py::top_auc`` (verbatim source in the
+upstream ``mol_opt`` repository, github.com/wenhao-gao/mol_opt). This is the
 canonical G1 number; the running curve in loop/logic.py is a live-UI estimate
 only -- do not let a second AUC definition drift in.
 """

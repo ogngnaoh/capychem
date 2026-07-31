@@ -1,7 +1,7 @@
 """Durable job queue over the ``runs`` table (milestone 08 slice 02).
 
-No Redis/broker/Celery — Postgres is both the run store and the queue
-(PROJECT.md §10 backend-headline re-decide). A "queued" row, or a "running" row
+No Redis/broker/Celery — Postgres is both the run store and the queue, by
+deliberate design. A "queued" row, or a "running" row
 whose lease has expired (its worker presumably crashed), is claimable via
 ``SELECT ... FOR UPDATE SKIP LOCKED``: two concurrent claimers racing the same
 row never both win, and a claimer that would block on a locked row skips it
