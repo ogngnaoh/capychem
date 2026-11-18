@@ -92,6 +92,15 @@ def _alembic_config() -> Config:
     return cfg
 
 
+def upgrade_schema(connection: Connection) -> None:
+    """Migrate a caller-owned connection, preserving its transaction and schema.
+
+    Async engines can invoke this through ``AsyncConnection.run_sync`` so CLI
+    bootstrap uses the same verified migration path as synchronous API startup.
+    """
+    _upgrade_connection(connection, _alembic_config())
+
+
 def run_migrations() -> None:
     """Bring the schema to head. Synchronous — run off the event loop
     (e.g. via asyncio.to_thread) when called from async code.
@@ -101,7 +110,6 @@ def run_migrations() -> None:
       specific revision, then apply new migrations. Reject ambiguous layouts.
     - Already-migrated DB: upgrade is a no-op or applies newer revisions.
     """
-    cfg = _alembic_config()
     url = sync_database_url()
     engine = create_engine(
         url,
@@ -109,6 +117,6 @@ def run_migrations() -> None:
     )
     try:
         with engine.begin() as connection:
-            _upgrade_connection(connection, cfg)
+            upgrade_schema(connection)
     finally:
         engine.dispose()

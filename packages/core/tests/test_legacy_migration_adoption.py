@@ -9,7 +9,9 @@ import pytest
 from alembic import command
 from capychem.db.migrate import _alembic_config, _upgrade_connection, legacy_metadata
 from capychem.db.models import Run
+from capychem.db.session import init_schema
 from sqlalchemy import create_engine, inspect, select, text
+from sqlalchemy.ext.asyncio import create_async_engine
 
 
 @pytest.fixture
@@ -92,3 +94,25 @@ def test_ambiguous_unversioned_schema_is_rejected_without_stamp(isolated_connect
     assert "alembic_version" not in tables
     assert "experiments" not in tables
     assert connection.scalar(select(Run.task).where(Run.id == run_id)) == "qed"
+
+
+async def test_async_bootstrap_is_versioned_before_api_startup(isolated_connection):
+    """CLI/test bootstrap must leave the same versioned schema as API startup."""
+    connection = isolated_connection
+    schema = connection.scalar(text("SELECT current_schema()"))
+    engine = create_async_engine(
+        connection.engine.url.set(drivername="postgresql+asyncpg"),
+        connect_args={"server_settings": {"search_path": schema}},
+    )
+    try:
+        await init_schema(engine)
+        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "d16324b5eac8"
+        run_id = existing_run(connection)
+
+        # A second CLI bootstrap and subsequent API migration must preserve data.
+        await init_schema(engine)
+        _upgrade_connection(connection, _alembic_config())
+        assert connection.scalar(select(Run.seed).where(Run.id == run_id)) == 42
+        assert "experiment_studies" in inspect(connection).get_table_names()
+    finally:
+        await engine.dispose()

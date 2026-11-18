@@ -96,7 +96,8 @@ jobs:
 
   studio:
     name: studio (typecheck · production build · recorded E2E)
-    runs-on: ubuntu-latest
+    # The locked Playwright release ships Chromium for Ubuntu 24.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       # This job verifies portable recorded evidence and interaction contracts.
@@ -160,7 +161,7 @@ jobs:
 
   web:
     name: web (lint · typecheck · test)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 

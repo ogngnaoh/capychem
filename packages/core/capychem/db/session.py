@@ -1,10 +1,10 @@
-"""Async engine, sessionmaker, and the test-only create_all bootstrap.
+"""Async engine, sessionmaker, and database bootstrap.
 
 Reads CAPYCHEM_DATABASE_URL (asyncpg driver). Real schema changes go through
 Alembic migrations (see capychem.db.migrate.run_migrations, used by the API
-lifespan) — `uv run alembic upgrade head`. init_schema's metadata.create_all
-below is kept only for test setup: it creates missing tables but does NOT
-ALTER existing ones, so it must not be relied on outside a fresh test DB.
+lifespan) — `uv run alembic upgrade head`. The CLI and PostgreSQL test fixtures
+use that same migration path through init_schema. Only isolated SQLite test
+databases use metadata.create_all, which does not ALTER existing tables.
 """
 
 from __future__ import annotations
@@ -49,9 +49,16 @@ def make_engine(url: str | None = None) -> AsyncEngine:
 
 
 async def init_schema(engine: AsyncEngine) -> None:
-    """Create all tables if they do not exist (idempotent)."""
+    """Migrate PostgreSQL; create tables for lightweight SQLite test databases."""
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        if engine.dialect.name == "postgresql":
+            # Deferred import avoids the migration module's database_url import
+            # cycle. Use this connection, including any isolated test search_path.
+            from capychem.db.migrate import upgrade_schema
+
+            await conn.run_sync(upgrade_schema)
+        else:
+            await conn.run_sync(Base.metadata.create_all)
 
 
 def make_sessionmaker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
