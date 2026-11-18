@@ -21,7 +21,7 @@ def test_canon_values() -> None:
     assert c.denominator == 23  # PMO's full single-objective task count
     assert c.comparable == 21  # reproducible, same-seed-Graph-GA-comparable tasks
     assert c.beat_or_matched == 21  # beat-or-matched on every comparable task (21/21)
-    assert c.decisive == 9  # decisive margin (>0.1 AUC) subset
+    assert c.decisive == 8  # strict >0.1 AUC; JNK3's 0.09843 does not qualify
     assert c.excluded_for_cause == 2  # oracle-defect tasks removed, not lost
     assert c.bar == 6  # G1 goal: beat Graph-GA on >=6 of 23
 
@@ -60,6 +60,36 @@ def test_exploratory_badge_says_not_comparable() -> None:
 def test_verify_against_committed_report_passes() -> None:
     # The canon's comparable count must still match the committed sweep JSON.
     figure_canon.verify_against_report()  # raises on drift
+
+
+def test_committed_fixture_preserves_exact_margin_and_exclusions() -> None:
+    report = Path(__file__).resolve().parents[3] / "data/benchmarks/pmo/g1-full23-10k-seed42.json"
+    data = json.loads(report.read_text())
+    assert data["seed"] == 42
+    assert data["budget"] == 10000
+    assert len(data["rows"]) == 21
+    assert sum(row["diff"] > 0.1 for row in data["rows"]) == 8
+    jnk3 = next(row for row in data["rows"] if row["task"] == "jnk3")
+    assert jnk3["diff"] == pytest.approx(0.09843)
+    assert [row["task"] for row in data["excluded_rows"]] == ["valsartan_smarts"]
+
+
+def test_verify_rejects_missing_default_fixture(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(figure_canon, "_REPORT_PATH", tmp_path / "missing.json")
+    with pytest.raises(FileNotFoundError, match="Missing committed benchmark fixture"):
+        figure_canon.verify_against_report()
+
+
+def test_verify_rejects_decisive_count_drift(tmp_path: Path) -> None:
+    data = json.loads(figure_canon._REPORT_PATH.read_text())
+    jnk3 = next(row for row in data["rows"] if row["task"] == "jnk3")
+    jnk3["llm_auc"] = jnk3["graph_ga_auc"] + 0.11
+    changed = tmp_path / "changed-margin.json"
+    changed.write_text(json.dumps(data))
+    with pytest.raises(AssertionError, match="decisive count=9"):
+        figure_canon.verify_against_report(changed)
 
 
 def test_verify_against_report_raises_on_drift(tmp_path: Path) -> None:

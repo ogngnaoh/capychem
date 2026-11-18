@@ -4,7 +4,7 @@ No Postgres, no LangGraph. Reuses the production oracle/validate/merge
 primitives; the ONLY differences from the product loop are (a) a memoizing
 mol_buffer keyed by canonical SMILES so budget counts UNIQUE oracle calls, and
 (b) no persistence. Used by ``capychem-eval`` to reproduce PMO baselines (every
-score is an in-silico oracle score, per PRD N6).
+score is an in-silico oracle score).
 """
 
 from __future__ import annotations

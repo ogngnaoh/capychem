@@ -3,9 +3,7 @@
   "private": true,
   "scripts": {
     "studio": "pnpm --dir apps/studio dev",
-    "build:studio": "pnpm --dir apps/studio build",
-    "launch:studio": "pnpm --dir apps/launch start",
-    "launch:render": "pnpm --dir apps/launch render"
+    "build:studio": "pnpm --dir apps/studio build"
   },
   "packageManager": "pnpm@11.5.0",
   "engines": {

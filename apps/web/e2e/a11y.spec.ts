@@ -9,10 +9,10 @@ import {
   SNAPSHOT_EXPLORATORY,
 } from "./_fixtures";
 
-// Accessibility gate (slice 06-04): runs axe-core across every operator route in
+// Accessibility gate: runs axe-core across every operator route in
 // light + dark at the 1280px target viewport and fails on serious/critical WCAG
 // violations. The FastAPI origin is route-mocked (mockApi) so no backend/Postgres/WS
-// is needed — the same harness the -shot specs use. A completed snapshot is terminal,
+// is needed. A completed snapshot is terminal,
 // so /runs/{id} renders the full cockpit without opening a WebSocket.
 
 type Route = { name: string; path: string };
@@ -39,6 +39,7 @@ for (const route of ROUTES) {
       // Let the client components settle after their mocked fetches resolve.
       await page.waitForTimeout(800);
 
+      await assertNoHorizontalOverflow(page);
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
         .analyze();
@@ -58,9 +59,15 @@ for (const route of ROUTES) {
   }
 }
 
-// New 07-08 surfaces/states: the objective builder open (custom mode) and the exploratory
+// Additional surfaces/states: the objective builder open (custom mode) and the exploratory
 // run-detail (quality badges, downloads/manifest legend, analyzer note).
+async function assertNoHorizontalOverflow(page: Page) {
+  const width = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(width, "The workspace must fit the tested viewport").toBeLessThanOrEqual(page.viewportSize()!.width);
+}
+
 async function axeBlocking(page: Page) {
+  await assertNoHorizontalOverflow(page);
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
     .analyze();

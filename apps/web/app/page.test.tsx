@@ -51,7 +51,7 @@ describe("Overview", () => {
     expect(screen.getByRole("heading", { name: /^The loop$/i })).toBeInTheDocument();
     // figure canon must be verbatim + honest (never "21/23", never efficacy)
     expect(screen.getByText(/all 21 comparable PMO tasks/i)).toBeInTheDocument();
-    expect(screen.getByText(/decisive \(~0\.1 AUC\+\) on 9/i)).toBeInTheDocument();
+    expect(screen.getByText(/decisive \(>0\.1 AUC\) on 8/i)).toBeInTheDocument();
     expect(screen.queryByText(/21\/23/)).toBeNull();
   });
 

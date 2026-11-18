@@ -32,7 +32,7 @@ def parse_origins(raw: str | None) -> list[str]:
 
 ALLOWED_ORIGINS = parse_origins(os.environ.get("ALLOWED_ORIGINS"))
 
-# Langfuse deep-link (FR-014 / SPEC §6.3). LANGFUSE_HOST is where the self-hosted
+# Langfuse deep-link. LANGFUSE_HOST is where the self-hosted
 # UI lives; LANGFUSE_PROJECT_ID scopes the trace URL. The project id is not
 # derivable from the API keys, so it must be set explicitly — when it is absent
 # (or a run has no trace id) there is simply no link, never a broken one.

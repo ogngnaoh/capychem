@@ -1,9 +1,5 @@
-// Shared route-mock fixtures for the -shot capture harness. Every screenshot spec
-// intercepts ALL requests to the FastAPI origin and dispatches by pathname, so no
-// Postgres / FastAPI / WebSocket is needed. Fixtures mirror apps/web/lib/api.ts shapes
-// including the slice-03a RunSnapshot fields (valid_smiles_rate, graph_ga_baseline,
-// llm_cost_usd, oracle_cost_usd) and the /catalog + /intent/resolve + /molecule/svg
-// endpoints. Numbers are honest in-silico oracle scores (N6).
+// Route-mock fixtures for the backend-free accessibility suite. Molecular SVGs
+// preserve the rendered candidate content without requiring the chemistry service.
 
 import type { Page } from "@playwright/test";
 import { MOLECULE_SVG_BY_SMILES, MOLECULE_SVG_FALLBACK } from "./_molecule-svgs.generated";
@@ -11,7 +7,7 @@ import { MOLECULE_SVG_BY_SMILES, MOLECULE_SVG_FALLBACK } from "./_molecule-svgs.
 export const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 // The full 23-task PMO catalog, mirroring the live GET /catalog
-// (apps/api/capychem/api/catalog.py) so captures read faithfully.
+// (apps/api/capychem/api/catalog.py).
 export const CATALOG = [
   {
     group: "Drug-likeness",
@@ -158,31 +154,6 @@ export const SNAPSHOT_EXPLORATORY = {
   novelty: 0.52,
 };
 
-// A fresh live run on Modal cold start: gen 0, nothing scored yet → the cockpit shows the
-// "waking the model (~30s)…" affordance instead of an empty shell.
-export const SNAPSHOT_COLD = {
-  run_id: 284,
-  task: "jnk3",
-  mode: "benchmark",
-  status: "running",
-  budget: 10000,
-  plateau_window: 5,
-  generation_index: 0,
-  oracle_calls_used: 0,
-  best_score: null as number | null,
-  top_k: [] as { smiles: string; score: number }[],
-  auc_curve: [] as { oracle_calls: number; top10_mean: number }[],
-  cost_so_far_usd: 0,
-  hypotheses: [] as unknown[],
-  trace_url: null as string | null,
-  valid_smiles_rate: null as number | null,
-  graph_ga_baseline: 0.5723,
-  llm_cost_usd: null as number | null,
-  oracle_cost_usd: null as number | null,
-  diversity: null as number | null,
-  novelty: null as number | null,
-};
-
 // POST /objective/validate preview (07-04): one composite [0,1] per probe; null = the
 // objective couldn't score it.
 export const VALIDATE_RESPONSE = {
@@ -238,68 +209,6 @@ export const MANIFEST_EXPLORATORY = {
     constraints_json: { catalogs: ["PAINS"] },
   },
 };
-
-export const SNAPSHOT_RUNNING = {
-  run_id: 284,
-  task: "troglitazone_rediscovery",
-  mode: "benchmark",
-  status: "running",
-  budget: 10000,
-  plateau_window: 5,
-  generation_index: 10,
-  oracle_calls_used: 4200,
-  best_score: 0.7431,
-  top_k: TOP_K.slice(0, 5).map((m, i) => ({ ...m, score: m.score - 0.14 + i * 0.01 })),
-  auc_curve: [
-    { oracle_calls: 100, top10_mean: 0.41 },
-    { oracle_calls: 800, top10_mean: 0.64 },
-    { oracle_calls: 1600, top10_mean: 0.7 },
-    { oracle_calls: 2800, top10_mean: 0.726 },
-    { oracle_calls: 4200, top10_mean: 0.7431 },
-  ],
-  cost_so_far_usd: 1.0362,
-  hypotheses: HYPS.slice(0, 2),
-  trace_url: "http://localhost:3001/project/p/traces/284",
-  valid_smiles_rate: 0.91,
-  graph_ga_baseline: 0.7712,
-  llm_cost_usd: 0.7913,
-  oracle_cost_usd: 0.2449,
-};
-
-// The starting frame for the deterministic "live" cockpit beat (demo.spec.ts): run 284 in
-// its cold state ("Waking the model ~30s"), socket open, no results in yet. Reuses the
-// exact cold-start field shape but fixes the task + Graph-GA baseline to match RUNS_LIST's
-// run 284, so the baseline delta renders honestly once the scripted climb begins.
-export const SNAPSHOT_REPLAY_START = {
-  ...SNAPSHOT_COLD,
-  task: "troglitazone_rediscovery",
-  graph_ga_baseline: 0.7712,
-};
-
-// A descending top-K whose leader equals the generation's best_score, so the tiles never
-// contradict the headline number as the run climbs.
-const replayTopK = (best: number) =>
-  SNAPSHOT_RUNNING.top_k.map((m, i) => ({ ...m, score: Number((best - i * 0.02).toFixed(4)) }));
-
-// Scripted RunEvents (shapes = lib/runEvents.ts RunEvent) replayed one per `stepMs` by
-// stubWebSocketReplay, so the cockpit visibly ticks: two analyzer hypotheses arrive live
-// and the curve climbs. Every score stays BELOW the Graph-GA baseline 0.7712 — the beat is
-// NOT claimed here (that lives in the Compare shot); the run is honestly still behind at
-// gen 10 with 5,800 calls left. Ends at the true SNAPSHOT_RUNNING state (0.7431 @ 4200).
-export const DEMO_REPLAY_EVENTS = [
-  { type: "generation.complete", generation_index: 1, best_score: 0.52, top10_mean: 0.52,
-    oracle_calls_used: 400, cost_so_far_usd: 0.14, top_k: replayTopK(0.52) },
-  { type: "analyzer.hypothesis", after_generation_index: 1, text: HYPS[0].text,
-    structured_json: HYPS[0].structured_json },
-  { type: "generation.complete", generation_index: 4, best_score: 0.66, top10_mean: 0.66,
-    oracle_calls_used: 1600, cost_so_far_usd: 0.52, top_k: replayTopK(0.66) },
-  { type: "generation.complete", generation_index: 6, best_score: 0.706, top10_mean: 0.706,
-    oracle_calls_used: 2800, cost_so_far_usd: 0.74, top_k: replayTopK(0.706) },
-  { type: "analyzer.hypothesis", after_generation_index: 8, text: HYPS[1].text,
-    structured_json: HYPS[1].structured_json },
-  { type: "generation.complete", generation_index: 10, best_score: 0.7431, top10_mean: 0.7431,
-    oracle_calls_used: 4200, cost_so_far_usd: 1.0362, top_k: replayTopK(0.7431) },
-];
 
 export const COMPARE_PAYLOAD = {
   a: {
@@ -361,22 +270,9 @@ export const RESOLUTION_MATCH = {
   cost_usd: 0.0002,
 };
 
-export const RESOLUTION_NOMATCH = {
-  matched_task: null,
-  confidence: null,
-  closest_task: "albuterol_similarity",
-  rationale:
-    "“make it dissolve well in water” isn’t one of the 23 PMO oracles. The closest available objective is albuterol_similarity — but it measures structural similarity, not solubility, so confirm before you launch.",
-  resolved_plan: null,
-  refusals: [{ field: "Objective", reason: "No benchmark exists for that objective." }],
-  cost_usd: 0.0002,
-};
-
 type MockOpts = {
   runs?: unknown;
   snapshot?: unknown;
-  // Serve a different snapshot per run id (a single mockApi call across a multi-run video).
-  snapshotById?: Record<number, unknown>;
   compare?: unknown;
   resolution?: unknown;
   validate?: unknown;
@@ -422,8 +318,7 @@ export async function mockApi(page: Page, opts: MockOpts = {}) {
     else if (p === "/compare") body = opts.compare ?? COMPARE_PAYLOAD;
     else if (/^\/runs\/\d+\/manifest$/.test(p)) body = opts.manifest ?? MANIFEST;
     else if (/^\/runs\/\d+$/.test(p)) {
-      const id = Number(p.split("/")[2]);
-      body = opts.snapshotById?.[id] ?? opts.snapshot ?? SNAPSHOT_COMPLETED;
+      body = opts.snapshot ?? SNAPSHOT_COMPLETED;
     }
     else if (p === "/runs" && req.method() === "POST") body = { run_id: 999 };
     else if (p === "/runs") body = opts.runs ?? RUNS_LIST;
@@ -442,209 +337,5 @@ export async function forceDark(page: Page) {
     } catch {
       /* ignore */
     }
-  });
-}
-
-// For a deterministic LIVE/running capture: `page.route` cannot intercept ws://, so a
-// non-terminal snapshot would otherwise connect to the real backend (if one is up) and
-// receive events that mutate the snapshot. Stub WebSocket to open with no traffic, so the
-// cockpit renders the "running" state (Stop control, live loop indicator) unperturbed.
-export async function stubWebSocket(page: Page) {
-  await page.addInitScript(() => {
-    const Native = window.WebSocket;
-    // Only the app's run socket (/ws/runs/) is faked — Next.js dev HMR uses its own
-    // WebSocket, so delegate every other URL to the native implementation.
-    function Fake(this: unknown, url: string, protocols?: string | string[]) {
-      if (typeof url === "string" && url.includes("/ws/runs/")) {
-        const ws = {
-          readyState: 1,
-          onopen: null as null | ((ev: Event) => void),
-          onmessage: null,
-          onclose: null,
-          onerror: null,
-          send() {},
-          close() {
-            (this as { readyState: number }).readyState = 3;
-          },
-          addEventListener() {},
-          removeEventListener() {},
-        };
-        setTimeout(() => ws.onopen?.(new Event("open")), 0);
-        return ws;
-      }
-      return new Native(url, protocols);
-    }
-    Fake.CONNECTING = 0;
-    Fake.OPEN = 1;
-    Fake.CLOSING = 2;
-    Fake.CLOSED = 3;
-    Fake.prototype = Native.prototype;
-    // @ts-expect-error override the global for the capture only
-    window.WebSocket = Fake;
-  });
-}
-
-// Like stubWebSocket, but replays a scripted event list on a timer so the cockpit ticks
-// deterministically with NO backend. Only the app's /ws/runs/ socket is faked; every other
-// WebSocket URL (Next HMR) delegates to native. Events serialize into the page via the
-// addInitScript arg. The first event fires after `stepMs`, leaving the cold-start frame
-// visible briefly before results arrive.
-export async function stubWebSocketReplay(page: Page, events: unknown[], stepMs = 1100) {
-  await page.addInitScript(
-    ({ events, stepMs }) => {
-      const Native = window.WebSocket;
-      function Fake(this: unknown, url: string, protocols?: string | string[]) {
-        if (typeof url === "string" && url.includes("/ws/runs/")) {
-          const ws = {
-            readyState: 1,
-            onopen: null as null | ((ev: Event) => void),
-            onmessage: null as null | ((ev: MessageEvent) => void),
-            onclose: null as null | ((ev: Event) => void),
-            onerror: null,
-            send() {},
-            close() {
-              (this as { readyState: number }).readyState = 3;
-            },
-            addEventListener() {},
-            removeEventListener() {},
-          };
-          setTimeout(() => ws.onopen?.(new Event("open")), 0);
-          (events as unknown[]).forEach((ev, i) => {
-            setTimeout(
-              () => ws.onmessage?.({ data: JSON.stringify(ev) } as MessageEvent),
-              (i + 1) * stepMs,
-            );
-          });
-          return ws;
-        }
-        return new Native(url, protocols);
-      }
-      Fake.CONNECTING = 0;
-      Fake.OPEN = 1;
-      Fake.CLOSING = 2;
-      Fake.CLOSED = 3;
-      Fake.prototype = Native.prototype;
-      // @ts-expect-error override the global for the capture only
-      window.WebSocket = Fake;
-    },
-    { events, stepMs },
-  );
-}
-
-// Like stubWebSocket, but the run socket OPENS then DROPS after a beat — driving the
-// cockpit into the "connection lost — reconnecting…" state deterministically for a shot
-// (the app then schedules a backoff reconnect; capture within that window).
-export async function stubWebSocketDrop(page: Page) {
-  await page.addInitScript(() => {
-    const Native = window.WebSocket;
-    function Fake(this: unknown, url: string, protocols?: string | string[]) {
-      if (typeof url === "string" && url.includes("/ws/runs/")) {
-        const ws = {
-          readyState: 1,
-          onopen: null as null | ((ev: Event) => void),
-          onmessage: null as null | ((ev: MessageEvent) => void),
-          onclose: null as null | ((ev: Event) => void),
-          onerror: null,
-          send() {},
-          close() {
-            (this as { readyState: number }).readyState = 3;
-          },
-          addEventListener() {},
-          removeEventListener() {},
-        };
-        setTimeout(() => ws.onopen?.(new Event("open")), 0);
-        // Drop once, ~120ms in — the app flips to "reconnecting" and schedules a retry.
-        setTimeout(() => {
-          (ws as { readyState: number }).readyState = 3;
-          ws.onclose?.(new Event("close"));
-        }, 120);
-        return ws;
-      }
-      return new Native(url, protocols);
-    }
-    Fake.CONNECTING = 0;
-    Fake.OPEN = 1;
-    Fake.CLOSING = 2;
-    Fake.CLOSED = 3;
-    Fake.prototype = Native.prototype;
-    // @ts-expect-error override the global for the capture only
-    window.WebSocket = Fake;
-  });
-}
-
-// Playwright's fullPage capture mis-paints `position: sticky` elements at a scroll
-// offset. At scroll 0 (which a full-page shot represents) the sticky nav header sits at
-// the very top, so pin it to `static` for a faithful, artifact-free full-page render.
-export async function stabilizeForShot(page: Page) {
-  await page.addStyleTag({ content: "header{position:static !important}" });
-}
-
-// A soft coral cursor + click ripple, injected for VIDEO captures only (Playwright
-// records no native cursor). pointer-events:none so it never intercepts a click; on-token
-// coral accent. Re-mounts on every navigation via addInitScript.
-export async function installCursor(page: Page) {
-  await page.addInitScript(() => {
-    const CORAL = "#d97757";
-    function mount() {
-      if (document.getElementById("__demo_cursor")) return;
-      const dot = document.createElement("div");
-      dot.id = "__demo_cursor";
-      Object.assign(dot.style, {
-        position: "fixed",
-        left: "0",
-        top: "0",
-        width: "18px",
-        height: "18px",
-        marginLeft: "-9px",
-        marginTop: "-9px",
-        borderRadius: "50%",
-        border: `2px solid ${CORAL}`,
-        background: "rgba(217,119,87,0.18)",
-        zIndex: "2147483647",
-        pointerEvents: "none",
-        opacity: "0",
-        transition: "opacity 120ms ease, transform 80ms ease",
-      });
-      document.body.appendChild(dot);
-      window.addEventListener(
-        "mousemove",
-        (e) => {
-          dot.style.opacity = "1";
-          dot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
-        },
-        { passive: true },
-      );
-      window.addEventListener(
-        "mousedown",
-        (e) => {
-          const r = document.createElement("div");
-          Object.assign(r.style, {
-            position: "fixed",
-            left: `${e.clientX}px`,
-            top: `${e.clientY}px`,
-            width: "10px",
-            height: "10px",
-            marginLeft: "-5px",
-            marginTop: "-5px",
-            borderRadius: "50%",
-            border: `2px solid ${CORAL}`,
-            zIndex: "2147483646",
-            pointerEvents: "none",
-            opacity: "0.9",
-            transform: "scale(1)",
-            transition: "transform 500ms ease-out, opacity 500ms ease-out",
-          });
-          document.body.appendChild(r);
-          requestAnimationFrame(() => {
-            r.style.transform = "scale(6)";
-            r.style.opacity = "0";
-          });
-          setTimeout(() => r.remove(), 520);
-        },
-        { passive: true },
-      );
-    }
-    if (document.body) mount();
-    else window.addEventListener("DOMContentLoaded", mount);
   });
 }

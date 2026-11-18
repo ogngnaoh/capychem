@@ -58,11 +58,17 @@ harness/__pycache__/
 .vite/
 *.prior
 *.ckpt
-output/playwright/
-apps/launch/out/
+/output/
 .capychem/
 .playwright-cli/
 .science/
 .pnpm-store/
 test-results/
 playwright-report/
+
+# Local research, release media and planning. Public setup lives in README.md.
+/docs/
+/experiments/
+/assets/demo/
+/apps/launch/
+/.planning/

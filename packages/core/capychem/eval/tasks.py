@@ -3,7 +3,7 @@
 Names are the exact PyTDC oracle names (``Oracle(name=task)``), in NeurIPS 2022 PMO
 Table 2 row order. Order is cosmetic (UI dropdown + sweep-row order only). Source:
 the PMO paper (arXiv:2206.12411) Table 2. Every score these tasks produce is an in-silico
-oracle score (PRD N6).
+oracle score.
 """
 
 from __future__ import annotations

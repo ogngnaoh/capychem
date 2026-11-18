@@ -4,7 +4,7 @@ primitive for the chosen mode, aggregate per-task rows + a summary.
 This is pure orchestration — it adds NO new AUC or comparator logic (the canonical
 PMO ``top_auc`` and the existing head-to-head / analyzer-verdict primitives do all the
 measuring). One task throwing is isolated to its own row so a long sweep never aborts.
-Every score is an in-silico oracle score (PRD N6).
+Every score is an in-silico oracle score.
 """
 
 from __future__ import annotations

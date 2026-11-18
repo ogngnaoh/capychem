@@ -5,8 +5,8 @@ maximize) and SA-score (synthetic accessibility, minimize) have canonical
 directions; MW / clogP / TPSA are band-oriented — their standalone ``direction`` is
 a documented drug-likeness *convention* (smaller / less-lipophilic preferred, all
 else equal), and a real objective should compose them with a band transform (07-04)
-rather than optimize them raw. Correctness of the underlying descriptors is RDKit's
-(PRD N5); this module only wires them to the protocol.
+rather than optimize them raw. Correctness of the underlying descriptors is RDKit's;
+this module only wires them to the protocol.
 """
 
 from __future__ import annotations

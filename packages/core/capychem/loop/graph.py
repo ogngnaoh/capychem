@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 # Bounded retry for a transient harness-subprocess blip (a timeout, a flaky spawn).
 # Absorbs the blip without pausing the run; a sustained outage still exhausts the
 # retry budget and re-raises, which apps/api/capychem/api/runner.py `_drive` catches
-# to pause the run in a recoverable state (PRD edge case 2). Covers BOTH harness
+# to pause the run in a recoverable state. Covers BOTH harness
 # subprocess paths — scoring (score_batch_async) AND Graph-GA offspring/fallback
 # (propose_offspring via strategy.ga_fill/fallback_fill) — all raise HarnessError.
 _HARNESS_RETRY_ATTEMPTS = 3
@@ -404,7 +404,7 @@ async def _persist(
 async def _analyze(
     state: LoopState, sessionmaker: async_sessionmaker[AsyncSession]
 ) -> dict[str, Any]:
-    # The differentiator (SPEC §6.4b). Runs only for an LLM run after gen >=1
+    # Analyze the previous generation. Runs only for an LLM run after gen >=1
     # (gen 0 is the seed population; graph_ga has no hypothesis consumer). No-op
     # otherwise — mirrors how `fallback` no-ops for non-llm strategies.
     if state.get("mutation_strategy") != "llm" or state["gen_index"] < 1:

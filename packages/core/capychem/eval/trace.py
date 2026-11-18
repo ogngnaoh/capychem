@@ -1,7 +1,7 @@
 """One analyzer+propose snapshot per generation, for offline diagnosis of why the
 analyzer hypothesis helps or hurts. Capture-only: never read by the loop itself
 (trace_sink=None keeps the run byte-identical). Every score here is an in-silico
-oracle score (PRD N6)."""
+oracle score."""
 
 from __future__ import annotations
 

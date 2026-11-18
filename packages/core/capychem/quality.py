@@ -5,7 +5,7 @@ reward-hacking failure. Every persisted candidate carries a cheap, RDKit-native
 quality report (synthesizability, drug-likeness, structural alarms) so a reviewer can
 see WHAT the optimizer actually produced. Annotate-only (OD-4): computing quality never
 drops a candidate, so a benchmark run's top-10 is unchanged. Correctness of the
-descriptors is RDKit's (PRD N5)."""
+descriptors is RDKit's."""
 
 from __future__ import annotations
 

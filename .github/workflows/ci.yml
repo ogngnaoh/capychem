@@ -5,7 +5,7 @@ name: CI
 # legacy ML-oracle tests can download their small reference models.
 # The web job preserves the legacy accessibility gate. Studio builds and runs
 # recorded-data browser flows separately. Scientific model installation and live
-# docking are explicit release checks documented in CONTRIBUTING.md.
+# docking are explicit release checks documented in AGENTS.md.
 
 on:
   push:
@@ -82,10 +82,6 @@ jobs:
       - name: Ruff lint
         run: uv run ruff check .
 
-      # Note: `ruff format --check .` is intentionally NOT enforced yet — the
-      # pre-existing tree predates format enforcement (~29 files would reformat).
-      # A repo-wide format baseline is a separate, deliberate pass; CI gates lint.
-
       - name: mypy (strict)
         run: uv run mypy -p capychem -p capychem.api
 
@@ -149,6 +145,18 @@ jobs:
 
       - name: Recorded workspace and evidence flows
         run: pnpm --dir apps/studio exec playwright test --config playwright.ci.config.ts
+
+      - name: Package the offline workspace
+        run: |
+          python3 scripts/package_demo.py --skip-build
+          unzip -q dist/capychem-studio-demo.zip -d dist
+
+      - name: Attach the runnable demo
+        uses: actions/upload-artifact@v4
+        with:
+          name: capychem-studio-demo
+          path: dist/capychem-studio-demo/
+          if-no-files-found: error
 
       - name: Upload browser failure evidence
         if: failure()

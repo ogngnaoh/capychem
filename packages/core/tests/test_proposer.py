@@ -120,7 +120,7 @@ def test_default_rates_match_configured_model(monkeypatch):
     # The placeholder rates must correspond to the default model. _DEFAULT_MODEL is
     # deepseek-v4-pro ($0.435/$0.87 per M tokens), so the unset-env defaults are
     # 0.000435 / 0.00087 per 1k — NOT the V4-Flash 0.00014 / 0.00028 (which would
-    # understate real spend ~3.1x). NOT a price guarantee (PRD N6).
+    # understate real spend ~3.1x). Not a price guarantee.
     monkeypatch.delenv("CAPYCHEM_LLM_USD_PER_1K_IN", raising=False)
     monkeypatch.delenv("CAPYCHEM_LLM_USD_PER_1K_OUT", raising=False)
     monkeypatch.delenv("CAPYCHEM_LLM_MODEL", raising=False)

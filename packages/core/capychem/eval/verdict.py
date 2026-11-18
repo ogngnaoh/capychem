@@ -1,13 +1,13 @@
 """With/without-analyzer value verdict: does the analyzer add AUC-of-top-10 value?
 
-The milestone-03 slice-02 differentiator kill-switch (SPEC §9 / PROJECT §9). Both
+Both
 arms run the headless ``run_reproduction`` with the LLM proposer at the SAME seed —
 the only difference is the analyzer (off vs on), which first conditions the proposer
 at generation 2. Both are measured with the canonical PMO ``top_auc`` (never ad hoc).
 The with-arm's ``parse_hypothesis`` success rate guards the verdict: below
 ``_PARSE_RATE_FLOOR`` the reasoning-mode chain-of-thought is crowding out the
 {focus, avoid} JSON, so a null is untrustworthy (raise analyzer max_tokens, rerun).
-Every score is an in-silico oracle score (PRD N6).
+Every score is an in-silico oracle score.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from capychem.eval.metric import top_auc
 from capychem.eval.runner import run_reproduction
 
-# Single source (07-05): below this the with-arm's hypotheses are not really parsing,
+# Shared parsing threshold: below this the with-arm's hypotheses are not really parsing,
 # so the AUC delta is not a true with/without comparison. In capychem.trust.gates.
 from capychem.trust.gates import PARSE_RATE_FLOOR as _PARSE_RATE_FLOOR
 

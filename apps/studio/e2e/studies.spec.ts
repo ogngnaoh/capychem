@@ -437,7 +437,7 @@ test("recorded study opens exact evidence and exports with the live API blocked"
   expect(exported.study.id).toBe(study.id);
   expect(exported.experiments).toHaveLength(study.seed_pairs.length);
   // Warning coverage belongs to the preserved polar-series fixture. The first
-  // recorded Study is the filmed three-candidate example and has no O–H group.
+  // recorded Study contains three candidates and has no O–H group.
   const warningStudy = (manifest.studies as Study[]).find((entry) =>
     entry.candidates?.some((c) =>
       c.observations.some((o) =>

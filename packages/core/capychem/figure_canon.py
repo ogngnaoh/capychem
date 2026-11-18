@@ -1,17 +1,18 @@
-"""The single honest source for CapyChem's G1 benchmark figures (m07 slice 01).
+"""Consistent figures for the legacy single-seed molecular benchmark.
 
-Every surface that states the benchmark result — README, run-detail badges, the
-provenance manifest (07-06) — derives its numbers from here, so the framing is
+Every surface that states the benchmark result — run-detail badges and the
+provenance manifest — derives its numbers from here, so the framing is
 consistent and cannot drift into an overclaim on any one surface.
 
-The canon is the human-audited prose framing of the G1 full-23 sweep
-(``docs/04-compare-and-polish/g1-full23-10k-seed42.json``), NOT a raw row count:
+The figures describe the full-23 sweep in
+``data/benchmarks/pmo/g1-full23-10k-seed42.json``:
 the sweep report banks 21 comparable rows and 1 excluded row (valsartan_smarts),
 because the second excluded task (sitagliptin_mpo) was pre-excluded before the
 sweep ran and never banked. Stated honestly the denominator is 23, of which 2 are
 excluded-for-cause (oracle defects, caught by a baseline-reproduction check — not
 losses) and 21 are comparable, with a beat-or-match on every one of those 21 and a
-decisive margin (>0.1 AUC) on 9.
+decisive margin (>0.1 AUC) on 8. The JNK3 margin is 0.09843 and does not pass
+that strict threshold.
 
 The forbidden collapse is **"21/23"** — technically 21 beats over a 23 denominator,
 but it silently drops the 2 excluded tasks and reads as an overclaim. Never emit it;
@@ -28,8 +29,9 @@ from typing import Literal
 
 _REPORT_PATH = (
     Path(__file__).resolve().parents[3]
-    / "docs"
-    / "04-compare-and-polish"
+    / "data"
+    / "benchmarks"
+    / "pmo"
     / "g1-full23-10k-seed42.json"
 )
 
@@ -49,7 +51,7 @@ CANON = FigureCanon(
     denominator=23,
     comparable=21,
     beat_or_matched=21,
-    decisive=9,
+    decisive=8,
     excluded_for_cause=2,
     bar=6,
     excluded_tasks=("valsartan_smarts", "sitagliptin_mpo"),
@@ -79,16 +81,25 @@ def badge_caption(mode: Literal["benchmark", "exploratory"]) -> str:
 
 
 def verify_against_report(path: Path | None = None) -> None:
-    """Assert the committed sweep JSON still backs CANON's comparable count.
+    """Assert the committed sweep backs the comparable and decisive counts.
 
     Kept out of import so a missing report never breaks importers; call it from a
-    test. Raises AssertionError on drift.
+    test. Raises AssertionError on drift and FileNotFoundError if the default
+    runtime fixture is missing. An explicitly absent optional report is skipped.
     """
     report = path or _REPORT_PATH
-    if not report.exists():  # nothing to verify against (report not present in this checkout)
-        return
+    if not report.exists():
+        if path is not None:
+            return
+        raise FileNotFoundError(f"Missing committed benchmark fixture: {report}")
     data = json.loads(report.read_text())
     assert data.get("comparable_tasks") == CANON.comparable, (
         f"sweep report comparable_tasks={data.get('comparable_tasks')} != CANON.comparable="
         f"{CANON.comparable}"
+    )
+    rows = data["rows"]
+    assert len(rows) == CANON.comparable, "Comparable row count differs from the benchmark figures"
+    decisive = sum(row["llm_auc"] - row["graph_ga_auc"] > 0.1 for row in rows)
+    assert decisive == CANON.decisive, (
+        f"sweep report decisive count={decisive} != CANON.decisive={CANON.decisive}"
     )

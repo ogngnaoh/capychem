@@ -1,5 +1,4 @@
 import { expect, test } from "@playwright/test";
-import { mkdir } from "node:fs/promises";
 
 const experimentId = process.env.CAPYCHEM_E2E_STEREO_EXPERIMENT;
 const studyId = process.env.CAPYCHEM_E2E_STEREO_STUDY;
@@ -23,11 +22,6 @@ test("live ambiguous stereochemistry stays visible beside the exact pose and in 
   const exported = await page.request.get(`/api/experiments/${experimentId}/export`);
   expect(exported.ok()).toBe(true);
   expect(await exported.text()).toContain(ambiguous.stereochemistryNote);
-  const capture = process.env.CAPYCHEM_DESIGN_CAPTURE;
-  if (capture) {
-    await mkdir(capture, { recursive: true });
-    await page.screenshot({ path: `${capture}/stereochemistry-warning.png` });
-  }
   await page.goto(`/experiments/${experimentId}?candidate=${specified.id}`);
   await expect(page.locator(".stage-heading h2")).toHaveText(specified.name);
   await expect(warning).toHaveCount(0);

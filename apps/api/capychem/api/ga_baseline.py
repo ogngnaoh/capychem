@@ -1,10 +1,9 @@
 """Static Graph-GA AUC-top-10 baseline lookup, keyed by PMO task name.
 
-Loaded once from the G1 full-23 sweep report (docs/04-compare-and-polish/
-g1-full23-10k-seed42.json, milestone 04 slice 04) — OUR reproduced same-seed
-Graph-GA control, not the published PMO table (packages/core/capychem/eval/
-baselines.py holds that; G1's verdicts always compare against our own control, per
-its own docstring). Baked in at import time as a static snapshot, not live-refreshed.
+Loaded once from data/benchmarks/pmo/g1-full23-10k-seed42.json: the reproduced
+same-seed Graph-GA control. The published PMO table in capychem.eval.baselines
+is a separate sanity reference, not this comparison's control.
+Loaded at import time as a static snapshot, not live-refreshed.
 None for a task the report doesn't cover (not banked, e.g. sitagliptin_mpo).
 """
 
@@ -16,8 +15,9 @@ from typing import Any
 
 _REPORT_PATH = (
     Path(__file__).resolve().parents[4]
-    / "docs"
-    / "04-compare-and-polish"
+    / "data"
+    / "benchmarks"
+    / "pmo"
     / "g1-full23-10k-seed42.json"
 )
 

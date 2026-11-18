@@ -15,7 +15,7 @@ PLATEAU_MIN_IMPROVEMENT = 1e-9
 
 
 def valid_smiles_gate(rate: float, threshold: float = VALID_SMILES_THRESHOLD) -> dict[str, Any]:
-    """The milestone-02 >80% valid-SMILES gate. Observational: it reports a verdict,
+    """The 80% minimum valid-SMILES check. Observational: it reports a verdict,
     it never halts a run (the Graph-GA fallback guarantees throughput)."""
     return {"threshold": threshold, "passed": rate >= threshold}
 
@@ -114,12 +114,12 @@ def build_summary(
     seed_pop: set[str] | None = None,
 ) -> dict[str, Any]:
     """Build the (un-authoritative) summary_json. The auc_curve here is the
-    running top-10-mean; the canonical AUC lives in packages/core/eval (later
-    milestone) — do not treat this as the G1 number.
+    running top-10 mean; the canonical AUC is computed by capychem.eval.metric.
+    The curve is not the benchmark AUC.
 
     When ``validation_stats`` (cumulative {"proposed","valid"}) is supplied, a
-    stable ``valid_smiles`` block is added. This is the field milestone 02's
-    >80% gate reads; keep its shape stable."""
+    stable ``valid_smiles`` block is added. The valid-SMILES check reads this
+    field; keep its shape stable."""
     # Lazy import so this pure-ish module doesn't pull RDKit/FilterCatalog at import time
     # (build_summary is finalize-only — the one RDKit caller here). 07-05/07-08.
     from capychem.quality import internal_diversity, molecule_quality, novelty

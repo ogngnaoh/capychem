@@ -583,7 +583,7 @@ class RunRegistry:
         # where {} preserves the existing zero-generation-fault behavior below):
         # if the resumed drive re-faults before yielding even one new state, the
         # summary fallback below still reflects the reconstructed population
-        # instead of erasing it (PRD edge case 2 — a paused run's partial results
+        # instead of erasing it (a paused run's partial results
         # stay durable/browseable; a re-pause must not regress that guarantee).
         final_state: dict[str, Any] = dict(prog) if progress is not None else {}
         stopped = False
@@ -673,7 +673,7 @@ class RunRegistry:
             # offspring/fallback (packages/core/capychem/loop/graph.py
             # _with_harness_retry) — so reaching here means the outage persisted
             # past that retry budget. Pause the run in a recoverable state rather
-            # than losing work (PRD edge case 2), instead of falling through to the
+            # than losing work, instead of falling through to the
             # generic errored path below. Placed BEFORE the broad `except
             # Exception` since HarnessError is a RuntimeError subclass.
             paused = True

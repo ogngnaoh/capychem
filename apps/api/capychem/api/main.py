@@ -1,4 +1,4 @@
-"""CapyChem FastAPI backend — REST + WebSocket host for the in-process loop."""
+"""FastAPI host for benchmark runs and structure-guided experiments."""
 
 from __future__ import annotations
 
@@ -28,8 +28,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 logger = logging.getLogger(__name__)
 
-# Same-process convenience worker (milestone 08 slice 02), on by default for
-# dev/test. Production (S6 compose) sets this "0" and runs a separate
+# Same-process benchmark worker, on by default for dev/test.
+# The legacy container deployment sets this "0" and runs a separate
 # `apps/runner` process as the only claimer, so the API process never drives a
 # loop itself.
 _INLINE_WORKER_ENV = "CAPYCHEM_INLINE_WORKER"
@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.engine = engine
     app.state.sessionmaker = make_sessionmaker(engine)
     app.state.registry = RunRegistry(app.state.sessionmaker)
-    # Cross-process live events (milestone 08 slice 03): a dedicated asyncpg
+    # Cross-process benchmark events use a dedicated asyncpg
     # LISTEN connection, opened once for this process's lifetime, closed at
     # shutdown alongside the engine. See capychem.api.events.RunEventBus.
     app.state.event_bus = RunEventBus(database_url())
@@ -111,7 +111,7 @@ async def _check_ready(engine: AsyncEngine) -> None:
     """Raise iff the API is not ready to serve traffic.
 
     Distinct from /healthz's bare ``SELECT 1``: readiness additionally proves
-    the durable-queue claim query (S6, mirroring capychem.db.queue.claim_next_run's
+    the durable-queue claim query (mirroring capychem.db.queue.claim_next_run's
     predicate) executes cleanly against the ``runs`` table -- i.e. Postgres is
     reachable AND the schema the queue/API depend on is actually there and
     queryable, not just that the socket connects. Read-only: never claims or

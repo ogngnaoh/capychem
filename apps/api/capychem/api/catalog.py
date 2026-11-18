@@ -2,8 +2,7 @@
 
 Single source of truth for GET /catalog and the deterministic matcher behind
 POST /intent/resolve (capychem.api.intent). Canonical names + membership come from
-capychem.eval.tasks.PMO_TASKS (SPEC §6.2); descriptions mirror the approved design
-copy in apps/web/app/proto/_mock.ts CATALOG. Aliases are additional plain-language
+capychem.eval.tasks.PMO_TASKS. Descriptions and aliases provide plain-language
 phrases the intent resolver keys on -- kept conservative (no invented pharmacology
 beyond the PMO task's own published intent).
 """

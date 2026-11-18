@@ -1,5 +1,5 @@
 """GET /catalog + POST /intent/resolve — the 23-task PMO objective catalog and
-grounded, guardrailed intent resolution (FR-015; SPEC §6.2 task surface)."""
+grounded intent resolution against the registered task catalog."""
 
 from __future__ import annotations
 

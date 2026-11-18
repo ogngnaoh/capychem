@@ -109,12 +109,12 @@ export function Overview() {
               Beats or matches vanilla Graph-GA on{" "}
               <strong className="font-medium">all 21 comparable PMO tasks</strong> by AUC of
               top-10 (single seed, 10,000-call budget); the margin is{" "}
-              <strong className="font-medium">decisive (~0.1 AUC+) on 9</strong> of them. 2 of 23
+              <strong className="font-medium">decisive (&gt;0.1 AUC) on 8</strong> of them. 2 of 23
               tasks are excluded for cause (defective oracles, not losses). The bar was ≥6/23.
             </p>
             <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-border sm:grid-cols-4">
               <Figure k="Comparable" v="21" />
-              <Figure k="Decisive wins" v="9" />
+              <Figure k="Decisive wins" v="8" />
               <Figure k="Excluded for cause" v="2" />
               <Figure k="Bar to clear" v="≥6/23" />
             </dl>

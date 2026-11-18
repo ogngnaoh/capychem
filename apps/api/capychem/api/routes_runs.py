@@ -40,7 +40,7 @@ router = APIRouter()
 
 
 def _gated_baseline(mode: str, task: str) -> float | None:
-    """The G1-contamination gate: a Graph-GA baseline is presentable ONLY for a
+    """Benchmark comparison rule: a Graph-GA baseline is presentable ONLY for a
     benchmark run. An exploratory run (custom seed/oracle/objective/constraint) has
     no comparable Graph-GA control, so its snapshot never carries one — the single
     rule both the live and DB snapshot paths apply."""
@@ -206,7 +206,7 @@ async def create_run_endpoint(
         ),
     )
     sm = sessionmaker_of(request)
-    # Idempotency-Key (m08-05, SPEC §6.3): a retried POST carrying the SAME key
+    # Idempotency-Key: a retried POST carrying the SAME key
     # returns the existing run instead of minting a second one. No header ->
     # idempotency_key stays None -> unchanged prior always-enqueue behavior.
     if idempotency_key is not None:
@@ -216,7 +216,7 @@ async def create_run_endpoint(
             )
             if existing is not None:
                 return {"run_id": existing.id, "status": existing.status}
-    # Enqueue only (milestone 08 slice 02): the request handler does not drive
+    # Enqueue only: the request handler does not drive
     # the loop itself — a worker's claim_next_run does, out of band. When the
     # inline dev/test worker is enabled, register a pending handle + wake it so
     # a WS/GET that arrives before the claim still finds a live handle (closing
@@ -360,7 +360,7 @@ async def _run_snapshot(
         return RunSnapshot(
             **live,
             hypotheses=hyps,
-            # G1-contamination guard (07-01): an exploratory run never presents a
+            # Benchmark comparison rule: an exploratory run never presents a
             # Graph-GA baseline, so its snapshot can never render a "beat". mode is
             # carried in the live dict (**live) itself.
             graph_ga_baseline=_gated_baseline(live["mode"], live["task"]),
@@ -548,7 +548,7 @@ async def export_sdf_endpoint(run_id: int, request: Request) -> Response:
 
 @router.get("/trace/{run_id}")
 async def get_trace_endpoint(run_id: int, request: Request) -> dict[str, str | None]:
-    """Langfuse deep link for a run (FR-014 / SPEC §6.3). 404 if the run is
+    """Langfuse deep link for a run. 404 if the run is
     unknown; ``trace_url`` is null when the run has no persisted trace id or
     LANGFUSE_PROJECT_ID is unconfigured (the UI hides the link, never shows a
     broken one)."""
@@ -565,7 +565,7 @@ async def get_trace_endpoint(run_id: int, request: Request) -> dict[str, str | N
 async def compare_runs_endpoint(request: Request, a: int, b: int) -> ComparePayload:
     """Read-only aggregation of two existing runs (FR-012/013). 404 if either is
     unknown. The two AUC curves are resampled onto a common oracle-call x-axis so
-    they overlay-compare (SPEC §6.4d)."""
+    they overlay-compare."""
     sm = sessionmaker_of(request)
     registry = registry_of(request)
     async with sm() as session:

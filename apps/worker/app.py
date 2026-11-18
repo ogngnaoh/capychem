@@ -1,4 +1,4 @@
-"""Modal worker: PMO oracle scoring (slice 4).
+"""Modal worker: PMO oracle scoring and optional LLM proposals.
 
 The image IS the legacy harness env (Python 3.10 + PyTDC 0.3.6). The harness
 import/exec happens only inside the remote function body, never at module load —
@@ -27,7 +27,7 @@ import modal
 # Pinned to the EXACT versions frozen in harness/uv.lock (the proven legacy env)
 # so the image == the legacy harness env and future builds are deterministic.
 # PyTDC 0.3.6 has incomplete metadata, so requests/networkx/scipy/numpy are
-# declared explicitly (CLAUDE.md gotcha).
+# declared explicitly rather than relying on its incomplete dependency metadata.
 # NO rdkit.six shim is needed here: score.py installs its own runtime sys.modules
 # shim when executed (harness/capychem_harness/score.py) — we just ship + run it.
 image = (
