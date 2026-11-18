@@ -1,17 +1,10 @@
-[![CapyChem — watch the 28-second film showing a molecule in the CDK2 binding pocket](assets/readme/capychem-film.jpg)](https://github.com/user-attachments/assets/f34b5ee5-8c14-44f0-a989-409440781ff8)
+[![CapyChem — watch the 28-second film showing a molecule in the CDK2 binding pocket](assets/readme/capychem-film.jpg)](#product-film)
 
 # Molecular design in 3D
 
 CapyChem is a local workspace for seeing how a small change to a molecule affects its fit inside a protein. Compare two candidates in the same pocket, inspect the atoms that come into contact, and export the exact 3D pose on screen.
 
-**[Download the demo ZIP](https://github.com/ogngnaoh/capychem/blob/6d482de562679923daea41d151d2dbded3a22041/assets/demo/capychem-studio-demo.zip?raw=1)** · [Run a live experiment](#run-a-live-experiment)
-
-<details>
-<summary>Play the 28-second film here</summary>
-
-https://github.com/user-attachments/assets/f34b5ee5-8c14-44f0-a989-409440781ff8
-
-</details>
+**[Download the demo ZIP](https://github.com/ogngnaoh/capychem/blob/6d482de562679923daea41d151d2dbded3a22041/assets/demo/capychem-studio-demo.zip?raw=1)** · [Watch the film](#product-film) · [Run a live experiment](#run-a-live-experiment)
 
 ## Try the recorded workspace
 
@@ -44,6 +37,10 @@ pnpm studio
 Open [Studio in recorded mode](http://127.0.0.1:5181/?mode=demo). To build the portable ZIP, run `python3 scripts/package_demo.py`.
 
 </details>
+
+## Product film
+
+https://github.com/user-attachments/assets/f34b5ee5-8c14-44f0-a989-409440781ff8
 
 ## Run a live experiment
 
