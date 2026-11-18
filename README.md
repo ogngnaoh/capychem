@@ -1,15 +1,15 @@
-[![CapyChem — watch the 28-second film showing a molecule in the CDK2 binding pocket](assets/readme/capychem-film.jpg)](https://github.com/ogngnaoh/capychem/blob/6d482de562679923daea41d151d2dbded3a22041/assets/demo/v10/capychem-studio-launch.mp4?raw=1)
+[![CapyChem — watch the 28-second film showing a molecule in the CDK2 binding pocket](assets/readme/capychem-film.jpg)](https://github.com/user-attachments/assets/f34b5ee5-8c14-44f0-a989-409440781ff8)
 
 # Molecular design in 3D
 
 CapyChem is a local workspace for seeing how a small change to a molecule affects its fit inside a protein. Compare two candidates in the same pocket, inspect the atoms that come into contact, and export the exact 3D pose on screen.
 
-**[Download the demo ZIP ↗](https://github.com/ogngnaoh/capychem/blob/6d482de562679923daea41d151d2dbded3a22041/assets/demo/capychem-studio-demo.zip?raw=1)** · [Watch the film](#watch-the-film) · [Run a live experiment](#run-a-live-experiment)
+**[Download the demo ZIP](https://github.com/ogngnaoh/capychem/blob/6d482de562679923daea41d151d2dbded3a22041/assets/demo/capychem-studio-demo.zip?raw=1)** · [Run a live experiment](#run-a-live-experiment)
 
 <details>
-<summary id="watch-the-film">Watch the film · 28 seconds</summary>
+<summary>Play the 28-second film here</summary>
 
-https://github.com/ogngnaoh/capychem/blob/6d482de562679923daea41d151d2dbded3a22041/assets/demo/v10/capychem-studio-launch.mp4?raw=1
+https://github.com/user-attachments/assets/f34b5ee5-8c14-44f0-a989-409440781ff8
 
 </details>
 
