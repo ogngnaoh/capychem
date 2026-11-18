@@ -1,0 +1,15 @@
+CapyChem molecular design studio
+
+Live local workflow:
+  Follow https://github.com/ogngnaoh/capychem#quick-start
+  The workspace uses the local API and experiment worker. It never substitutes
+  recorded outputs when a live request fails.
+
+Recorded demo (no backend needed):
+  From a built distribution directory, run:
+    python3 -m http.server 5181 --bind 127.0.0.1
+  Open http://127.0.0.1:5181/?mode=demo
+  Coordinates and predictions are recorded scientific artifacts. This mode
+  launches no calculations. Notes and pins stay in this browser.
+
+Third-party notices: THIRD_PARTY_NOTICES.txt

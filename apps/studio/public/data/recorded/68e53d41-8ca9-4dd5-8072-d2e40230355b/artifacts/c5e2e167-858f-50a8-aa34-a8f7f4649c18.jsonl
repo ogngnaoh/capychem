@@ -1,0 +1,16 @@
+{"type": "stage.started", "sequence": 1, "stage": "prepare", "message": "Verifying the curated receptor and parent coordinates"}
+{"type": "stage.completed", "sequence": 2, "stage": "prepare"}
+{"type": "stage.started", "sequence": 3, "stage": "baseline", "message": "Computing the parent baseline with the same receptor and scoring setup"}
+{"type": "stage.completed", "sequence": 4, "stage": "baseline", "score": -8.209}
+{"type": "stage.started", "sequence": 5, "stage": "generate"}
+{"type": "stage.completed", "sequence": 6, "stage": "generate", "count": 8}
+{"type": "stage.started", "sequence": 7, "stage": "evaluate", "total": 8}
+{"type": "candidate.complete", "sequence": 8, "stage": "evaluate", "candidate_id": "candidate-0000", "status": "ready_for_review", "completed": 1, "total": 8, "pose_count": 1}
+{"type": "candidate.complete", "sequence": 9, "stage": "evaluate", "candidate_id": "candidate-0001", "status": "ready_for_review", "completed": 2, "total": 8, "pose_count": 4}
+{"type": "candidate.complete", "sequence": 10, "stage": "evaluate", "candidate_id": "candidate-0002", "status": "ready_for_review", "completed": 3, "total": 8, "pose_count": 2}
+{"type": "candidate.complete", "sequence": 11, "stage": "evaluate", "candidate_id": "candidate-0003", "status": "ready_for_review", "completed": 4, "total": 8, "pose_count": 3}
+{"type": "candidate.complete", "sequence": 12, "stage": "evaluate", "candidate_id": "candidate-0004", "status": "ready_for_review", "completed": 5, "total": 8, "pose_count": 2}
+{"type": "candidate.complete", "sequence": 13, "stage": "evaluate", "candidate_id": "candidate-0005", "status": "ready_for_review", "completed": 6, "total": 8, "pose_count": 1}
+{"type": "candidate.complete", "sequence": 14, "stage": "evaluate", "candidate_id": "candidate-0006", "status": "ready_for_review", "completed": 7, "total": 8, "pose_count": 5}
+{"type": "candidate.complete", "sequence": 15, "stage": "evaluate", "candidate_id": "candidate-0007", "status": "ready_for_review", "completed": 8, "total": 8, "pose_count": 1}
+{"type": "experiment.complete", "sequence": 16, "stage": "complete", "summary": {"ready_for_review": 8, "raw_proposals": 8, "processed_proposals": 8, "unique_candidates": 8, "evaluated_candidates": 8, "pose_count": 19, "pose_failures": 0, "objective_hits": 5}, "scientific_outcome": "review_candidates", "objective_outcome": "detected_contact_candidates"}

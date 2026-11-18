@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+  "protocol": "guided_growth_cdk2_v2",
+  "candidate_source": {
+    "kind": "libinvent",
+    "raw_proposal_count": 32,
+    "seed": 43
+  },
+  "limits": {
+    "max_unique_candidates_evaluated": 12,
+    "embedding_attempts_per_candidate": 16,
+    "evaluation_admission_seconds": 600
+  },
+  "seeds": {
+    "embedding": 194715,
+    "vina": 42
+  },
+  "constraints": {
+    "max_molecular_weight": 450.0,
+    "max_clogp": 4.5,
+    "max_rotatable_bonds": 8,
+    "formal_charge": 0
+  },
+  "label": "CDK2 \u00b7 para growth exploration"
+}

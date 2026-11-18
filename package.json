@@ -1,6 +1,12 @@
 {
   "name": "capychem",
   "private": true,
+  "scripts": {
+    "studio": "pnpm --dir apps/studio dev",
+    "build:studio": "pnpm --dir apps/studio build",
+    "launch:studio": "pnpm --dir apps/launch start",
+    "launch:render": "pnpm --dir apps/launch render"
+  },
   "packageManager": "pnpm@11.5.0",
   "engines": {
     "node": ">=22",

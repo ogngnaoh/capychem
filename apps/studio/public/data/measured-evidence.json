@@ -1,0 +1,5421 @@
+{
+  "guided_batch_protocol": {
+    "name": "guided-local-v1",
+    "chemical_scaffold": "Exact 18-heavy-atom parent graph retained; grow only at supplied N2 attachment",
+    "initial_pose": "Parent 1H1P full18 coordinates guide initial embedding; this is a prior, not frozen during refinement",
+    "refinement": "Vina 1.2.7 local_only; ligand translation, orientation and torsions released; receptor rigid",
+    "embedding_attempts": 8,
+    "embedding_seed_start": 194715,
+    "max_unique_candidates_evaluated": 24,
+    "wall_time_budget_seconds": 600,
+    "property_profile": {
+      "molecular_weight_max": 450,
+      "clogp_max": 4.5,
+      "rotatable_bonds_max": 8,
+      "formal_charge": 0
+    },
+    "property_profile_interpretation": "A declared design profile, not universal drug-likeness",
+    "review_ready": "PoseBusters pass, purine ring drift <=2 A, and at least one detected Glu81/Leu83 hydrogen-bond type",
+    "review_ready_interpretation": "Within this design hypothesis; not evidence of experimental binding",
+    "pose_selection": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+    "objective": "Explore N2 analogs that can make an Asp86 polar contact while preserving a plausible hinge-local binding pose and bounded molecular properties",
+    "score_usage": "Within a fixed preparation/protocol, review evidence and model tradeoffs; no automatic potency claim",
+    "receptor_preparation": "1H1P A/B heterodimer, TPO160 retained, waters removed, neutral9H ligand core",
+    "calibration": "Chosen after known CDK2 controls; same settings frozen before evaluating seed43 batch"
+  },
+  "guided_batch_fixture": {
+    "schemaVersion": 1,
+    "kind": "measured_computational_results",
+    "status": "complete",
+    "title": "CDK2 \u00b7 N2 analog exploration",
+    "receptor": "experiments/cdk2-validation/data/1H1P_prepared.pdb",
+    "frame": "Original 1H1P receptor coordinates; \u00c5",
+    "parent": {
+      "name": "NU2058",
+      "pdb": "1H1P",
+      "refinedScore": -7.306
+    },
+    "protocol": {
+      "name": "guided-local-v1",
+      "chemical_scaffold": "Exact 18-heavy-atom parent graph retained; grow only at supplied N2 attachment",
+      "initial_pose": "Parent 1H1P full18 coordinates guide initial embedding; this is a prior, not frozen during refinement",
+      "refinement": "Vina 1.2.7 local_only; ligand translation, orientation and torsions released; receptor rigid",
+      "embedding_attempts": 8,
+      "embedding_seed_start": 194715,
+      "max_unique_candidates_evaluated": 24,
+      "wall_time_budget_seconds": 600,
+      "property_profile": {
+        "molecular_weight_max": 450,
+        "clogp_max": 4.5,
+        "rotatable_bonds_max": 8,
+        "formal_charge": 0
+      },
+      "property_profile_interpretation": "A declared design profile, not universal drug-likeness",
+      "review_ready": "PoseBusters pass, purine ring drift <=2 A, and at least one detected Glu81/Leu83 hydrogen-bond type",
+      "review_ready_interpretation": "Within this design hypothesis; not evidence of experimental binding",
+      "pose_selection": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+      "objective": "Explore N2 analogs that can make an Asp86 polar contact while preserving a plausible hinge-local binding pose and bounded molecular properties",
+      "score_usage": "Within a fixed preparation/protocol, review evidence and model tradeoffs; no automatic potency claim",
+      "receptor_preparation": "1H1P A/B heterodimer, TPO160 retained, waters removed, neutral9H ligand core",
+      "calibration": "Chosen after known CDK2 controls; same settings frozen before evaluating seed43 batch"
+    },
+    "provenance": {
+      "proposalFile": "results/libinvent-cdk2-seed43.json",
+      "proposalFileSha256": "00eed31ea9f9e2214611850d184d0f7ce72c722c425105765d3da47ebad1d9a4",
+      "controlResultsSha256": "70b38b09aa449bb2485e29acc88bd5a24c5af149dbcdb820bbdab8e318ab4c0a",
+      "checkpointSha256": "03e6cbe8a53e59a4ac3aa6728d041f1957bdd07b5eefdf2cfc5c8591036075af",
+      "versions": {
+        "python": "3.11.5",
+        "torch": "2.10.0",
+        "rdkit": "2025.09.6",
+        "numpy": "2.4.2",
+        "molvs": "0.1.1",
+        "reinvent": "4.9.34",
+        "reinvent_git_commit": "0f075b349ed22015e0406350c6f426701bb0815d"
+      },
+      "generationSeconds": {
+        "checkpoint_load": 0.08142587495967746,
+        "sampling": 0.2513794170226902,
+        "total_to_report": 4.76756516599562
+      },
+      "samplingSeed": 43,
+      "protocolSha256": "11e913b65b6e565e6f7e2117e200fa337fc4487f259a600244bd827e4d363864"
+    },
+    "fixtureProducerSha256": "04e181d03d4ac304ad723abebb56b9ddfda9d1bb0ec01607ca7b0999d00f18a1",
+    "candidates": [
+      {
+        "id": "C43-000",
+        "name": "C43-000",
+        "smiles": "c1ncc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cn1",
+        "proposalSmiles": "c1ncc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cn1",
+        "preparedSmiles": "c1ncc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cn1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 339.40299999999996,
+          "clogp": 2.7141,
+          "rotatable_bonds": 6,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-000_3.sdf",
+        "poseCount": 5,
+        "selectedPose": {
+          "score": -7.218,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.6171307695519914,
+          "hingeContactTypes": 1,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 20,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.29800033569336,
+                46.744998931884766,
+                15.645999908447266
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.9656041611328723
+            }
+          ],
+          "deltaScoreVsParent": 0.08800000000000008
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 0,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 9.441764916002285,
+        "error": null
+      },
+      {
+        "id": "C43-002",
+        "name": "C43-002",
+        "smiles": "COc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1OCC(C)=O",
+        "proposalSmiles": "COc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1OCC(C)=O",
+        "preparedSmiles": null,
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 425.48900000000015,
+          "clogp": 4.032000000000002,
+          "rotatable_bonds": 9,
+          "formal_charge": 0
+        },
+        "status": "outside_constraints",
+        "filterFailures": [
+          "rotatable_bonds>8"
+        ],
+        "selectedSdf": null,
+        "poseCount": 0,
+        "selectedPose": null,
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 2,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 0.00047754094703122973,
+        "error": null
+      },
+      {
+        "id": "C43-003",
+        "name": "C43-003",
+        "smiles": "N#Cc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cn1",
+        "proposalSmiles": "N#Cc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cn1",
+        "preparedSmiles": "N#Cc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cn1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 349.3979999999999,
+          "clogp": 3.322280000000001,
+          "rotatable_bonds": 5,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-003_1.sdf",
+        "poseCount": 4,
+        "selectedPose": {
+          "score": -7.947,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.30115917347962584,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 6,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                33.4739990234375,
+                42.95800018310547,
+                17.166000366210938
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 2.8890353629068155
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 23,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.55500030517578,
+                44.895999908447266,
+                16.361000061035156
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.1803643180452963
+            },
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 21,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.604000091552734,
+                47.0620002746582,
+                15.819999694824219
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 3.002891100626097
+            },
+            {
+              "residue": "LYS89.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 0,
+              "proteinAtomIndex": 1487,
+              "ligandPosition": [
+                27.79800033569336,
+                40.16999816894531,
+                19.716999053955078
+              ],
+              "proteinPosition": [
+                28.861,
+                42.014,
+                21.941
+              ],
+              "distanceA": 3.0783910159786045
+            }
+          ],
+          "deltaScoreVsParent": -0.641
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 3,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 7.749569082981907,
+        "error": null
+      },
+      {
+        "id": "C43-004",
+        "name": "C43-004",
+        "smiles": "Cn1cc(C2CCC(CNc3nc(OCC4CCCCC4)c4nc[nH]c4n3)C2)cn1",
+        "proposalSmiles": "Cn1cc(C2CCC(CNc3nc(OCC4CCCCC4)c4nc[nH]c4n3)C2)cn1",
+        "preparedSmiles": "Cn1cc([C@@H]2CC[C@@H](CNc3nc(OCC4CCCCC4)c4nc[nH]c4n3)C2)cn1",
+        "unspecifiedStereoElements": [
+          {
+            "type": "Atom_Tetrahedral",
+            "index": 4
+          },
+          {
+            "type": "Atom_Tetrahedral",
+            "index": 7
+          }
+        ],
+        "stereoNote": "One coordinate-derived stereochemical realization; unspecified proposal stereochemistry was not enumerated.",
+        "properties": {
+          "molecular_weight": 409.5380000000002,
+          "clogp": 4.041300000000002,
+          "rotatable_bonds": 7,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-004_3.sdf",
+        "poseCount": 7,
+        "selectedPose": {
+          "score": -8.132,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.8566996487009829,
+          "hingeContactTypes": 1,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 24,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.31100082397461,
+                47.52799987792969,
+                16.128000259399414
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 3.373144827173332
+            }
+          ],
+          "deltaScoreVsParent": -0.8259999999999996
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 4,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": true,
+        "poseErrors": [
+          {
+            "id": "C43-004_4",
+            "kind": "outside_grid",
+            "message": "Local refinement left the fixed grid."
+          }
+        ],
+        "seconds": 19.924373082991224,
+        "error": null
+      },
+      {
+        "id": "C43-005",
+        "name": "C43-005",
+        "smiles": "c1nc2c(OCC3CCCCC3)nc(Nc3ccc(N4CCOCC4)cc3)nc2[nH]1",
+        "proposalSmiles": "c1nc2c(OCC3CCCCC3)nc(Nc3ccc(N4CCOCC4)cc3)nc2[nH]1",
+        "preparedSmiles": "c1nc2c(OCC3CCCCC3)nc(Nc3ccc(N4CCOCC4)cc3)nc2[nH]1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 408.5060000000002,
+          "clogp": 3.8922000000000017,
+          "rotatable_bonds": 6,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-005_2.sdf",
+        "poseCount": 7,
+        "selectedPose": {
+          "score": -6.173,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.21333316757504808,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 14,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                33.35200119018555,
+                43.13399887084961,
+                17.128000259399414
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 3.0030423663468016
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 27,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.45600128173828,
+                45.053001403808594,
+                16.309999465942383
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.258938329539238
+            },
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 29,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.52899932861328,
+                47.20399856567383,
+                15.755000114440918
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.949544533271727
+            },
+            {
+              "residue": "LYS89.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 22,
+              "proteinAtomIndex": 1487,
+              "ligandPosition": [
+                26.952999114990234,
+                39.85100173950195,
+                20.923999786376953
+              ],
+              "proteinPosition": [
+                28.861,
+                42.014,
+                21.941
+              ],
+              "distanceA": 3.0583195200346482
+            }
+          ],
+          "deltaScoreVsParent": 1.133
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 5,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 14.337132291984744,
+        "error": null
+      },
+      {
+        "id": "C43-006",
+        "name": "C43-006",
+        "smiles": "c1cncc(CCCNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)c1",
+        "proposalSmiles": "c1cncc(CCCNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)c1",
+        "preparedSmiles": "c1cncc(CCCNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)c1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 366.4690000000001,
+          "clogp": 3.7517000000000023,
+          "rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-006_1.sdf",
+        "poseCount": 6,
+        "selectedPose": {
+          "score": -6.406,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.19053521139445145,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 8,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                33.435001373291016,
+                43.21699905395508,
+                16.89299964904785
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 2.8522233764149227
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 25,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.551998138427734,
+                45.12799835205078,
+                16.073999404907227
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.0815209071847076
+            },
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 23,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.667999267578125,
+                47.2599983215332,
+                15.527999877929688
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.6943803389107734
+            },
+            {
+              "residue": "LYS20.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 2,
+              "proteinAtomIndex": 330,
+              "ligandPosition": [
+                28.14900016784668,
+                39.974998474121094,
+                14.857999801635742
+              ],
+              "proteinPosition": [
+                28.129,
+                40.126,
+                12.251
+              ],
+              "distanceA": 2.611445851106328
+            }
+          ],
+          "deltaScoreVsParent": 0.9000000000000004
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 6,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 11.623731166997459,
+        "error": null
+      },
+      {
+        "id": "C43-007",
+        "name": "C43-007",
+        "smiles": "c1nc2c(OCC3CCCCC3)nc(NC3CCCCCCC3)nc2[nH]1",
+        "proposalSmiles": "c1nc2c(OCC3CCCCC3)nc(NC3CCCCCCC3)nc2[nH]1",
+        "preparedSmiles": null,
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 357.5020000000002,
+          "clogp": 4.836800000000004,
+          "rotatable_bonds": 5,
+          "formal_charge": 0
+        },
+        "status": "outside_constraints",
+        "filterFailures": [
+          "clogp>4.5"
+        ],
+        "selectedSdf": null,
+        "poseCount": 0,
+        "selectedPose": null,
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 7,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 0.00043062499025836587,
+        "error": null
+      },
+      {
+        "id": "C43-008",
+        "name": "C43-008",
+        "smiles": "CC(Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1)c1ccccc1",
+        "proposalSmiles": "CC(Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1)c1ccccc1",
+        "preparedSmiles": "C[C@H](Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1)c1ccccc1",
+        "unspecifiedStereoElements": [
+          {
+            "type": "Atom_Tetrahedral",
+            "index": 1
+          }
+        ],
+        "stereoNote": "One coordinate-derived stereochemical realization; unspecified proposal stereochemistry was not enumerated.",
+        "properties": {
+          "molecular_weight": 351.454,
+          "clogp": 4.485100000000004,
+          "rotatable_bonds": 6,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-008_0.sdf",
+        "poseCount": 8,
+        "selectedPose": {
+          "score": -7.727,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.7964379731740204,
+          "hingeContactTypes": 1,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 17,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.275001525878906,
+                46.505001068115234,
+                15.807999610900879
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 3.175282974153013
+            }
+          ],
+          "deltaScoreVsParent": -0.42100000000000026
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 8,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 16.034049083013088,
+        "error": null
+      },
+      {
+        "id": "C43-009",
+        "name": "C43-009",
+        "smiles": "c1cc(CCNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)ccn1",
+        "proposalSmiles": "c1cc(CCNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)ccn1",
+        "preparedSmiles": "c1cc(CCNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)ccn1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 352.44199999999995,
+          "clogp": 3.361600000000002,
+          "rotatable_bonds": 7,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-009_2.sdf",
+        "poseCount": 6,
+        "selectedPose": {
+          "score": -7.913,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.2237666335022901,
+          "hingeContactTypes": 2,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 22,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.784000396728516,
+                45.09000015258789,
+                16.31999969482422
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.149699046796133
+            },
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 20,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.604000091552734,
+                47.36000061035156,
+                15.809000015258789
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.9826347463171086
+            }
+          ],
+          "deltaScoreVsParent": -0.6070000000000002
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 9,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 11.376886208017822,
+        "error": null
+      },
+      {
+        "id": "C43-010",
+        "name": "C43-010",
+        "smiles": "COCC(=O)NCc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)o1",
+        "proposalSmiles": "COCC(=O)NCc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)o1",
+        "preparedSmiles": null,
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 414.4660000000003,
+          "clogp": 2.911200000000001,
+          "rotatable_bonds": 9,
+          "formal_charge": 0
+        },
+        "status": "outside_constraints",
+        "filterFailures": [
+          "rotatable_bonds>8"
+        ],
+        "selectedSdf": null,
+        "poseCount": 0,
+        "selectedPose": null,
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 10,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 0.0004170839674770832,
+        "error": null
+      },
+      {
+        "id": "C43-011",
+        "name": "C43-011",
+        "smiles": "c1nc2c(OCC3CCCCC3)nc(NCC3CC3)nc2[nH]1",
+        "proposalSmiles": "c1nc2c(OCC3CCCCC3)nc(NCC3CC3)nc2[nH]1",
+        "preparedSmiles": "c1nc2c(OCC3CCCCC3)nc(NCC3CC3)nc2[nH]1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 301.394,
+          "clogp": 3.1339000000000006,
+          "rotatable_bonds": 6,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-011_4.sdf",
+        "poseCount": 5,
+        "selectedPose": {
+          "score": -7.535,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.25717520244567477,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 14,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                33.35900115966797,
+                43.39500045776367,
+                16.801000595092773
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 2.9357580167437907
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 19,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.426998138427734,
+                45.362998962402344,
+                16.05500030517578
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.2572792392461665
+            },
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 21,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.49100112915039,
+                47.540000915527344,
+                15.59000015258789
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.80860347309073
+            }
+          ],
+          "deltaScoreVsParent": -0.2290000000000001
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 11,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 9.350346958031878,
+        "error": null
+      },
+      {
+        "id": "C43-012",
+        "name": "C43-012",
+        "smiles": "OCc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+        "proposalSmiles": "OCc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+        "preparedSmiles": "OCc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 353.426,
+          "clogp": 3.547900000000002,
+          "rotatable_bonds": 6,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-012_2.sdf",
+        "poseCount": 6,
+        "selectedPose": {
+          "score": -7.356,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.12434774764902003,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 6,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                33.5369987487793,
+                43.15999984741211,
+                16.909000396728516
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 2.7890494169317237
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 23,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.61600112915039,
+                45.11199951171875,
+                16.13599967956543
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.0895307016623224
+            },
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 21,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.67100143432617,
+                47.28499984741211,
+                15.635000228881836
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.797730064819802
+            }
+          ],
+          "deltaScoreVsParent": -0.04999999999999982
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 12,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 11.849853041989263,
+        "error": null
+      },
+      {
+        "id": "C43-013",
+        "name": "C43-013",
+        "smiles": "O=C(Nc1cccc(-n2ccnc2)n1)Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "proposalSmiles": "O=C(Nc1cccc(-n2ccnc2)n1)Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "preparedSmiles": "O=C(Nc1cccc(-n2ccnc2)n1)Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 433.47600000000034,
+          "clogp": 3.5367000000000015,
+          "rotatable_bonds": 6,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-013_2.sdf",
+        "poseCount": 6,
+        "selectedPose": {
+          "score": -7.62,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.2504981062163601,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 29,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.678001403808594,
+                47.43600082397461,
+                15.718999862670898
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.881121961121216
+            },
+            {
+              "residue": "HIS84.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 2,
+              "proteinAtomIndex": 1383,
+              "ligandPosition": [
+                31.913999557495117,
+                41.38800048828125,
+                17.152000427246094
+              ],
+              "proteinPosition": [
+                33.295,
+                39.214,
+                16.573
+              ],
+              "distanceA": 2.6398261003325514
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 2,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                31.913999557495117,
+                41.38800048828125,
+                17.152000427246094
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 3.4594544598609307
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 31,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.55500030517578,
+                45.28300094604492,
+                16.15399932861328
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.222225554969897
+            }
+          ],
+          "deltaScoreVsParent": -0.31400000000000006
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 13,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": true,
+        "poseErrors": [
+          {
+            "id": "C43-013_1",
+            "kind": "outside_grid",
+            "message": "Local refinement left the fixed grid."
+          }
+        ],
+        "seconds": 15.699402125028428,
+        "error": null
+      },
+      {
+        "id": "C43-014",
+        "name": "C43-014",
+        "smiles": "O=C(NCCCN1CCCC1=O)Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "proposalSmiles": "O=C(NCCCN1CCCC1=O)Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "preparedSmiles": "O=C(NCCCN1CCCC1=O)Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 415.4980000000003,
+          "clogp": 2.445999999999999,
+          "rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-014_6.sdf",
+        "poseCount": 4,
+        "selectedPose": {
+          "score": -7.086,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.5718065620036701,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 27,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.369998931884766,
+                46.928001403808594,
+                15.930000305175781
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 3.1819465304334362
+            },
+            {
+              "residue": "HIS84.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 2,
+              "proteinAtomIndex": 1383,
+              "ligandPosition": [
+                31.3439998626709,
+                41.125999450683594,
+                17.76300048828125
+              ],
+              "proteinPosition": [
+                33.295,
+                39.214,
+                16.573
+              ],
+              "distanceA": 2.979638333318687
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 12,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                32.770999908447266,
+                43.0620002746582,
+                17.152999877929688
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 3.2646895206994846
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 29,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.0620002746582,
+                44.88999938964844,
+                16.400999069213867
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.450860405786287
+            }
+          ],
+          "deltaScoreVsParent": 0.21999999999999975
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 14,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": true,
+        "poseErrors": [
+          {
+            "id": "C43-014_0",
+            "kind": "outside_grid",
+            "message": "Local refinement left the fixed grid."
+          },
+          {
+            "id": "C43-014_2",
+            "kind": "outside_grid",
+            "message": "Local refinement left the fixed grid."
+          },
+          {
+            "id": "C43-014_3",
+            "kind": "outside_grid",
+            "message": "Local refinement left the fixed grid."
+          }
+        ],
+        "seconds": 12.520641582959797,
+        "error": null
+      },
+      {
+        "id": "C43-015",
+        "name": "C43-015",
+        "smiles": "c1cncc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)c1",
+        "proposalSmiles": "c1cncc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)c1",
+        "preparedSmiles": "c1cncc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)c1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 324.3879999999999,
+          "clogp": 3.4506000000000014,
+          "rotatable_bonds": 5,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-015_1.sdf",
+        "poseCount": 4,
+        "selectedPose": {
+          "score": -8.103,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.21033788750429366,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 5,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                33.42399978637695,
+                43.33300018310547,
+                16.841999053955078
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 2.8953589749269315
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 22,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.56100082397461,
+                45.268001556396484,
+                16.113000869750977
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.1823156983433196
+            },
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 20,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.68199920654297,
+                47.41899871826172,
+                15.659000396728516
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.820955129857254
+            }
+          ],
+          "deltaScoreVsParent": -0.7969999999999997
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 15,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 7.483164084027521,
+        "error": null
+      },
+      {
+        "id": "C43-016",
+        "name": "C43-016",
+        "smiles": "O=C(CC1CCCCC1)Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "proposalSmiles": "O=C(CC1CCCCC1)Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "preparedSmiles": "O=C(CC1CCCCC1)Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 371.4850000000001,
+          "clogp": 4.220900000000003,
+          "rotatable_bonds": 6,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-016_0.sdf",
+        "poseCount": 8,
+        "selectedPose": {
+          "score": -8.547,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.2942993083120528,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 9,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                33.10599899291992,
+                43.40999984741211,
+                16.871999740600586
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 3.102652152561153
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 26,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.36800003051758,
+                45.255001068115234,
+                16.114999771118164
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.2649396152773575
+            },
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 24,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.65299987792969,
+                47.30699920654297,
+                15.640000343322754
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.8064787601638392
+            }
+          ],
+          "deltaScoreVsParent": -1.2410000000000005
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 16,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 15.875567624985706,
+        "error": null
+      },
+      {
+        "id": "C43-017",
+        "name": "C43-017",
+        "smiles": "c1nc2c(OCC3CCCCC3)nc(NCCC3CCCCC3)nc2[nH]1",
+        "proposalSmiles": "c1nc2c(OCC3CCCCC3)nc(NCCC3CCCCC3)nc2[nH]1",
+        "preparedSmiles": null,
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 357.5020000000002,
+          "clogp": 4.694300000000004,
+          "rotatable_bonds": 7,
+          "formal_charge": 0
+        },
+        "status": "outside_constraints",
+        "filterFailures": [
+          "clogp>4.5"
+        ],
+        "selectedSdf": null,
+        "poseCount": 0,
+        "selectedPose": null,
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 17,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 0.00040004198672249913,
+        "error": null
+      },
+      {
+        "id": "C43-018",
+        "name": "C43-018",
+        "smiles": "c1cc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)ccn1",
+        "proposalSmiles": "c1cc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)ccn1",
+        "preparedSmiles": "c1cc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)ccn1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 338.4149999999999,
+          "clogp": 3.3191000000000015,
+          "rotatable_bonds": 6,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-018_0.sdf",
+        "poseCount": 4,
+        "selectedPose": {
+          "score": -7.67,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.21549687290345507,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 4,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                33.189998626708984,
+                43.27199935913086,
+                17.017000198364258
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 3.073878060538026
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 21,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.3650016784668,
+                45.152000427246094,
+                16.20800018310547
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.2767251937605955
+            },
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 19,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.540000915527344,
+                47.25400161743164,
+                15.670999526977539
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.8642167968803034
+            }
+          ],
+          "deltaScoreVsParent": -0.3639999999999999
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 18,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 7.816380332980771,
+        "error": null
+      },
+      {
+        "id": "C43-019",
+        "name": "C43-019",
+        "smiles": "Cc1ccc(S(=O)(=O)NC(=O)c2ccc(Nc3nc(OCC4CCCCC4)c4nc[nH]c4n3)cc2)cc1",
+        "proposalSmiles": "Cc1ccc(S(=O)(=O)NC(=O)c2ccc(Nc3nc(OCC4CCCCC4)c4nc[nH]c4n3)cc2)cc1",
+        "preparedSmiles": null,
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 520.6150000000005,
+          "clogp": 4.482720000000004,
+          "rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "status": "outside_constraints",
+        "filterFailures": [
+          "molecular_weight>450"
+        ],
+        "selectedSdf": null,
+        "poseCount": 0,
+        "selectedPose": null,
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 19,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 0.0005583330057561398,
+        "error": null
+      },
+      {
+        "id": "C43-020",
+        "name": "C43-020",
+        "smiles": "Cc1ccc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)o1",
+        "proposalSmiles": "Cc1ccc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)o1",
+        "preparedSmiles": "Cc1ccc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)o1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 341.415,
+          "clogp": 3.8255200000000027,
+          "rotatable_bonds": 6,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-020_3.sdf",
+        "poseCount": 4,
+        "selectedPose": {
+          "score": -7.565,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.5843223435655107,
+          "hingeContactTypes": 1,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 21,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.32600021362305,
+                46.720001220703125,
+                15.571999549865723
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.89293842973567
+            }
+          ],
+          "deltaScoreVsParent": -0.25900000000000034
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 20,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 7.863414042047225,
+        "error": null
+      },
+      {
+        "id": "C43-021",
+        "name": "C43-021",
+        "smiles": "CCNc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "proposalSmiles": "CCNc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "preparedSmiles": "CCNc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 275.35599999999994,
+          "clogp": 2.7438000000000002,
+          "rotatable_bonds": 5,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-021_1.sdf",
+        "poseCount": 2,
+        "selectedPose": {
+          "score": -7.234,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.31655394085097904,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 2,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                33.005001068115234,
+                43.25299835205078,
+                17.143999099731445
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 3.2358303128049832
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 19,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.21099853515625,
+                45.07099914550781,
+                16.243000030517578
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.3383917507093233
+            },
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 17,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.45000076293945,
+                47.10900115966797,
+                15.612000465393066
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.8386709562601196
+            }
+          ],
+          "deltaScoreVsParent": 0.07200000000000006
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 21,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 3.841780667018611,
+        "error": null
+      },
+      {
+        "id": "C43-022",
+        "name": "C43-022",
+        "smiles": "COCc1nn(C)c(Cl)c1CNc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "proposalSmiles": "COCc1nn(C)c(Cl)c1CNc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "preparedSmiles": "COCc1nn(C)c(Cl)c1CNc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 419.91700000000026,
+          "clogp": 3.4574000000000016,
+          "rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-022_4.sdf",
+        "poseCount": 6,
+        "selectedPose": {
+          "score": -0.664,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 1.29241541491218,
+          "hingeContactTypes": 1,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 28,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.263999938964844,
+                45.0369987487793,
+                16.135000228881836
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.218318399215221
+            }
+          ],
+          "deltaScoreVsParent": 6.642
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 22,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 12.599405042012222,
+        "error": null
+      },
+      {
+        "id": "C43-023",
+        "name": "C43-023",
+        "smiles": "O=C(Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1)C1CCOCC1",
+        "proposalSmiles": "O=C(Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1)C1CCOCC1",
+        "preparedSmiles": "O=C(Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1)C1CCOCC1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 359.4300000000002,
+          "clogp": 2.677100000000001,
+          "rotatable_bonds": 5,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-023_3.sdf",
+        "poseCount": 7,
+        "selectedPose": {
+          "score": -7.631,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.4611580000226965,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 2,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                32.73699951171875,
+                43.16299819946289,
+                17.159000396728516
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 3.337697928802403
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 19,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.018001556396484,
+                44.948001861572266,
+                16.295000076293945
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.423501260220164
+            },
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 17,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.327999114990234,
+                46.952999114990234,
+                15.70300006866455
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.976948050015518
+            }
+          ],
+          "deltaScoreVsParent": -0.3250000000000002
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 23,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 13.502684999955818,
+        "error": null
+      },
+      {
+        "id": "C43-024",
+        "name": "C43-024",
+        "smiles": "c1ccc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+        "proposalSmiles": "c1ccc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+        "preparedSmiles": "c1ccc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 337.42699999999996,
+          "clogp": 3.924100000000003,
+          "rotatable_bonds": 6,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-024_0.sdf",
+        "poseCount": 5,
+        "selectedPose": {
+          "score": -3.502,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 1.2344321265504477,
+          "hingeContactTypes": 1,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 22,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.060001373291016,
+                44.54899978637695,
+                16.615999221801758
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.492157944667838
+            }
+          ],
+          "deltaScoreVsParent": 3.8040000000000003
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 24,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 9.63126925000688,
+        "error": null
+      },
+      {
+        "id": "C43-025",
+        "name": "C43-025",
+        "smiles": "c1ccc(Cc2ccc(CNc3nc(OCC4CCCCC4)c4nc[nH]c4n3)cn2)cc1",
+        "proposalSmiles": "c1ccc(Cc2ccc(CNc3nc(OCC4CCCCC4)c4nc[nH]c4n3)cn2)cc1",
+        "preparedSmiles": null,
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 428.54000000000013,
+          "clogp": 4.909900000000003,
+          "rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "status": "outside_constraints",
+        "filterFailures": [
+          "clogp>4.5"
+        ],
+        "selectedSdf": null,
+        "poseCount": 0,
+        "selectedPose": null,
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 25,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 0.00042870797915384173,
+        "error": null
+      },
+      {
+        "id": "C43-026",
+        "name": "C43-026",
+        "smiles": "CCn1cc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cn1",
+        "proposalSmiles": "CCn1cc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cn1",
+        "preparedSmiles": "CCn1cc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cn1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 341.4189999999999,
+          "clogp": 3.272000000000001,
+          "rotatable_bonds": 6,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-026_0.sdf",
+        "poseCount": 6,
+        "selectedPose": {
+          "score": -8.311,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.19728791730527884,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 5,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                33.22700119018555,
+                43.2760009765625,
+                16.951000213623047
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 3.015465164472058
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 22,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.39899826049805,
+                45.1609992980957,
+                16.14900016784668
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.2233294522425084
+            },
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 20,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.57699966430664,
+                47.263999938964844,
+                15.621999740600586
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.807271462790174
+            }
+          ],
+          "deltaScoreVsParent": -1.005
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 26,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 11.616557333036326,
+        "error": null
+      },
+      {
+        "id": "C43-027",
+        "name": "C43-027",
+        "smiles": "OCCNc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "proposalSmiles": "OCCNc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "preparedSmiles": "OCCNc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 291.35499999999996,
+          "clogp": 1.7161999999999995,
+          "rotatable_bonds": 6,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-027_0.sdf",
+        "poseCount": 4,
+        "selectedPose": {
+          "score": -6.634,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.24037347803294057,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 3,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                33.25600051879883,
+                43.30699920654297,
+                16.9689998626709
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 3.0332484499995607
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 20,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.457000732421875,
+                45.17100143432617,
+                16.160999298095703
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.209789478755251
+            },
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 18,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.66699981689453,
+                47.25299835205078,
+                15.626999855041504
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.7912301252838683
+            }
+          ],
+          "deltaScoreVsParent": 0.6719999999999997
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 27,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 7.933151500008535,
+        "error": null
+      },
+      {
+        "id": "C43-028",
+        "name": "C43-028",
+        "smiles": "O=C(Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1)c1ccc([N+](=O)[O-])o1",
+        "proposalSmiles": "O=C(Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1)c1ccc([N+](=O)[O-])o1",
+        "preparedSmiles": "O=C(Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1)c1ccc([N+](=O)[O-])o1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 386.3680000000001,
+          "clogp": 3.065500000000001,
+          "rotatable_bonds": 6,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-028_3.sdf",
+        "poseCount": 7,
+        "selectedPose": {
+          "score": -8.138,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.5653781768986269,
+          "hingeContactTypes": 1,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 17,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.34299850463867,
+                46.819000244140625,
+                15.647000312805176
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.938779044789863
+            }
+          ],
+          "deltaScoreVsParent": -0.8319999999999999
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 28,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 14.040000167035032,
+        "error": null
+      },
+      {
+        "id": "C43-029",
+        "name": "C43-029",
+        "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)nc1",
+        "proposalSmiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)nc1",
+        "preparedSmiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)nc1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 324.3879999999999,
+          "clogp": 3.4506000000000014,
+          "rotatable_bonds": 5,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-029_3.sdf",
+        "poseCount": 4,
+        "selectedPose": {
+          "score": -8.145,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.18986012600920438,
+          "hingeContactTypes": 3,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "LEU83.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 4,
+              "proteinAtomIndex": 1364,
+              "ligandPosition": [
+                33.42399978637695,
+                43.32099914550781,
+                16.791000366210938
+              ],
+              "proteinPosition": [
+                34.58,
+                41.472,
+                14.949
+              ],
+              "distanceA": 2.8544876393332603
+            },
+            {
+              "residue": "LEU83.A",
+              "type": "HBAcceptor",
+              "ligandAtomIndex": 21,
+              "proteinAtomIndex": 1367,
+              "ligandPosition": [
+                34.55500030517578,
+                45.26300048828125,
+                16.069000244140625
+              ],
+              "proteinPosition": [
+                35.942,
+                43.471,
+                13.879
+              ],
+              "distanceA": 3.151370332534519
+            },
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 19,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.66899871826172,
+                47.41899871826172,
+                15.623000144958496
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.7886175898346943
+            }
+          ],
+          "deltaScoreVsParent": -0.8389999999999995
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 29,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 7.585039708006661,
+        "error": null
+      },
+      {
+        "id": "C43-030",
+        "name": "C43-030",
+        "smiles": "c1cc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)ncn1",
+        "proposalSmiles": "c1cc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)ncn1",
+        "preparedSmiles": "c1cc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)ncn1",
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 339.4029999999999,
+          "clogp": 2.7141,
+          "rotatable_bonds": 6,
+          "formal_charge": 0
+        },
+        "status": "ready_for_review",
+        "filterFailures": [],
+        "selectedSdf": "experiments/cdk2-validation/results/artifacts/guided_batch/C43-030_3.sdf",
+        "poseCount": 4,
+        "selectedPose": {
+          "score": -7.267,
+          "geometryPass": true,
+          "failures": [],
+          "ringDriftA": 0.5587477736573561,
+          "hingeContactTypes": 1,
+          "asp86Contact": false,
+          "reviewReady": true,
+          "contacts": [
+            {
+              "residue": "GLU81.A",
+              "type": "HBDonor",
+              "ligandAtomIndex": 19,
+              "proteinAtomIndex": 1329,
+              "ligandPosition": [
+                35.33300018310547,
+                46.84600067138672,
+                15.67300033569336
+              ],
+              "proteinPosition": [
+                36.278,
+                47.307,
+                12.904
+              ],
+              "distanceA": 2.961909501315415
+            }
+          ],
+          "deltaScoreVsParent": 0.0389999999999997
+        },
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 30,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 8.01866166695254,
+        "error": null
+      },
+      {
+        "id": "C43-031",
+        "name": "C43-031",
+        "smiles": "CNCc1ccc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+        "proposalSmiles": "CNCc1ccc(CNc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+        "preparedSmiles": null,
+        "unspecifiedStereoElements": [],
+        "stereoNote": null,
+        "properties": {
+          "molecular_weight": 380.49600000000004,
+          "clogp": 3.643500000000002,
+          "rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "status": "deferred_budget",
+        "filterFailures": [],
+        "selectedSdf": null,
+        "poseCount": 0,
+        "selectedPose": null,
+        "selectionPolicy": "Among review-ready poses prefer Asp86 contact if present, then lowest Vina score; otherwise lowest score review-ready pose; if none, lowest score pose shown with failure labels",
+        "source": {
+          "kind": "predicted",
+          "model": "LibInvent",
+          "seed": 43,
+          "proposalIndex": 31,
+          "experiment": "guided-batch-v1"
+        },
+        "partial": false,
+        "poseErrors": [],
+        "seconds": 0.0004520840011537075,
+        "error": null
+      }
+    ],
+    "limitations": [
+      "Synthetic molecular proposals with actual local pose computations; not synthesized compounds",
+      "Scores are Vina model scores, not measured binding affinity",
+      "Hydrogen bonds depend on ligand/protein preparation and distance/angle criteria",
+      "Rigid receptor, water removal, one ligand tautomer and small pose budget are approximations",
+      "Unspecified proposal stereochemistry can become one stereochemical realization in3D; isomer enumeration was not validated",
+      "Protocol chosen on four known CDK2 structures; not a held-out generalization benchmark"
+    ]
+  },
+  "guided_batch_audit": {
+    "integrity_pass": true,
+    "pose_artifacts_audited": 129,
+    "contact_endpoints_audited": 202,
+    "selected_poses_geometry_rechecked": 24,
+    "proposals_with_unspecified_stereo_and_a_pose": [
+      "C43-004",
+      "C43-008"
+    ],
+    "checks": [
+      "Every saved pose preserves connectivity and explicitly specified proposal stereochemistry",
+      "Vina scores match logs",
+      "Contact atom indices/coordinates/distances agree with saved pose and receptor",
+      "Selected-pose physicality rerun matches saved outcomes",
+      "Every generated conformer accounted for by artifact or documented error",
+      "Selection reproduces declared policy"
+    ],
+    "failures": [],
+    "scientific_scope": "Integrity of computation; no experimental affinity, synthesis, or pose accuracy for new proposals established",
+    "results_sha256": "8522af5b61e57018e9ba61d1795103f740740b7ff54fc38411bb63844eb7fd8d",
+    "fixture_sha256": "9fa6b435392a240d3aba6bbdab076347e08d054d2e79ae81ff1330f2d42e49c4",
+    "artifacts": [
+      {
+        "id": "C43-000_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.3445062701939988e-06
+      },
+      {
+        "id": "C43-000_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.836197303778988e-06
+      },
+      {
+        "id": "C43-000_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.5274040245432564e-06
+      },
+      {
+        "id": "C43-000_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.1233619550545877e-06
+      },
+      {
+        "id": "C43-000_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.9243625937736205e-06
+      },
+      {
+        "id": "C43-003_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.1378102576854347e-06
+      },
+      {
+        "id": "C43-003_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.088169605035116e-06
+      },
+      {
+        "id": "C43-003_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.3160333729301954e-06
+      },
+      {
+        "id": "C43-003_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.3470149223109393e-06
+      },
+      {
+        "id": "C43-004_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-004_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.60224551004734e-06
+      },
+      {
+        "id": "C43-004_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.3051394543535911e-06
+      },
+      {
+        "id": "C43-004_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 8.724238498688611e-07
+      },
+      {
+        "id": "C43-004_5",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.4737968216716817e-06
+      },
+      {
+        "id": "C43-004_6",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-004_7",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-005_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-005_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.768506160693992e-06
+      },
+      {
+        "id": "C43-005_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.974525038182546e-06
+      },
+      {
+        "id": "C43-005_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.26288407325117e-06
+      },
+      {
+        "id": "C43-005_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.1637371778952416e-06
+      },
+      {
+        "id": "C43-005_5",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.059030316291354e-06
+      },
+      {
+        "id": "C43-005_6",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.4844417847454435e-06
+      },
+      {
+        "id": "C43-006_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-006_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.5564278471222024e-06
+      },
+      {
+        "id": "C43-006_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.4492636883361506e-06
+      },
+      {
+        "id": "C43-006_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.8938732966792072e-06
+      },
+      {
+        "id": "C43-006_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.916846468215998e-06
+      },
+      {
+        "id": "C43-006_5",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-008_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.9027807848562874e-06
+      },
+      {
+        "id": "C43-008_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-008_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-008_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.6699836672152754e-06
+      },
+      {
+        "id": "C43-008_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.2619673526100557e-06
+      },
+      {
+        "id": "C43-008_5",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-008_6",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-008_7",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.00210198440234e-06
+      },
+      {
+        "id": "C43-009_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-009_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.9342584144327364e-06
+      },
+      {
+        "id": "C43-009_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 6.17368418793113e-07
+      },
+      {
+        "id": "C43-009_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.9041721593004005e-06
+      },
+      {
+        "id": "C43-009_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-009_5",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-011_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.3207669674282987e-06
+      },
+      {
+        "id": "C43-011_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.157756795847193e-06
+      },
+      {
+        "id": "C43-011_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-011_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-011_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.1529497094938295e-06
+      },
+      {
+        "id": "C43-012_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-012_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.1504744705217756e-06
+      },
+      {
+        "id": "C43-012_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.460466202061365e-06
+      },
+      {
+        "id": "C43-012_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.960323898466573e-06
+      },
+      {
+        "id": "C43-012_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.2696926331930504e-06
+      },
+      {
+        "id": "C43-012_5",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.2817375016997285e-06
+      },
+      {
+        "id": "C43-013_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.829528173545848e-06
+      },
+      {
+        "id": "C43-013_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.6335458409580018e-06
+      },
+      {
+        "id": "C43-013_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-013_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.1500916866614617e-06
+      },
+      {
+        "id": "C43-013_5",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.862385058915557e-06
+      },
+      {
+        "id": "C43-013_6",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-014_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.726941724941112e-06
+      },
+      {
+        "id": "C43-014_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-014_5",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.4844417847454435e-06
+      },
+      {
+        "id": "C43-014_6",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.7901622780132234e-06
+      },
+      {
+        "id": "C43-015_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.997736230672433e-06
+      },
+      {
+        "id": "C43-015_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.9641209060193757e-06
+      },
+      {
+        "id": "C43-015_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.317126378550984e-06
+      },
+      {
+        "id": "C43-015_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.2177431430594532e-06
+      },
+      {
+        "id": "C43-016_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.0927892591860407e-06
+      },
+      {
+        "id": "C43-016_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.2643240934291485e-06
+      },
+      {
+        "id": "C43-016_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-016_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-016_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-016_5",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.251744417815863e-06
+      },
+      {
+        "id": "C43-016_6",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-016_7",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.4180826058396173e-06
+      },
+      {
+        "id": "C43-018_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.917817949113324e-06
+      },
+      {
+        "id": "C43-018_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.981411193635082e-06
+      },
+      {
+        "id": "C43-018_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.0854137753118184e-06
+      },
+      {
+        "id": "C43-018_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 8.010500943870554e-07
+      },
+      {
+        "id": "C43-020_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-020_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 5.604360235757396e-07
+      },
+      {
+        "id": "C43-020_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.7985316585857081e-06
+      },
+      {
+        "id": "C43-020_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.318473281866439e-06
+      },
+      {
+        "id": "C43-021_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-021_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.1603449363432743e-06
+      },
+      {
+        "id": "C43-022_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.0388762912760723e-06
+      },
+      {
+        "id": "C43-022_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-022_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-022_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-022_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.2734462808730126e-06
+      },
+      {
+        "id": "C43-022_5",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.4844417847454435e-06
+      },
+      {
+        "id": "C43-023_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.3049610470031997e-06
+      },
+      {
+        "id": "C43-023_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.3658107890061215e-06
+      },
+      {
+        "id": "C43-023_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.5142378233067997e-06
+      },
+      {
+        "id": "C43-023_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.4276824501868933e-06
+      },
+      {
+        "id": "C43-023_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-023_5",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.3939052079533695e-06
+      },
+      {
+        "id": "C43-023_6",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.290157461716936e-06
+      },
+      {
+        "id": "C43-024_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.5928451013522353e-06
+      },
+      {
+        "id": "C43-024_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.601009852459854e-06
+      },
+      {
+        "id": "C43-024_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-024_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-024_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-026_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.88327087790189e-06
+      },
+      {
+        "id": "C43-026_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.164651633102219e-06
+      },
+      {
+        "id": "C43-026_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.8896271495046718e-06
+      },
+      {
+        "id": "C43-026_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.6617549884297065e-06
+      },
+      {
+        "id": "C43-026_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.5654208775506698e-06
+      },
+      {
+        "id": "C43-026_5",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.5848586651780552e-06
+      },
+      {
+        "id": "C43-027_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.756816158538527e-06
+      },
+      {
+        "id": "C43-027_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-027_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-027_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 0
+      },
+      {
+        "id": "C43-028_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.44566457593184e-06
+      },
+      {
+        "id": "C43-028_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.523760276695026e-06
+      },
+      {
+        "id": "C43-028_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.1399244785571708e-06
+      },
+      {
+        "id": "C43-028_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.5471125471454812e-06
+      },
+      {
+        "id": "C43-028_4",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.2527084825426436e-06
+      },
+      {
+        "id": "C43-028_5",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 8.606011115646615e-07
+      },
+      {
+        "id": "C43-028_6",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.6701927830575033e-06
+      },
+      {
+        "id": "C43-029_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.2103660828523913e-06
+      },
+      {
+        "id": "C43-029_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.8165650882819306e-06
+      },
+      {
+        "id": "C43-029_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 2.088392591336788e-06
+      },
+      {
+        "id": "C43-029_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.8184386141108524e-06
+      },
+      {
+        "id": "C43-030_0",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.2138172483904011e-06
+      },
+      {
+        "id": "C43-030_1",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.7462482484061955e-06
+      },
+      {
+        "id": "C43-030_2",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 1.9524245187514757e-06
+      },
+      {
+        "id": "C43-030_3",
+        "graph_match": true,
+        "specified_stereo_preserved": true,
+        "max_contact_coordinate_error_A": 7.726433689217579e-07
+      }
+    ]
+  },
+  "soft_anchor_audit": {
+    "integrity_pass": true,
+    "pose_artifacts_audited": 348,
+    "checks": [
+      "Every saved SDF matches known ligand graph",
+      "Independent RDKit CalcRMS agrees in protein frame within SDF coordinate precision",
+      "Every saved Vina score matches process output",
+      "All16experimental cells present and error-free"
+    ],
+    "max_reference_rmsd_error_A": 2.0381568205163347e-05,
+    "failures": [],
+    "parent_receptor_full_prior_refined_benchmark": [
+      {
+        "pdb": "1H1P",
+        "compound": "NU2058",
+        "selected": {
+          "id": "1H1P_full18_parent_0_relaxed",
+          "vina_score": -7.306,
+          "purine_ring_drift_A": 0.1472620980636575,
+          "full_parent_drift_A": 0.28783772434404115,
+          "geometry_pass": true,
+          "posebusters_failures": [],
+          "recovery": {
+            "reference": "primary",
+            "heavy_atom_rmsd_A": 0.2878377329671031
+          },
+          "hinge_hbond_type_count": 3,
+          "asp86_hbond": false,
+          "sdf": "results/artifacts/soft_anchor/1H1P_full18_parent_0_relaxed.sdf"
+        },
+        "recovered_within_2A": true,
+        "is_self_control": true
+      },
+      {
+        "pdb": "1H1Q",
+        "compound": "NU6094",
+        "selected": {
+          "id": "1H1Q_full18_parent_5_relaxed",
+          "vina_score": -8.148,
+          "purine_ring_drift_A": 0.20578678479217433,
+          "full_parent_drift_A": 0.31595033013293555,
+          "geometry_pass": true,
+          "posebusters_failures": [],
+          "recovery": {
+            "reference": "primary",
+            "heavy_atom_rmsd_A": 1.3584459207011124
+          },
+          "hinge_hbond_type_count": 3,
+          "asp86_hbond": false,
+          "sdf": "results/artifacts/soft_anchor/1H1Q_full18_parent_5_relaxed.sdf"
+        },
+        "recovered_within_2A": true,
+        "is_self_control": false
+      },
+      {
+        "pdb": "1H1R",
+        "compound": "NU6086",
+        "selected": {
+          "id": "1H1R_full18_parent_5_relaxed",
+          "vina_score": -8.232,
+          "purine_ring_drift_A": 0.2004885946715831,
+          "full_parent_drift_A": 0.383501122698632,
+          "geometry_pass": true,
+          "posebusters_failures": [],
+          "recovery": {
+            "reference": "primary",
+            "heavy_atom_rmsd_A": 1.531072799684534
+          },
+          "hinge_hbond_type_count": 3,
+          "asp86_hbond": false,
+          "sdf": "results/artifacts/soft_anchor/1H1R_full18_parent_5_relaxed.sdf"
+        },
+        "recovered_within_2A": true,
+        "is_self_control": false
+      },
+      {
+        "pdb": "1H1S",
+        "compound": "NU6102",
+        "selected": {
+          "id": "1H1S_full18_parent_4_relaxed",
+          "vina_score": -7.562,
+          "purine_ring_drift_A": 0.40488880053660914,
+          "full_parent_drift_A": 0.3809847620166583,
+          "geometry_pass": true,
+          "posebusters_failures": [],
+          "recovery": {
+            "reference": "primary",
+            "heavy_atom_rmsd_A": 2.469534283256888
+          },
+          "hinge_hbond_type_count": 3,
+          "asp86_hbond": false,
+          "sdf": "results/artifacts/soft_anchor/1H1S_full18_parent_4_relaxed.sdf"
+        },
+        "recovered_within_2A": false,
+        "is_self_control": false
+      }
+    ],
+    "scientific_interpretation": "Integrity passing does not mean predictive accuracy passed; NU6102 remains a receptor-dependent pose failure.",
+    "results_sha256": "70b38b09aa449bb2485e29acc88bd5a24c5af149dbcdb820bbdab8e318ab4c0a",
+    "rows": [
+      {
+        "id": "1H1P_full18_parent_0_initial",
+        "rms_error_A": 8.562639520105428e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_full18_parent_0_relaxed",
+        "rms_error_A": 8.623063152413124e-09,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_full18_own_0_initial",
+        "rms_error_A": 8.562639520306656e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_full18_own_0_relaxed",
+        "rms_error_A": 8.623063207924275e-09,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_0_initial",
+        "rms_error_A": 1.0744507618010157e-05,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_1_initial",
+        "rms_error_A": 1.6082867131395062e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_2_initial",
+        "rms_error_A": 2.3938250273136674e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_3_initial",
+        "rms_error_A": 2.038156819805792e-05,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_4_initial",
+        "rms_error_A": 6.060773971916511e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_5_initial",
+        "rms_error_A": 1.8861470829634186e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_6_initial",
+        "rms_error_A": 1.4925253122299864e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_7_initial",
+        "rms_error_A": 1.0851995103866585e-05,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_8_initial",
+        "rms_error_A": 9.219397949955521e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_9_initial",
+        "rms_error_A": 3.814722332018405e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_10_initial",
+        "rms_error_A": 5.346618465740249e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_11_initial",
+        "rms_error_A": 8.52748943902526e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_12_initial",
+        "rms_error_A": 1.0031993857850807e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_13_initial",
+        "rms_error_A": 7.081754643811777e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_14_initial",
+        "rms_error_A": 1.203842558084034e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_15_initial",
+        "rms_error_A": 7.704806011699095e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_0_relaxed",
+        "rms_error_A": 5.398995261973738e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_1_relaxed",
+        "rms_error_A": 7.562916337633396e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_2_relaxed",
+        "rms_error_A": 4.5826627093070726e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_3_relaxed",
+        "rms_error_A": 1.1350166273516038e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_4_relaxed",
+        "rms_error_A": 2.783688195506784e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_5_relaxed",
+        "rms_error_A": 1.958243733835019e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_6_relaxed",
+        "rms_error_A": 3.7467800417800845e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_7_relaxed",
+        "rms_error_A": 2.1465941912879316e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_8_relaxed",
+        "rms_error_A": 2.431015906356748e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_9_relaxed",
+        "rms_error_A": 1.3581303925924715e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_10_relaxed",
+        "rms_error_A": 2.0447540372003914e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_11_relaxed",
+        "rms_error_A": 1.1549036116331735e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_12_relaxed",
+        "rms_error_A": 5.047732809515537e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_13_relaxed",
+        "rms_error_A": 1.6378828304741688e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_14_relaxed",
+        "rms_error_A": 7.55615332526105e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_parent_15_relaxed",
+        "rms_error_A": 1.6531549434928294e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_0_initial",
+        "rms_error_A": 1.0744507605797704e-05,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_1_initial",
+        "rms_error_A": 1.608286725574004e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_2_initial",
+        "rms_error_A": 2.3938250215405077e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_3_initial",
+        "rms_error_A": 2.0381568205163347e-05,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_4_initial",
+        "rms_error_A": 6.060773983684875e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_5_initial",
+        "rms_error_A": 1.8861470963971172e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_6_initial",
+        "rms_error_A": 1.49252538328426e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_7_initial",
+        "rms_error_A": 1.0851995096761158e-05,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_8_initial",
+        "rms_error_A": 9.219397949733477e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_9_initial",
+        "rms_error_A": 3.814722322914577e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_10_initial",
+        "rms_error_A": 5.34661847684248e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_11_initial",
+        "rms_error_A": 8.52748937685277e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_12_initial",
+        "rms_error_A": 1.0031994701620306e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_13_initial",
+        "rms_error_A": 7.081754643367688e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_14_initial",
+        "rms_error_A": 1.2038425813987175e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_15_initial",
+        "rms_error_A": 7.704805999597664e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_0_relaxed",
+        "rms_error_A": 5.398995261973738e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_1_relaxed",
+        "rms_error_A": 7.562916248815554e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_2_relaxed",
+        "rms_error_A": 4.5826627104172957e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_3_relaxed",
+        "rms_error_A": 1.1350166273516038e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_4_relaxed",
+        "rms_error_A": 2.78368819772723e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_5_relaxed",
+        "rms_error_A": 1.9582437227327887e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_6_relaxed",
+        "rms_error_A": 3.7467799529622425e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_7_relaxed",
+        "rms_error_A": 2.1465941912879316e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_8_relaxed",
+        "rms_error_A": 2.431015904136302e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_9_relaxed",
+        "rms_error_A": 1.3581303948129175e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_10_relaxed",
+        "rms_error_A": 2.0447540283186072e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_11_relaxed",
+        "rms_error_A": 1.1549036127433965e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_12_relaxed",
+        "rms_error_A": 5.047732809515537e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_13_relaxed",
+        "rms_error_A": 1.6378828293639458e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_14_relaxed",
+        "rms_error_A": 7.55615330305659e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1P_purine9_own_15_relaxed",
+        "rms_error_A": 1.6531549434928294e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_0_initial",
+        "rms_error_A": 3.538798050151115e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_1_initial",
+        "rms_error_A": 1.1603527896308918e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_2_initial",
+        "rms_error_A": 4.7582026860837345e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_3_initial",
+        "rms_error_A": 3.6402832357396164e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_4_initial",
+        "rms_error_A": 7.02398427998574e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_5_initial",
+        "rms_error_A": 5.1785740229348676e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_6_initial",
+        "rms_error_A": 1.2889586691322563e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_7_initial",
+        "rms_error_A": 6.944415909870827e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_0_relaxed",
+        "rms_error_A": 1.906429452080971e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_1_relaxed",
+        "rms_error_A": 1.834225784591581e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_2_relaxed",
+        "rms_error_A": 1.8083055586259889e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_3_relaxed",
+        "rms_error_A": 6.507248873077742e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_4_relaxed",
+        "rms_error_A": 3.6473803000092175e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_5_relaxed",
+        "rms_error_A": 2.2072000671613523e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_6_relaxed",
+        "rms_error_A": 1.3314155467014643e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_parent_7_relaxed",
+        "rms_error_A": 4.7414751236374286e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_0_initial",
+        "rms_error_A": 1.3314265625563593e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_1_initial",
+        "rms_error_A": 5.323346583097077e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_2_initial",
+        "rms_error_A": 6.225367128909198e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_3_initial",
+        "rms_error_A": 9.453871443465545e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_4_initial",
+        "rms_error_A": 2.146372312772371e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_5_initial",
+        "rms_error_A": 6.713521425449898e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_6_initial",
+        "rms_error_A": 9.050863987170032e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_7_initial",
+        "rms_error_A": 2.5257098745790074e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_0_relaxed",
+        "rms_error_A": 5.0488604408371884e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_1_relaxed",
+        "rms_error_A": 1.4901754941121226e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_2_relaxed",
+        "rms_error_A": 1.6717265793886327e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_3_relaxed",
+        "rms_error_A": 6.429498622395613e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_4_relaxed",
+        "rms_error_A": 3.6402324088413707e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_5_relaxed",
+        "rms_error_A": 3.6361853084088125e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_6_relaxed",
+        "rms_error_A": 1.671791971524783e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_full18_own_7_relaxed",
+        "rms_error_A": 2.7441074301748358e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_0_initial",
+        "rms_error_A": 2.698446070592553e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_1_initial",
+        "rms_error_A": 7.88495283243762e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_2_initial",
+        "rms_error_A": 9.33819101112121e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_3_initial",
+        "rms_error_A": 2.3211717099513862e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_4_initial",
+        "rms_error_A": 3.334265874510578e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_5_initial",
+        "rms_error_A": 3.980932674174653e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_6_initial",
+        "rms_error_A": 5.895919934939542e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_7_initial",
+        "rms_error_A": 7.974759172579837e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_8_initial",
+        "rms_error_A": 5.522922860823343e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_9_initial",
+        "rms_error_A": 9.152121791533574e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_10_initial",
+        "rms_error_A": 3.646755883934816e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_11_initial",
+        "rms_error_A": 3.741465916196063e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_12_initial",
+        "rms_error_A": 2.9479542584809337e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_13_initial",
+        "rms_error_A": 3.873877963744832e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_14_initial",
+        "rms_error_A": 6.133762036064638e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_0_relaxed",
+        "rms_error_A": 1.7933115792345689e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_1_relaxed",
+        "rms_error_A": 1.164602170256046e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_2_relaxed",
+        "rms_error_A": 2.609549227816643e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_3_relaxed",
+        "rms_error_A": 1.1714860193023924e-09,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_4_relaxed",
+        "rms_error_A": 5.2787044069191325e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_5_relaxed",
+        "rms_error_A": 1.9237799842031222e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_6_relaxed",
+        "rms_error_A": 2.6807848385601574e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_7_relaxed",
+        "rms_error_A": 1.9066783840671064e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_8_relaxed",
+        "rms_error_A": 2.1411654227421195e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_9_relaxed",
+        "rms_error_A": 7.864641471400091e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_10_relaxed",
+        "rms_error_A": 1.2889954792427716e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_11_relaxed",
+        "rms_error_A": 2.175124791392591e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_12_relaxed",
+        "rms_error_A": 1.6260216284536e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_13_relaxed",
+        "rms_error_A": 6.43205928518853e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_parent_14_relaxed",
+        "rms_error_A": 5.7728471336560006e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_0_initial",
+        "rms_error_A": 7.1973370352473864e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_1_initial",
+        "rms_error_A": 8.569270574909638e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_2_initial",
+        "rms_error_A": 3.4063579352761053e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_3_initial",
+        "rms_error_A": 2.165156668620938e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_4_initial",
+        "rms_error_A": 8.157673647701813e-09,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_5_initial",
+        "rms_error_A": 8.828257072934775e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_6_initial",
+        "rms_error_A": 1.8345673176156652e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_7_initial",
+        "rms_error_A": 5.226246745593244e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_8_initial",
+        "rms_error_A": 1.1426979466211407e-05,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_9_initial",
+        "rms_error_A": 2.7543127694151792e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_10_initial",
+        "rms_error_A": 2.3150278418704318e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_11_initial",
+        "rms_error_A": 3.866214271397439e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_12_initial",
+        "rms_error_A": 8.446907968195916e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_13_initial",
+        "rms_error_A": 3.48841273201117e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_14_initial",
+        "rms_error_A": 5.891397886870209e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_0_relaxed",
+        "rms_error_A": 1.0429178498583269e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_1_relaxed",
+        "rms_error_A": 7.307012861446083e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_2_relaxed",
+        "rms_error_A": 3.490449707044263e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_3_relaxed",
+        "rms_error_A": 1.6606965136389817e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_4_relaxed",
+        "rms_error_A": 9.784095311715646e-09,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_5_relaxed",
+        "rms_error_A": 1.6154665161138837e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_6_relaxed",
+        "rms_error_A": 1.2226516865609938e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_7_relaxed",
+        "rms_error_A": 9.789558053086012e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_8_relaxed",
+        "rms_error_A": 2.2074449823605846e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_9_relaxed",
+        "rms_error_A": 1.9404325213301377e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_10_relaxed",
+        "rms_error_A": 3.417900140689767e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_11_relaxed",
+        "rms_error_A": 1.5587916912807032e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_12_relaxed",
+        "rms_error_A": 1.379380698551813e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_13_relaxed",
+        "rms_error_A": 1.503235491639998e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1Q_purine9_own_14_relaxed",
+        "rms_error_A": 1.591363729680495e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_parent_0_initial",
+        "rms_error_A": 1.0905340432909583e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_parent_1_initial",
+        "rms_error_A": 2.702215601724234e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_parent_2_initial",
+        "rms_error_A": 5.532192266510805e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_parent_3_initial",
+        "rms_error_A": 2.4511866851817388e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_parent_4_initial",
+        "rms_error_A": 7.221814990909792e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_parent_5_initial",
+        "rms_error_A": 3.196158369300761e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_parent_6_initial",
+        "rms_error_A": 1.4064868603114178e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_parent_0_relaxed",
+        "rms_error_A": 2.3394043657809505e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_parent_1_relaxed",
+        "rms_error_A": 1.6583276418735693e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_parent_2_relaxed",
+        "rms_error_A": 7.849758132394413e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_parent_3_relaxed",
+        "rms_error_A": 2.535325522856624e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_parent_4_relaxed",
+        "rms_error_A": 3.328742979036292e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_parent_5_relaxed",
+        "rms_error_A": 7.13812420283233e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_parent_6_relaxed",
+        "rms_error_A": 1.0759539481597358e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_own_0_initial",
+        "rms_error_A": 1.7882018019665935e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_own_1_initial",
+        "rms_error_A": 4.773175761974002e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_own_2_initial",
+        "rms_error_A": 1.2127467445832707e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_own_3_initial",
+        "rms_error_A": 1.8235539642752485e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_own_4_initial",
+        "rms_error_A": 5.468334260072538e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_own_5_initial",
+        "rms_error_A": 3.815982017041364e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_own_6_initial",
+        "rms_error_A": 2.4429221285870995e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_own_0_relaxed",
+        "rms_error_A": 5.9172081234848406e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_own_1_relaxed",
+        "rms_error_A": 3.50245388247572e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_own_2_relaxed",
+        "rms_error_A": 1.5946020592849663e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_own_3_relaxed",
+        "rms_error_A": 2.613354066482998e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_own_4_relaxed",
+        "rms_error_A": 1.7122037254679867e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_own_5_relaxed",
+        "rms_error_A": 1.11979290284836e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_full18_own_6_relaxed",
+        "rms_error_A": 9.925544652844565e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_0_initial",
+        "rms_error_A": 9.30853109393226e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_1_initial",
+        "rms_error_A": 8.356545646570623e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_2_initial",
+        "rms_error_A": 1.702845040263412e-05,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_3_initial",
+        "rms_error_A": 2.4892059200531946e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_4_initial",
+        "rms_error_A": 2.4536478580028387e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_5_initial",
+        "rms_error_A": 1.4265844825445129e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_6_initial",
+        "rms_error_A": 4.00542502809742e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_7_initial",
+        "rms_error_A": 3.4067425520589723e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_8_initial",
+        "rms_error_A": 5.679699827787488e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_9_initial",
+        "rms_error_A": 2.530192126037889e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_10_initial",
+        "rms_error_A": 8.098397594746842e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_11_initial",
+        "rms_error_A": 1.0783951339909947e-05,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_12_initial",
+        "rms_error_A": 1.5366964440932662e-05,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_0_relaxed",
+        "rms_error_A": 4.1007850581920025e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_1_relaxed",
+        "rms_error_A": 1.034786971665369e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_2_relaxed",
+        "rms_error_A": 2.5927203584075187e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_3_relaxed",
+        "rms_error_A": 2.7865309748520417e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_4_relaxed",
+        "rms_error_A": 2.3490685563398728e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_5_relaxed",
+        "rms_error_A": 1.2547274330643177e-09,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_6_relaxed",
+        "rms_error_A": 1.6077328091057552e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_7_relaxed",
+        "rms_error_A": 6.38795993879171e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_8_relaxed",
+        "rms_error_A": 3.622595334817902e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_9_relaxed",
+        "rms_error_A": 6.150235609680976e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_10_relaxed",
+        "rms_error_A": 6.984125633380245e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_11_relaxed",
+        "rms_error_A": 3.393630310100093e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_parent_12_relaxed",
+        "rms_error_A": 1.036656593900176e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_0_initial",
+        "rms_error_A": 3.287213564906466e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_1_initial",
+        "rms_error_A": 2.2170322742098847e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_2_initial",
+        "rms_error_A": 1.2096068759959167e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_3_initial",
+        "rms_error_A": 1.7249999428869955e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_4_initial",
+        "rms_error_A": 3.131801773248455e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_5_initial",
+        "rms_error_A": 2.397693040112614e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_6_initial",
+        "rms_error_A": 2.9113284578663468e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_7_initial",
+        "rms_error_A": 1.8452607699614987e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_8_initial",
+        "rms_error_A": 3.889602997020347e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_9_initial",
+        "rms_error_A": 3.168407075815338e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_10_initial",
+        "rms_error_A": 5.952279137577676e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_11_initial",
+        "rms_error_A": 3.1841332090998264e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_12_initial",
+        "rms_error_A": 2.2666115069291948e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_0_relaxed",
+        "rms_error_A": 3.758829736355551e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_1_relaxed",
+        "rms_error_A": 1.736243233629864e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_2_relaxed",
+        "rms_error_A": 2.640475393889119e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_3_relaxed",
+        "rms_error_A": 1.5139892939330934e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_4_relaxed",
+        "rms_error_A": 5.102703226622651e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_5_relaxed",
+        "rms_error_A": 3.269174948528075e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_6_relaxed",
+        "rms_error_A": 1.9257401628891557e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_7_relaxed",
+        "rms_error_A": 1.711804467063871e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_8_relaxed",
+        "rms_error_A": 1.7390141771045364e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_9_relaxed",
+        "rms_error_A": 4.7599206132176164e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_10_relaxed",
+        "rms_error_A": 4.257678742902726e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_11_relaxed",
+        "rms_error_A": 1.4497756062326062e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1R_purine9_own_12_relaxed",
+        "rms_error_A": 5.849150896963806e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_0_initial",
+        "rms_error_A": 1.1731423086303039e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_1_initial",
+        "rms_error_A": 2.005358706647087e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_2_initial",
+        "rms_error_A": 9.626779178262268e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_3_initial",
+        "rms_error_A": 2.3605679624338904e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_4_initial",
+        "rms_error_A": 1.4966761829882103e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_5_initial",
+        "rms_error_A": 2.1281374680270915e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_6_initial",
+        "rms_error_A": 6.518363252272508e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_7_initial",
+        "rms_error_A": 9.673599844717273e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_8_initial",
+        "rms_error_A": 3.862826925882246e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_9_initial",
+        "rms_error_A": 4.51876888796221e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_10_initial",
+        "rms_error_A": 5.267169850720066e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_0_relaxed",
+        "rms_error_A": 1.602472874395744e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_1_relaxed",
+        "rms_error_A": 2.206149396499768e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_2_relaxed",
+        "rms_error_A": 1.4655751812142626e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_3_relaxed",
+        "rms_error_A": 1.0561809649090037e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_4_relaxed",
+        "rms_error_A": 1.7262587226340997e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_5_relaxed",
+        "rms_error_A": 1.2986789865720993e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_6_relaxed",
+        "rms_error_A": 1.8050583383555363e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_7_relaxed",
+        "rms_error_A": 4.1445154419506025e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_8_relaxed",
+        "rms_error_A": 1.8606111762409228e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_9_relaxed",
+        "rms_error_A": 2.2714514535948638e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_parent_10_relaxed",
+        "rms_error_A": 6.270112207218403e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_0_initial",
+        "rms_error_A": 4.091847019660477e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_1_initial",
+        "rms_error_A": 1.421436581328095e-05,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_2_initial",
+        "rms_error_A": 4.103341227690294e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_3_initial",
+        "rms_error_A": 1.66267784678098e-05,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_4_initial",
+        "rms_error_A": 5.95688103288694e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_5_initial",
+        "rms_error_A": 8.176343846422185e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_6_initial",
+        "rms_error_A": 1.948103234727938e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_7_initial",
+        "rms_error_A": 7.676318043436936e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_8_initial",
+        "rms_error_A": 2.27884839265613e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_9_initial",
+        "rms_error_A": 4.3518557257815615e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_10_initial",
+        "rms_error_A": 3.485578846440518e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_0_relaxed",
+        "rms_error_A": 3.278918683236043e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_1_relaxed",
+        "rms_error_A": 8.66625882167682e-10,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_2_relaxed",
+        "rms_error_A": 5.390325164000842e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_3_relaxed",
+        "rms_error_A": 8.522356420570532e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_4_relaxed",
+        "rms_error_A": 2.887057992673192e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_5_relaxed",
+        "rms_error_A": 1.2783550751294115e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_6_relaxed",
+        "rms_error_A": 3.3144797573214646e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_7_relaxed",
+        "rms_error_A": 2.0753323504152377e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_8_relaxed",
+        "rms_error_A": 2.065234205872457e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_9_relaxed",
+        "rms_error_A": 1.4739769627070132e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_full18_own_10_relaxed",
+        "rms_error_A": 3.3031548762885166e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_0_initial",
+        "rms_error_A": 4.902345995816404e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_1_initial",
+        "rms_error_A": 1.1697552926293042e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_2_initial",
+        "rms_error_A": 3.5055549374440886e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_3_initial",
+        "rms_error_A": 7.998882715298805e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_4_initial",
+        "rms_error_A": 2.0412732446573045e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_5_initial",
+        "rms_error_A": 1.9944841271879454e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_6_initial",
+        "rms_error_A": 2.4340999651428774e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_7_initial",
+        "rms_error_A": 1.0187640308245705e-05,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_8_initial",
+        "rms_error_A": 2.0987931854676845e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_9_initial",
+        "rms_error_A": 4.569911322249709e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_10_initial",
+        "rms_error_A": 1.5548011988997246e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_11_initial",
+        "rms_error_A": 4.502267473505128e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_12_initial",
+        "rms_error_A": 5.854576445862847e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_13_initial",
+        "rms_error_A": 4.472780146258515e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_14_initial",
+        "rms_error_A": 1.5792620802201895e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_15_initial",
+        "rms_error_A": 3.4254984901949115e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_0_relaxed",
+        "rms_error_A": 1.298441736352629e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_1_relaxed",
+        "rms_error_A": 3.971854400930397e-09,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_2_relaxed",
+        "rms_error_A": 1.8983327665367256e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_3_relaxed",
+        "rms_error_A": 2.24882091170997e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_4_relaxed",
+        "rms_error_A": 1.683642443239819e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_5_relaxed",
+        "rms_error_A": 5.641139999568168e-09,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_6_relaxed",
+        "rms_error_A": 1.0301384811839398e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_7_relaxed",
+        "rms_error_A": 2.399949137199542e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_8_relaxed",
+        "rms_error_A": 4.983738941533034e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_9_relaxed",
+        "rms_error_A": 1.6038301264842403e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_10_relaxed",
+        "rms_error_A": 1.0244384895941039e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_11_relaxed",
+        "rms_error_A": 6.116836015479521e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_12_relaxed",
+        "rms_error_A": 6.574476874021684e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_13_relaxed",
+        "rms_error_A": 3.728122663915201e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_14_relaxed",
+        "rms_error_A": 1.3730110692833364e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_parent_15_relaxed",
+        "rms_error_A": 2.5895544819576344e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_0_initial",
+        "rms_error_A": 5.749329193172059e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_1_initial",
+        "rms_error_A": 3.6096390252371435e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_2_initial",
+        "rms_error_A": 7.57236882975576e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_3_initial",
+        "rms_error_A": 2.986245919878172e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_4_initial",
+        "rms_error_A": 6.378060456668777e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_5_initial",
+        "rms_error_A": 1.8326888442388167e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_6_initial",
+        "rms_error_A": 3.10342428200272e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_7_initial",
+        "rms_error_A": 2.1609373792585984e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_8_initial",
+        "rms_error_A": 1.0643113581565444e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_9_initial",
+        "rms_error_A": 1.6325111036330497e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_10_initial",
+        "rms_error_A": 8.587032234608216e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_11_initial",
+        "rms_error_A": 2.153626010859e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_12_initial",
+        "rms_error_A": 6.926225613490544e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_13_initial",
+        "rms_error_A": 1.7102295064574946e-06,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_14_initial",
+        "rms_error_A": 9.844359354360677e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_15_initial",
+        "rms_error_A": 1.3384084846634892e-05,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_0_relaxed",
+        "rms_error_A": 2.1134161087843495e-09,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_1_relaxed",
+        "rms_error_A": 1.1150609324772631e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_2_relaxed",
+        "rms_error_A": 1.3162827272594768e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_3_relaxed",
+        "rms_error_A": 2.2535976862414486e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_4_relaxed",
+        "rms_error_A": 7.66074397251515e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_5_relaxed",
+        "rms_error_A": 1.886737077683165e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_6_relaxed",
+        "rms_error_A": 2.914221592931199e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_7_relaxed",
+        "rms_error_A": 1.8158312187210868e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_8_relaxed",
+        "rms_error_A": 6.619078796177291e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_9_relaxed",
+        "rms_error_A": 2.501636711116362e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_10_relaxed",
+        "rms_error_A": 6.892033432848166e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_11_relaxed",
+        "rms_error_A": 1.6363465960012036e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_12_relaxed",
+        "rms_error_A": 2.3526158798858887e-09,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_13_relaxed",
+        "rms_error_A": 1.4744403031841102e-08,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_14_relaxed",
+        "rms_error_A": 3.218969597540422e-07,
+        "graph_match": true,
+        "score_match": true
+      },
+      {
+        "id": "1H1S_purine9_own_15_relaxed",
+        "rms_error_A": 5.3268098376690887e-08,
+        "graph_match": true,
+        "score_match": true
+      }
+    ]
+  },
+  "known_compound_selected_parent_rmsd_A": {
+    "NU2058": 0.29,
+    "NU6094": 1.36,
+    "NU6086": 1.53,
+    "NU6102": 2.47
+  },
+  "interpretation": "Retrospective CDK2 calibration and fresh stochastic batch. No affinity or generalization validation. NU2058 is a self-control."
+}

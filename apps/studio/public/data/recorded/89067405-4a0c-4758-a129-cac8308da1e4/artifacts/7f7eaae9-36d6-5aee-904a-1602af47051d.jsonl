@@ -1,0 +1,40 @@
+{"type": "stage.started", "sequence": 1, "stage": "prepare", "message": "Verifying the curated receptor and parent coordinates"}
+{"type": "stage.completed", "sequence": 2, "stage": "prepare"}
+{"type": "stage.started", "sequence": 3, "stage": "baseline", "message": "Computing the parent baseline with the same receptor and scoring setup"}
+{"type": "stage.completed", "sequence": 4, "stage": "baseline", "score": -8.209}
+{"type": "stage.started", "sequence": 5, "stage": "generate"}
+{"type": "stage.completed", "sequence": 6, "stage": "generate", "count": 32}
+{"type": "stage.started", "sequence": 7, "stage": "evaluate", "total": 32}
+{"type": "candidate.complete", "sequence": 8, "stage": "evaluate", "candidate_id": "candidate-0000", "status": "ready_for_review", "completed": 1, "total": 32, "pose_count": 3}
+{"type": "candidate.complete", "sequence": 9, "stage": "evaluate", "candidate_id": "candidate-0001", "status": "ready_for_review", "completed": 2, "total": 32, "pose_count": 7}
+{"type": "candidate.complete", "sequence": 10, "stage": "evaluate", "candidate_id": "candidate-0002", "status": "ready_for_review", "completed": 3, "total": 32, "pose_count": 8}
+{"type": "candidate.complete", "sequence": 11, "stage": "evaluate", "candidate_id": "candidate-0003", "status": "ready_for_review", "completed": 4, "total": 32, "pose_count": 1}
+{"type": "candidate.complete", "sequence": 12, "stage": "evaluate", "candidate_id": "candidate-0004", "status": "ready_for_review", "completed": 5, "total": 32, "pose_count": 4}
+{"type": "candidate.complete", "sequence": 13, "stage": "evaluate", "candidate_id": "candidate-0005", "status": "duplicate", "completed": 6, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 14, "stage": "evaluate", "candidate_id": "candidate-0006", "status": "duplicate", "completed": 7, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 15, "stage": "evaluate", "candidate_id": "candidate-0007", "status": "ready_for_review", "completed": 8, "total": 32, "pose_count": 8}
+{"type": "candidate.complete", "sequence": 16, "stage": "evaluate", "candidate_id": "candidate-0008", "status": "duplicate", "completed": 9, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 17, "stage": "evaluate", "candidate_id": "candidate-0009", "status": "duplicate", "completed": 10, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 18, "stage": "evaluate", "candidate_id": "candidate-0010", "status": "ready_for_review", "completed": 11, "total": 32, "pose_count": 2}
+{"type": "candidate.complete", "sequence": 19, "stage": "evaluate", "candidate_id": "candidate-0011", "status": "duplicate", "completed": 12, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 20, "stage": "evaluate", "candidate_id": "candidate-0012", "status": "outside_constraints", "completed": 13, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 21, "stage": "evaluate", "candidate_id": "candidate-0013", "status": "outside_constraints", "completed": 14, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 22, "stage": "evaluate", "candidate_id": "candidate-0014", "status": "duplicate", "completed": 15, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 23, "stage": "evaluate", "candidate_id": "candidate-0015", "status": "duplicate", "completed": 16, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 24, "stage": "evaluate", "candidate_id": "candidate-0016", "status": "duplicate", "completed": 17, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 25, "stage": "evaluate", "candidate_id": "candidate-0017", "status": "ready_for_review", "completed": 18, "total": 32, "pose_count": 10}
+{"type": "candidate.complete", "sequence": 26, "stage": "evaluate", "candidate_id": "candidate-0018", "status": "outside_constraints", "completed": 19, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 27, "stage": "evaluate", "candidate_id": "candidate-0019", "status": "ready_for_review", "completed": 20, "total": 32, "pose_count": 1}
+{"type": "candidate.complete", "sequence": 28, "stage": "evaluate", "candidate_id": "candidate-0020", "status": "duplicate", "completed": 21, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 29, "stage": "evaluate", "candidate_id": "candidate-0021", "status": "ready_for_review", "completed": 22, "total": 32, "pose_count": 2}
+{"type": "candidate.complete", "sequence": 30, "stage": "evaluate", "candidate_id": "candidate-0022", "status": "duplicate", "completed": 23, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 31, "stage": "evaluate", "candidate_id": "candidate-0023", "status": "duplicate", "completed": 24, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 32, "stage": "evaluate", "candidate_id": "candidate-0024", "status": "ready_for_review", "completed": 25, "total": 32, "pose_count": 1}
+{"type": "candidate.complete", "sequence": 33, "stage": "evaluate", "candidate_id": "candidate-0025", "status": "outside_constraints", "completed": 26, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 34, "stage": "evaluate", "candidate_id": "candidate-0026", "status": "duplicate", "completed": 27, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 35, "stage": "evaluate", "candidate_id": "candidate-0027", "status": "ready_for_review", "completed": 28, "total": 32, "pose_count": 4}
+{"type": "candidate.complete", "sequence": 36, "stage": "evaluate", "candidate_id": "candidate-0028", "status": "duplicate", "completed": 29, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 37, "stage": "evaluate", "candidate_id": "candidate-0029", "status": "duplicate", "completed": 30, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 38, "stage": "evaluate", "candidate_id": "candidate-0030", "status": "outside_constraints", "completed": 31, "total": 32, "pose_count": 0}
+{"type": "candidate.complete", "sequence": 39, "stage": "evaluate", "candidate_id": "candidate-0031", "status": "duplicate", "completed": 32, "total": 32, "pose_count": 0}
+{"type": "experiment.complete", "sequence": 40, "stage": "complete", "summary": {"duplicate": 15, "outside_constraints": 5, "ready_for_review": 12, "raw_proposals": 32, "processed_proposals": 32, "unique_candidates": 17, "evaluated_candidates": 12, "pose_count": 51, "pose_failures": 0, "objective_hits": 5}, "scientific_outcome": "review_candidates", "objective_outcome": "detected_contact_candidates"}

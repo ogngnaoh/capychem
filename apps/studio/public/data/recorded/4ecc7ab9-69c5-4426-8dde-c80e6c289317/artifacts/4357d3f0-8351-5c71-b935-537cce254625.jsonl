@@ -1,0 +1,10 @@
+{"type": "stage.started", "sequence": 1, "stage": "prepare", "message": "Verifying the curated receptor and parent coordinates"}
+{"type": "stage.completed", "sequence": 2, "stage": "prepare"}
+{"type": "stage.started", "sequence": 3, "stage": "baseline", "message": "Computing the parent baseline with the same receptor and scoring setup"}
+{"type": "stage.completed", "sequence": 4, "stage": "baseline", "score": -8.209}
+{"type": "stage.started", "sequence": 5, "stage": "generate"}
+{"type": "stage.completed", "sequence": 6, "stage": "generate", "count": 2}
+{"type": "stage.started", "sequence": 7, "stage": "evaluate", "total": 2}
+{"type": "candidate.complete", "sequence": 8, "stage": "evaluate", "candidate_id": "candidate-0000", "status": "ready_for_review", "completed": 1, "total": 2, "pose_count": 2}
+{"type": "candidate.complete", "sequence": 9, "stage": "evaluate", "candidate_id": "candidate-0001", "status": "ready_for_review", "completed": 2, "total": 2, "pose_count": 2}
+{"type": "experiment.complete", "sequence": 10, "stage": "complete", "summary": {"ready_for_review": 2, "raw_proposals": 2, "processed_proposals": 2, "unique_candidates": 2, "evaluated_candidates": 2, "pose_count": 4, "pose_failures": 0, "objective_hits": 1}, "scientific_outcome": "review_candidates", "objective_outcome": "detected_contact_candidates"}

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+  "protocol": "guided_growth_cdk2_v2",
+  "candidate_source": {
+    "kind": "supplied",
+    "candidates": [
+      {
+        "name": "NU6094",
+        "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+      },
+      {
+        "name": "NU6102",
+        "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+      },
+      {
+        "name": "Para carboxamide",
+        "smiles": "NC(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+      }
+    ]
+  },
+  "limits": {
+    "max_unique_candidates_evaluated": 3,
+    "embedding_attempts_per_candidate": 16,
+    "evaluation_admission_seconds": 300
+  },
+  "seeds": {
+    "embedding": 194715,
+    "vina": 42
+  },
+  "constraints": {
+    "max_molecular_weight": 450.0,
+    "max_clogp": 4.5,
+    "max_rotatable_bonds": 8,
+    "formal_charge": 0
+  },
+  "label": "CDK2 \u00b7 does the contact repeat? \u00b7 seed run 1"
+}

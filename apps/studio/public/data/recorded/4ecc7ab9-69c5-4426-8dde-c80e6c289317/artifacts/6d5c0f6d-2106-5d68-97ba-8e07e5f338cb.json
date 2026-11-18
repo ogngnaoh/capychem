@@ -1,0 +1,2049 @@
+{
+  "schema_version": 1,
+  "kind": "live_computation",
+  "status": "complete",
+  "spec": {
+    "schema_version": 1,
+    "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+    "protocol": "guided_growth_cdk2_v2",
+    "candidate_source": {
+      "kind": "supplied",
+      "candidates": [
+        {
+          "name": "Para hydroxyethyl R",
+          "smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+        },
+        {
+          "name": "Para hydroxyethyl unspecified",
+          "smiles": "CC(O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+        }
+      ]
+    },
+    "limits": {
+      "max_unique_candidates_evaluated": 12,
+      "embedding_attempts_per_candidate": 16,
+      "evaluation_admission_seconds": 600
+    },
+    "seeds": {
+      "embedding": 194715,
+      "vina": 42
+    },
+    "constraints": {
+      "max_molecular_weight": 450.0,
+      "max_clogp": 4.5,
+      "max_rotatable_bonds": 8,
+      "formal_charge": 0
+    },
+    "label": "Reliability v6 stereochemistry Study \u00b7 seed run 1"
+  },
+  "protocol_manifest": {
+    "id": "guided_growth_cdk2_v2",
+    "version": 2,
+    "preparation": {
+      "receptor": "Rigid 1H1S source chains A/B; TPO160 retained; waters removed; default altloc A",
+      "ligand": "Neutral9H NU6094 scaffold; 1H1Q coordinates transferred by protein alignment",
+      "meeko_version": "0.8.0",
+      "rdkit_version": "2025.9.6",
+      "prolif_version": "2.2.3",
+      "posebusters_version": "0.6.5",
+      "no_pH_ensemble": true
+    },
+    "scaffold": {
+      "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "libinvent_scaffold": "[*:0]c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "retained_heavy_atoms": 24,
+      "ring_atoms": [
+        "N1",
+        "C2",
+        "N3",
+        "C4",
+        "C5",
+        "C6",
+        "N7",
+        "C8",
+        "N9"
+      ],
+      "attachment_atom_name": "C20",
+      "attachment_label": "para carbon on the aniline ring"
+    },
+    "initial_prior": "all 24 parent/template heavy atoms; RDKit constrained embedding with UFF tethers",
+    "placement_reference": {
+      "name": "NU6094",
+      "source_pdb": "1H1Q",
+      "source_url": "https://www.rcsb.org/structure/1H1Q",
+      "component": "2A6",
+      "pose_kind": "protein_aligned_template",
+      "reference_label": "NU6094 template transferred from 1H1Q",
+      "source_canonical_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3[nH]cnc3n2)cc1",
+      "prepared_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "preparation_transformations": [
+        "Declared neutral9H state selected from the source CCD tautomer",
+        "Heavy atoms transformed using protein backbone alignment only"
+      ]
+    },
+    "validation_scope": {
+      "kind": "retrospective_receptor_informed",
+      "receptor_informed_by": "The known NU6102 holo complex 1H1S was chosen as the open receptor; this is not fully prospective validation.",
+      "placement_inputs": "Observed NU6094 heavy-atom template from 1H1Q and candidate molecular graph only.",
+      "target_ligand_coordinates_used_for_placement": false,
+      "target_ligand_coordinates_used_for_selection": false,
+      "reference_comparison": "NU6102 coordinates are held out for retrospective RMSD/contact checks only; not included in this live preparation.",
+      "scope": "Preserve NU6094 and add at most one substituent at C20; arbitrary molecules, other attachment sites and charge states are outside this workflow."
+    },
+    "conformer_adapter": "FEgrow mapped embedding procedure, isolated adaptation, v1",
+    "refinement": "Vina local_only; ligand translation/orientation/torsions released; rigid receptor",
+    "vina": {
+      "version": "AutoDock Vina v1.2.7",
+      "seed": 42,
+      "cpu_threads": 1,
+      "timeout_seconds": 120
+    },
+    "box": {
+      "center": [
+        6.0750375,
+        44.306691666666666,
+        51.03965416666666
+      ],
+      "size": [
+        27.3031,
+        23.7691,
+        25.352199999999996
+      ]
+    },
+    "embedding": {
+      "attempts": 16,
+      "seed_start": 194715,
+      "duplicate_rms_A": 0.5
+    },
+    "posebusters_config": "dock",
+    "contact_types": [
+      "HBDonor",
+      "HBAcceptor"
+    ],
+    "review": {
+      "geometry_required": true,
+      "ring_drift_max_A": 2.0,
+      "hinge_residues": [
+        "GLU81.A",
+        "LEU83.A"
+      ],
+      "minimum_hinge_interaction_types": 1
+    },
+    "objective": "Seek an ASP86.A hydrogen-bond hypothesis while retaining a hinge-local pose",
+    "selection": "Prefer review-ready Asp86-contact poses, then lowest Vina score; otherwise eligible minimum; otherwise flagged minimum",
+    "parent_baseline": "Independent local refinement of observed parent pose; no previously computed control score is reused",
+    "admission_budget": "Elapsed evaluation time checked before each candidate; not a hard run deadline"
+  },
+  "provenance": {
+    "python": "3.11.5",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "versions": {
+      "rdkit": "2025.9.6",
+      "numpy": "2.4.2",
+      "meeko": "0.8.0",
+      "posebusters": "0.6.5",
+      "prolif": "2.2.3"
+    },
+    "vina_binary_sha256": "823c2bbacf26d72183861322345f0a89736aca66c8e81054c66f93af5ad623f1",
+    "preset_sha256": "dd69f0dc2df29c516fe08f59d634a861f2cabd48cb73b76b9d10abc6d32c7e38",
+    "spec_sha256": "7e7dbe06fcaad258825033768adc4a0a49069fe643cd31362297aac9b8787fac",
+    "protocol_sha256": "d3b9704af16a3580c76bb4b0ef5e8a0a8d9619a7041a3517d7bb772e437fbd57",
+    "engine_source_sha256": {
+      "science.py": "fdeff28273831f71c1a20e7a603f720d57dbaa437ddee6a7a968b279ee1f9fde",
+      "science_config.py": "5cc80d5b88eb2110c2d9a416ea9497d0aa6a82a3219e2335856318bf2095589e",
+      "chemistry/conformers.py": "0e0fd00ceb1c1f3e940a0206931d205aa05c9ad42612b93698c7f561b4e299cd",
+      "chemistry/generate.py": "a14990e317d673d7ed2b2d4161cc437a7a1f38ee2a251766cb9fd49cb1500f40",
+      "chemistry/geometry.py": "b7f926248047ec9bdf5911cac975151fe8c955c5a2a7608536289644a8e219b0",
+      "chemistry/identity.py": "33f39d731a9bfc4358acb6fa98262e144463310f2fb2a53850c0fb15780fe94e"
+    },
+    "engine_fingerprint": "361b7dc321d609803c25e3f1748dec73956884be07e2cb138d9597c747c32d93",
+    "request_spec_sha256": "71904837d0d7b99c819ab282df48d56664fedcc1e5e49ccd72bebe89564d88c5"
+  },
+  "target": {
+    "id": "cdk2_1h1s_nu6094_v1",
+    "receptor_pdb": "inputs/1H1S_prepared.pdb",
+    "receptor_pdbqt": "inputs/1H1S_prepared.pdbqt",
+    "frame": {
+      "id": "cdk2_1h1s_nu6094_v1:original_1h1s",
+      "units": "angstrom",
+      "transform": "identity",
+      "description": "Original 1H1S prepared receptor coordinates"
+    }
+  },
+  "parent": {
+    "name": "NU6094",
+    "pose_kind": "protein_aligned_template",
+    "reference_label": "NU6094 template transferred from 1H1Q",
+    "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+    "observed_sdf": "poses/parent-observed.sdf",
+    "view_json": "views/parent-observed.json",
+    "observed_evidence": {
+      "geometry_pass": true,
+      "geometry_checks": {
+        "mol_pred_loaded": true,
+        "mol_cond_loaded": true,
+        "sanitization": true,
+        "inchi_convertible": true,
+        "all_atoms_connected": true,
+        "no_radicals": true,
+        "bond_lengths": true,
+        "bond_angles": true,
+        "internal_steric_clash": true,
+        "aromatic_ring_flatness": true,
+        "non-aromatic_ring_non-flatness": true,
+        "double_bond_flatness": true,
+        "internal_energy": true,
+        "protein-ligand_maximum_distance": true,
+        "minimum_distance_to_protein": true,
+        "minimum_distance_to_organic_cofactors": true,
+        "minimum_distance_to_inorganic_cofactors": true,
+        "minimum_distance_to_waters": true,
+        "volume_overlap_with_protein": true,
+        "volume_overlap_with_organic_cofactors": true,
+        "volume_overlap_with_inorganic_cofactors": true,
+        "volume_overlap_with_waters": true
+      },
+      "geometry_failures": [],
+      "ring_drift_A": 0.0,
+      "hinge_hbond_type_count": 2,
+      "asp86_contact": false,
+      "contacts": [
+        {
+          "type": "HBAcceptor",
+          "residue": "LEU83.A",
+          "chain": "A",
+          "residue_number": 83,
+          "insertion_code": "",
+          "protein_atom_name": "N",
+          "ligand_atom_index": 20,
+          "protein_atom_index": 1367,
+          "ligand_position": [
+            8.9804,
+            44.0343,
+            49.7622
+          ],
+          "protein_position": [
+            11.125,
+            42.038,
+            48.572
+          ],
+          "distance_A": 3.162451405160246,
+          "angle_degrees": 170.67984122932842
+        },
+        {
+          "type": "HBDonor",
+          "residue": "GLU81.A",
+          "chain": "A",
+          "residue_number": 81,
+          "insertion_code": "",
+          "protein_atom_name": "O",
+          "ligand_atom_index": 18,
+          "protein_atom_index": 1329,
+          "ligand_position": [
+            10.7084,
+            45.3163,
+            50.9158
+          ],
+          "protein_position": [
+            12.995,
+            45.349,
+            49.575
+          ],
+          "distance_A": 2.6509155946578127,
+          "angle_degrees": 140.61802348713778
+        }
+      ],
+      "review_ready": true,
+      "hydrogen_preparation": {
+        "policy": "fixed_explicit_hydrogens",
+        "method": "RDKit AddHs coordinate placement; fixed during contact assessment",
+        "note": "Hydrogen positions and the declared neutral protonation state are fixed approximations. This workflow does not optimize hydrogen orientations against the receptor or model state populations across pH.",
+        "orientation_optimized_against_receptor": false,
+        "orientation_sensitivity_assessed": false,
+        "oh_groups": [],
+        "warnings": []
+      }
+    },
+    "depiction_svg": "depictions/parent.svg",
+    "baseline_pose": {
+      "id": "parent-baseline",
+      "prepared_state_id": "state-e5587f6ddfb9798a559d",
+      "prepared_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "sdf": "poses/parent-baseline.sdf",
+      "view_json": "views/parent-baseline.json",
+      "log": "logs/parent-baseline.log",
+      "score": -8.209,
+      "score_unit": "Vina kcal/mol model score",
+      "seconds": 2.017873792035971,
+      "atom_mapping": {
+        "preparedStateId": "state-e5587f6ddfb9798a559d",
+        "canonicalToPose": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23
+        ],
+        "parentToPose": [
+          5,
+          18,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          1,
+          0,
+          23,
+          22,
+          6,
+          7,
+          8,
+          16,
+          17,
+          19,
+          20,
+          21,
+          4,
+          3,
+          2
+        ],
+        "parentAtomNames": [
+          "C2",
+          "C8",
+          "C10",
+          "C11",
+          "C12",
+          "C13",
+          "C14",
+          "C15",
+          "C16",
+          "C19",
+          "C20",
+          "C21",
+          "C22",
+          "N1",
+          "C6",
+          "O6",
+          "C5",
+          "N7",
+          "N9",
+          "C4",
+          "N3",
+          "N2",
+          "C17",
+          "C18"
+        ]
+      },
+      "geometry_pass": true,
+      "geometry_checks": {
+        "mol_pred_loaded": true,
+        "mol_cond_loaded": true,
+        "sanitization": true,
+        "inchi_convertible": true,
+        "all_atoms_connected": true,
+        "no_radicals": true,
+        "bond_lengths": true,
+        "bond_angles": true,
+        "internal_steric_clash": true,
+        "aromatic_ring_flatness": true,
+        "non-aromatic_ring_non-flatness": true,
+        "double_bond_flatness": true,
+        "internal_energy": true,
+        "protein-ligand_maximum_distance": true,
+        "minimum_distance_to_protein": true,
+        "minimum_distance_to_organic_cofactors": true,
+        "minimum_distance_to_inorganic_cofactors": true,
+        "minimum_distance_to_waters": true,
+        "volume_overlap_with_protein": true,
+        "volume_overlap_with_organic_cofactors": true,
+        "volume_overlap_with_inorganic_cofactors": true,
+        "volume_overlap_with_waters": true
+      },
+      "geometry_failures": [],
+      "ring_drift_A": 0.3540961168948336,
+      "hinge_hbond_type_count": 3,
+      "asp86_contact": false,
+      "contacts": [
+        {
+          "type": "HBDonor",
+          "residue": "LEU83.A",
+          "chain": "A",
+          "residue_number": 83,
+          "insertion_code": "",
+          "protein_atom_name": "O",
+          "ligand_atom_index": 4,
+          "protein_atom_index": 1364,
+          "ligand_position": [
+            7.203,
+            42.779,
+            48.99
+          ],
+          "protein_position": [
+            8.929,
+            40.936,
+            47.729
+          ],
+          "distance_A": 2.8223830356633064,
+          "angle_degrees": 142.79927394958057
+        },
+        {
+          "type": "HBAcceptor",
+          "residue": "LEU83.A",
+          "chain": "A",
+          "residue_number": 83,
+          "insertion_code": "",
+          "protein_atom_name": "N",
+          "ligand_atom_index": 21,
+          "protein_atom_index": 1367,
+          "ligand_position": [
+            8.67,
+            44.002,
+            49.94
+          ],
+          "protein_position": [
+            11.125,
+            42.038,
+            48.572
+          ],
+          "distance_A": 3.428665192170272,
+          "angle_degrees": 165.94227207556173
+        },
+        {
+          "type": "HBDonor",
+          "residue": "GLU81.A",
+          "chain": "A",
+          "residue_number": 81,
+          "insertion_code": "",
+          "protein_atom_name": "O",
+          "ligand_atom_index": 19,
+          "protein_atom_index": 1329,
+          "ligand_position": [
+            10.39,
+            45.366,
+            51.009
+          ],
+          "protein_position": [
+            12.995,
+            45.349,
+            49.575
+          ],
+          "distance_A": 2.973662724654561,
+          "angle_degrees": 138.0033279295348
+        }
+      ],
+      "review_ready": true,
+      "hydrogen_preparation": {
+        "policy": "fixed_explicit_hydrogens",
+        "method": "RDKit AddHs coordinate placement; fixed during contact assessment",
+        "note": "Hydrogen positions and the declared neutral protonation state are fixed approximations. This workflow does not optimize hydrogen orientations against the receptor or model state populations across pH.",
+        "orientation_optimized_against_receptor": false,
+        "orientation_sensitivity_assessed": false,
+        "oh_groups": [],
+        "warnings": []
+      }
+    }
+  },
+  "records": [
+    {
+      "id": "candidate-0000",
+      "name": "Para hydroxyethyl R",
+      "proposal_index": 0,
+      "source": "supplied",
+      "proposal_smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "canonical_smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "status": "ready_for_review",
+      "properties": {
+        "smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+        "molecular_weight": 367.453,
+        "clogp": 4.108900000000003,
+        "rotatable_bonds": 6,
+        "formal_charge": 0,
+        "heavy_atoms": 27
+      },
+      "filter_failures": [],
+      "prepared_states": [
+        {
+          "id": "state-f514771de5444cf2fc7d",
+          "smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+          "stereochemistry_policy": "Coordinate-derived state; explicitly specified stereo preserved",
+          "proposal_had_unspecified_stereo": false
+        }
+      ],
+      "poses": [
+        {
+          "id": "candidate-0000-pose-000",
+          "prepared_state_id": "state-f514771de5444cf2fc7d",
+          "prepared_smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+          "sdf": "poses/candidate-0000-pose-000.sdf",
+          "view_json": "views/candidate-0000-pose-000.json",
+          "log": "logs/candidate-0000-pose-000.log",
+          "score": -8.618,
+          "score_unit": "Vina kcal/mol model score",
+          "seconds": 2.5692873329971917,
+          "atom_mapping": {
+            "preparedStateId": "state-f514771de5444cf2fc7d",
+            "canonicalToPose": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26
+            ],
+            "parentToPose": [
+              8,
+              21,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              26,
+              3,
+              4,
+              5,
+              9,
+              10,
+              11,
+              19,
+              20,
+              22,
+              23,
+              24,
+              7,
+              6,
+              25
+            ],
+            "parentAtomNames": [
+              "C2",
+              "C8",
+              "C10",
+              "C11",
+              "C12",
+              "C13",
+              "C14",
+              "C15",
+              "C16",
+              "C19",
+              "C20",
+              "C21",
+              "C22",
+              "N1",
+              "C6",
+              "O6",
+              "C5",
+              "N7",
+              "N9",
+              "C4",
+              "N3",
+              "N2",
+              "C17",
+              "C18"
+            ]
+          },
+          "geometry_pass": true,
+          "geometry_checks": {
+            "mol_pred_loaded": true,
+            "mol_cond_loaded": true,
+            "sanitization": true,
+            "inchi_convertible": true,
+            "all_atoms_connected": true,
+            "no_radicals": true,
+            "bond_lengths": true,
+            "bond_angles": true,
+            "internal_steric_clash": true,
+            "aromatic_ring_flatness": true,
+            "non-aromatic_ring_non-flatness": true,
+            "double_bond_flatness": true,
+            "internal_energy": true,
+            "protein-ligand_maximum_distance": true,
+            "minimum_distance_to_protein": true,
+            "minimum_distance_to_organic_cofactors": true,
+            "minimum_distance_to_inorganic_cofactors": true,
+            "minimum_distance_to_waters": true,
+            "volume_overlap_with_protein": true,
+            "volume_overlap_with_organic_cofactors": true,
+            "volume_overlap_with_inorganic_cofactors": true,
+            "volume_overlap_with_waters": true
+          },
+          "geometry_failures": [],
+          "ring_drift_A": 0.3106160795723371,
+          "hinge_hbond_type_count": 3,
+          "asp86_contact": true,
+          "contacts": [
+            {
+              "type": "HBDonor",
+              "residue": "LEU83.A",
+              "chain": "A",
+              "residue_number": 83,
+              "insertion_code": "",
+              "protein_atom_name": "O",
+              "ligand_atom_index": 7,
+              "protein_atom_index": 1364,
+              "ligand_position": [
+                7.304,
+                42.832,
+                48.884
+              ],
+              "protein_position": [
+                8.929,
+                40.936,
+                47.729
+              ],
+              "distance_A": 2.751266253927454,
+              "angle_degrees": 135.38350997287083
+            },
+            {
+              "type": "HBAcceptor",
+              "residue": "LEU83.A",
+              "chain": "A",
+              "residue_number": 83,
+              "insertion_code": "",
+              "protein_atom_name": "N",
+              "ligand_atom_index": 24,
+              "protein_atom_index": 1367,
+              "ligand_position": [
+                8.756,
+                44.058,
+                49.909
+              ],
+              "protein_position": [
+                11.125,
+                42.038,
+                48.572
+              ],
+              "distance_A": 3.388234053308597,
+              "angle_degrees": 167.7629699669689
+            },
+            {
+              "type": "HBDonor",
+              "residue": "ASP86.A",
+              "chain": "A",
+              "residue_number": 86,
+              "insertion_code": "",
+              "protein_atom_name": "OD2",
+              "ligand_atom_index": 2,
+              "protein_atom_index": 1427,
+              "ligand_position": [
+                2.49,
+                38.916,
+                49.927
+              ],
+              "protein_position": [
+                1.619,
+                39.841,
+                52.696
+              ],
+              "distance_A": 3.0465762750996404,
+              "angle_degrees": 157.38795314382614
+            },
+            {
+              "type": "HBAcceptor",
+              "residue": "ASP86.A",
+              "chain": "A",
+              "residue_number": 86,
+              "insertion_code": "",
+              "protein_atom_name": "N",
+              "ligand_atom_index": 2,
+              "protein_atom_index": 1420,
+              "ligand_position": [
+                2.49,
+                38.916,
+                49.927
+              ],
+              "protein_position": [
+                4.63,
+                37.901,
+                51.663
+              ],
+              "distance_A": 2.9365832186403256,
+              "angle_degrees": 154.98854576376507
+            },
+            {
+              "type": "HBDonor",
+              "residue": "GLU81.A",
+              "chain": "A",
+              "residue_number": 81,
+              "insertion_code": "",
+              "protein_atom_name": "O",
+              "ligand_atom_index": 22,
+              "protein_atom_index": 1329,
+              "ligand_position": [
+                10.432,
+                45.4,
+                51.037
+              ],
+              "protein_position": [
+                12.995,
+                45.349,
+                49.575
+              ],
+              "distance_A": 2.951103861269539,
+              "angle_degrees": 141.2665847706269
+            }
+          ],
+          "review_ready": true,
+          "hydrogen_preparation": {
+            "policy": "fixed_explicit_hydrogens",
+            "method": "RDKit AddHs coordinate placement; fixed during contact assessment",
+            "note": "Hydrogen positions and the declared neutral protonation state are fixed approximations. This workflow does not optimize hydrogen orientations against the receptor or model state populations across pH.",
+            "orientation_optimized_against_receptor": false,
+            "orientation_sensitivity_assessed": false,
+            "oh_groups": [
+              {
+                "oxygen_atom_index": 2,
+                "hydrogen_atom_index": 31,
+                "carbon_atom_index": 1
+              }
+            ],
+            "warnings": [
+              {
+                "code": "oh_orientation_not_sampled",
+                "message": "Contains an O\u2013H group whose hydrogen orientation was placed without receptor-conditioned optimization. Donor contacts may depend on this orientation; sensitivity has not been assessed for this pose."
+              }
+            ]
+          },
+          "embedding_seed": 194715,
+          "embedding_attempt": 0,
+          "delta_score_vs_parent": -0.4090000000000007
+        },
+        {
+          "id": "candidate-0000-pose-001",
+          "prepared_state_id": "state-f514771de5444cf2fc7d",
+          "prepared_smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+          "sdf": "poses/candidate-0000-pose-001.sdf",
+          "view_json": "views/candidate-0000-pose-001.json",
+          "log": "logs/candidate-0000-pose-001.log",
+          "score": -7.893,
+          "score_unit": "Vina kcal/mol model score",
+          "seconds": 2.2062106249504723,
+          "atom_mapping": {
+            "preparedStateId": "state-f514771de5444cf2fc7d",
+            "canonicalToPose": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26
+            ],
+            "parentToPose": [
+              8,
+              21,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              26,
+              3,
+              4,
+              5,
+              9,
+              10,
+              11,
+              19,
+              20,
+              22,
+              23,
+              24,
+              7,
+              6,
+              25
+            ],
+            "parentAtomNames": [
+              "C2",
+              "C8",
+              "C10",
+              "C11",
+              "C12",
+              "C13",
+              "C14",
+              "C15",
+              "C16",
+              "C19",
+              "C20",
+              "C21",
+              "C22",
+              "N1",
+              "C6",
+              "O6",
+              "C5",
+              "N7",
+              "N9",
+              "C4",
+              "N3",
+              "N2",
+              "C17",
+              "C18"
+            ]
+          },
+          "geometry_pass": true,
+          "geometry_checks": {
+            "mol_pred_loaded": true,
+            "mol_cond_loaded": true,
+            "sanitization": true,
+            "inchi_convertible": true,
+            "all_atoms_connected": true,
+            "no_radicals": true,
+            "bond_lengths": true,
+            "bond_angles": true,
+            "internal_steric_clash": true,
+            "aromatic_ring_flatness": true,
+            "non-aromatic_ring_non-flatness": true,
+            "double_bond_flatness": true,
+            "internal_energy": true,
+            "protein-ligand_maximum_distance": true,
+            "minimum_distance_to_protein": true,
+            "minimum_distance_to_organic_cofactors": true,
+            "minimum_distance_to_inorganic_cofactors": true,
+            "minimum_distance_to_waters": true,
+            "volume_overlap_with_protein": true,
+            "volume_overlap_with_organic_cofactors": true,
+            "volume_overlap_with_inorganic_cofactors": true,
+            "volume_overlap_with_waters": true
+          },
+          "geometry_failures": [],
+          "ring_drift_A": 0.35986521242141595,
+          "hinge_hbond_type_count": 3,
+          "asp86_contact": false,
+          "contacts": [
+            {
+              "type": "HBDonor",
+              "residue": "LEU83.A",
+              "chain": "A",
+              "residue_number": 83,
+              "insertion_code": "",
+              "protein_atom_name": "O",
+              "ligand_atom_index": 7,
+              "protein_atom_index": 1364,
+              "ligand_position": [
+                7.292,
+                42.888,
+                48.963
+              ],
+              "protein_position": [
+                8.929,
+                40.936,
+                47.729
+              ],
+              "distance_A": 2.830694084495885,
+              "angle_degrees": 138.14357344454365
+            },
+            {
+              "type": "HBAcceptor",
+              "residue": "LEU83.A",
+              "chain": "A",
+              "residue_number": 83,
+              "insertion_code": "",
+              "protein_atom_name": "N",
+              "ligand_atom_index": 24,
+              "protein_atom_index": 1367,
+              "ligand_position": [
+                8.75,
+                44.132,
+                49.956
+              ],
+              "protein_position": [
+                11.125,
+                42.038,
+                48.572
+              ],
+              "distance_A": 3.4555631957757633,
+              "angle_degrees": 168.1779740147682
+            },
+            {
+              "type": "HBDonor",
+              "residue": "GLU81.A",
+              "chain": "A",
+              "residue_number": 81,
+              "insertion_code": "",
+              "protein_atom_name": "O",
+              "ligand_atom_index": 22,
+              "protein_atom_index": 1329,
+              "ligand_position": [
+                10.432,
+                45.495,
+                51.049
+              ],
+              "protein_position": [
+                12.995,
+                45.349,
+                49.575
+              ],
+              "distance_A": 2.9602298897214023,
+              "angle_degrees": 142.87737549295318
+            }
+          ],
+          "review_ready": true,
+          "hydrogen_preparation": {
+            "policy": "fixed_explicit_hydrogens",
+            "method": "RDKit AddHs coordinate placement; fixed during contact assessment",
+            "note": "Hydrogen positions and the declared neutral protonation state are fixed approximations. This workflow does not optimize hydrogen orientations against the receptor or model state populations across pH.",
+            "orientation_optimized_against_receptor": false,
+            "orientation_sensitivity_assessed": false,
+            "oh_groups": [
+              {
+                "oxygen_atom_index": 2,
+                "hydrogen_atom_index": 31,
+                "carbon_atom_index": 1
+              }
+            ],
+            "warnings": [
+              {
+                "code": "oh_orientation_not_sampled",
+                "message": "Contains an O\u2013H group whose hydrogen orientation was placed without receptor-conditioned optimization. Donor contacts may depend on this orientation; sensitivity has not been assessed for this pose."
+              }
+            ]
+          },
+          "embedding_seed": 194716,
+          "embedding_attempt": 1,
+          "delta_score_vs_parent": 0.31599999999999984
+        }
+      ],
+      "pose_errors": [],
+      "embedding_attempts": [
+        {
+          "attempt": 0,
+          "seed": 194715,
+          "status": "generated",
+          "conformer_index": 0
+        },
+        {
+          "attempt": 1,
+          "seed": 194716,
+          "status": "generated",
+          "conformer_index": 1
+        },
+        {
+          "attempt": 2,
+          "seed": 194717,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 3,
+          "seed": 194718,
+          "status": "duplicate",
+          "duplicate_conformer": 1
+        },
+        {
+          "attempt": 4,
+          "seed": 194719,
+          "status": "duplicate",
+          "duplicate_conformer": 1
+        },
+        {
+          "attempt": 5,
+          "seed": 194720,
+          "status": "duplicate",
+          "duplicate_conformer": 1
+        },
+        {
+          "attempt": 6,
+          "seed": 194721,
+          "status": "duplicate",
+          "duplicate_conformer": 1
+        },
+        {
+          "attempt": 7,
+          "seed": 194722,
+          "status": "duplicate",
+          "duplicate_conformer": 1
+        },
+        {
+          "attempt": 8,
+          "seed": 194723,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 9,
+          "seed": 194724,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 10,
+          "seed": 194725,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 11,
+          "seed": 194726,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 12,
+          "seed": 194727,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 13,
+          "seed": 194728,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 14,
+          "seed": 194729,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 15,
+          "seed": 194730,
+          "status": "duplicate",
+          "duplicate_conformer": 1
+        }
+      ],
+      "selected_pose_id": "candidate-0000-pose-000",
+      "partial": false,
+      "evaluated": true,
+      "normalized_smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "unspecified_stereo": [],
+      "depiction_svg": "depictions/candidate-0000.svg",
+      "parent_to_candidate_atom_map": [
+        8,
+        21,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        26,
+        3,
+        4,
+        5,
+        9,
+        10,
+        11,
+        19,
+        20,
+        22,
+        23,
+        24,
+        7,
+        6,
+        25
+      ],
+      "generated_conformer_count": 2,
+      "seconds": 6.198634582979139
+    },
+    {
+      "id": "candidate-0001",
+      "name": "Para hydroxyethyl unspecified",
+      "proposal_index": 1,
+      "source": "supplied",
+      "proposal_smiles": "CC(O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "canonical_smiles": "CC(O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "status": "ready_for_review",
+      "properties": {
+        "smiles": "CC(O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+        "molecular_weight": 367.453,
+        "clogp": 4.108900000000003,
+        "rotatable_bonds": 6,
+        "formal_charge": 0,
+        "heavy_atoms": 27
+      },
+      "filter_failures": [],
+      "prepared_states": [
+        {
+          "id": "state-f514771de5444cf2fc7d",
+          "smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+          "stereochemistry_policy": "Coordinate-derived state; explicitly specified stereo preserved",
+          "proposal_had_unspecified_stereo": true
+        },
+        {
+          "id": "state-9cfd1b2ce8718d1e8203",
+          "smiles": "C[C@@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+          "stereochemistry_policy": "Coordinate-derived state; explicitly specified stereo preserved",
+          "proposal_had_unspecified_stereo": true
+        }
+      ],
+      "poses": [
+        {
+          "id": "candidate-0001-pose-000",
+          "prepared_state_id": "state-f514771de5444cf2fc7d",
+          "prepared_smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+          "sdf": "poses/candidate-0001-pose-000.sdf",
+          "view_json": "views/candidate-0001-pose-000.json",
+          "log": "logs/candidate-0001-pose-000.log",
+          "score": -7.882,
+          "score_unit": "Vina kcal/mol model score",
+          "seconds": 2.725518583029043,
+          "atom_mapping": {
+            "preparedStateId": "state-f514771de5444cf2fc7d",
+            "canonicalToPose": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26
+            ],
+            "parentToPose": [
+              8,
+              21,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              26,
+              3,
+              4,
+              5,
+              9,
+              10,
+              11,
+              19,
+              20,
+              22,
+              23,
+              24,
+              7,
+              6,
+              25
+            ],
+            "parentAtomNames": [
+              "C2",
+              "C8",
+              "C10",
+              "C11",
+              "C12",
+              "C13",
+              "C14",
+              "C15",
+              "C16",
+              "C19",
+              "C20",
+              "C21",
+              "C22",
+              "N1",
+              "C6",
+              "O6",
+              "C5",
+              "N7",
+              "N9",
+              "C4",
+              "N3",
+              "N2",
+              "C17",
+              "C18"
+            ]
+          },
+          "geometry_pass": true,
+          "geometry_checks": {
+            "mol_pred_loaded": true,
+            "mol_cond_loaded": true,
+            "sanitization": true,
+            "inchi_convertible": true,
+            "all_atoms_connected": true,
+            "no_radicals": true,
+            "bond_lengths": true,
+            "bond_angles": true,
+            "internal_steric_clash": true,
+            "aromatic_ring_flatness": true,
+            "non-aromatic_ring_non-flatness": true,
+            "double_bond_flatness": true,
+            "internal_energy": true,
+            "protein-ligand_maximum_distance": true,
+            "minimum_distance_to_protein": true,
+            "minimum_distance_to_organic_cofactors": true,
+            "minimum_distance_to_inorganic_cofactors": true,
+            "minimum_distance_to_waters": true,
+            "volume_overlap_with_protein": true,
+            "volume_overlap_with_organic_cofactors": true,
+            "volume_overlap_with_inorganic_cofactors": true,
+            "volume_overlap_with_waters": true
+          },
+          "geometry_failures": [],
+          "ring_drift_A": 0.35678747798156296,
+          "hinge_hbond_type_count": 3,
+          "asp86_contact": false,
+          "contacts": [
+            {
+              "type": "HBDonor",
+              "residue": "LEU83.A",
+              "chain": "A",
+              "residue_number": 83,
+              "insertion_code": "",
+              "protein_atom_name": "O",
+              "ligand_atom_index": 7,
+              "protein_atom_index": 1364,
+              "ligand_position": [
+                7.3,
+                42.882,
+                48.965
+              ],
+              "protein_position": [
+                8.929,
+                40.936,
+                47.729
+              ],
+              "distance_A": 2.8228094161668094,
+              "angle_degrees": 137.93350792909652
+            },
+            {
+              "type": "HBAcceptor",
+              "residue": "LEU83.A",
+              "chain": "A",
+              "residue_number": 83,
+              "insertion_code": "",
+              "protein_atom_name": "N",
+              "ligand_atom_index": 24,
+              "protein_atom_index": 1367,
+              "ligand_position": [
+                8.754,
+                44.124,
+                49.967
+              ],
+              "protein_position": [
+                11.125,
+                42.038,
+                48.572
+              ],
+              "distance_A": 3.4523994554512396,
+              "angle_degrees": 167.86694095779924
+            },
+            {
+              "type": "HBDonor",
+              "residue": "GLU81.A",
+              "chain": "A",
+              "residue_number": 81,
+              "insertion_code": "",
+              "protein_atom_name": "O",
+              "ligand_atom_index": 22,
+              "protein_atom_index": 1329,
+              "ligand_position": [
+                10.431,
+                45.485,
+                51.07
+              ],
+              "protein_position": [
+                12.995,
+                45.349,
+                49.575
+              ],
+              "distance_A": 2.9711305928888403,
+              "angle_degrees": 142.65797425054143
+            }
+          ],
+          "review_ready": true,
+          "hydrogen_preparation": {
+            "policy": "fixed_explicit_hydrogens",
+            "method": "RDKit AddHs coordinate placement; fixed during contact assessment",
+            "note": "Hydrogen positions and the declared neutral protonation state are fixed approximations. This workflow does not optimize hydrogen orientations against the receptor or model state populations across pH.",
+            "orientation_optimized_against_receptor": false,
+            "orientation_sensitivity_assessed": false,
+            "oh_groups": [
+              {
+                "oxygen_atom_index": 2,
+                "hydrogen_atom_index": 31,
+                "carbon_atom_index": 1
+              }
+            ],
+            "warnings": [
+              {
+                "code": "oh_orientation_not_sampled",
+                "message": "Contains an O\u2013H group whose hydrogen orientation was placed without receptor-conditioned optimization. Donor contacts may depend on this orientation; sensitivity has not been assessed for this pose."
+              }
+            ]
+          },
+          "embedding_seed": 194715,
+          "embedding_attempt": 0,
+          "delta_score_vs_parent": 0.32699999999999996
+        },
+        {
+          "id": "candidate-0001-pose-001",
+          "prepared_state_id": "state-9cfd1b2ce8718d1e8203",
+          "prepared_smiles": "C[C@@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+          "sdf": "poses/candidate-0001-pose-001.sdf",
+          "view_json": "views/candidate-0001-pose-001.json",
+          "log": "logs/candidate-0001-pose-001.log",
+          "score": -8.119,
+          "score_unit": "Vina kcal/mol model score",
+          "seconds": 2.661643000028562,
+          "atom_mapping": {
+            "preparedStateId": "state-9cfd1b2ce8718d1e8203",
+            "canonicalToPose": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26
+            ],
+            "parentToPose": [
+              8,
+              21,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              26,
+              3,
+              4,
+              5,
+              9,
+              10,
+              11,
+              19,
+              20,
+              22,
+              23,
+              24,
+              7,
+              6,
+              25
+            ],
+            "parentAtomNames": [
+              "C2",
+              "C8",
+              "C10",
+              "C11",
+              "C12",
+              "C13",
+              "C14",
+              "C15",
+              "C16",
+              "C19",
+              "C20",
+              "C21",
+              "C22",
+              "N1",
+              "C6",
+              "O6",
+              "C5",
+              "N7",
+              "N9",
+              "C4",
+              "N3",
+              "N2",
+              "C17",
+              "C18"
+            ]
+          },
+          "geometry_pass": true,
+          "geometry_checks": {
+            "mol_pred_loaded": true,
+            "mol_cond_loaded": true,
+            "sanitization": true,
+            "inchi_convertible": true,
+            "all_atoms_connected": true,
+            "no_radicals": true,
+            "bond_lengths": true,
+            "bond_angles": true,
+            "internal_steric_clash": true,
+            "aromatic_ring_flatness": true,
+            "non-aromatic_ring_non-flatness": true,
+            "double_bond_flatness": true,
+            "internal_energy": true,
+            "protein-ligand_maximum_distance": true,
+            "minimum_distance_to_protein": true,
+            "minimum_distance_to_organic_cofactors": true,
+            "minimum_distance_to_inorganic_cofactors": true,
+            "minimum_distance_to_waters": true,
+            "volume_overlap_with_protein": true,
+            "volume_overlap_with_organic_cofactors": true,
+            "volume_overlap_with_inorganic_cofactors": true,
+            "volume_overlap_with_waters": true
+          },
+          "geometry_failures": [],
+          "ring_drift_A": 0.3392834835682711,
+          "hinge_hbond_type_count": 3,
+          "asp86_contact": false,
+          "contacts": [
+            {
+              "type": "HBDonor",
+              "residue": "LEU83.A",
+              "chain": "A",
+              "residue_number": 83,
+              "insertion_code": "",
+              "protein_atom_name": "O",
+              "ligand_atom_index": 7,
+              "protein_atom_index": 1364,
+              "ligand_position": [
+                7.263,
+                42.87,
+                49.017
+              ],
+              "protein_position": [
+                8.929,
+                40.936,
+                47.729
+              ],
+              "distance_A": 2.859170509081262,
+              "angle_degrees": 138.27690730970704
+            },
+            {
+              "type": "HBAcceptor",
+              "residue": "LEU83.A",
+              "chain": "A",
+              "residue_number": 83,
+              "insertion_code": "",
+              "protein_atom_name": "N",
+              "ligand_atom_index": 24,
+              "protein_atom_index": 1367,
+              "ligand_position": [
+                8.748,
+                44.096,
+                49.992
+              ],
+              "protein_position": [
+                11.125,
+                42.038,
+                48.572
+              ],
+              "distance_A": 3.4499120278638973,
+              "angle_degrees": 166.98275979727174
+            },
+            {
+              "type": "HBDonor",
+              "residue": "GLU81.A",
+              "chain": "A",
+              "residue_number": 81,
+              "insertion_code": "",
+              "protein_atom_name": "O",
+              "ligand_atom_index": 22,
+              "protein_atom_index": 1329,
+              "ligand_position": [
+                10.46,
+                45.438,
+                51.064
+              ],
+              "protein_position": [
+                12.995,
+                45.349,
+                49.575
+              ],
+              "distance_A": 2.9413036225456195,
+              "angle_degrees": 138.74617143023457
+            }
+          ],
+          "review_ready": true,
+          "hydrogen_preparation": {
+            "policy": "fixed_explicit_hydrogens",
+            "method": "RDKit AddHs coordinate placement; fixed during contact assessment",
+            "note": "Hydrogen positions and the declared neutral protonation state are fixed approximations. This workflow does not optimize hydrogen orientations against the receptor or model state populations across pH.",
+            "orientation_optimized_against_receptor": false,
+            "orientation_sensitivity_assessed": false,
+            "oh_groups": [
+              {
+                "oxygen_atom_index": 2,
+                "hydrogen_atom_index": 31,
+                "carbon_atom_index": 1
+              }
+            ],
+            "warnings": [
+              {
+                "code": "oh_orientation_not_sampled",
+                "message": "Contains an O\u2013H group whose hydrogen orientation was placed without receptor-conditioned optimization. Donor contacts may depend on this orientation; sensitivity has not been assessed for this pose."
+              }
+            ]
+          },
+          "embedding_seed": 194719,
+          "embedding_attempt": 4,
+          "delta_score_vs_parent": 0.08999999999999986
+        }
+      ],
+      "pose_errors": [],
+      "embedding_attempts": [
+        {
+          "attempt": 0,
+          "seed": 194715,
+          "status": "generated",
+          "conformer_index": 0
+        },
+        {
+          "attempt": 1,
+          "seed": 194716,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 2,
+          "seed": 194717,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 3,
+          "seed": 194718,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 4,
+          "seed": 194719,
+          "status": "generated",
+          "conformer_index": 1
+        },
+        {
+          "attempt": 5,
+          "seed": 194720,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 6,
+          "seed": 194721,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 7,
+          "seed": 194722,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 8,
+          "seed": 194723,
+          "status": "duplicate",
+          "duplicate_conformer": 1
+        },
+        {
+          "attempt": 9,
+          "seed": 194724,
+          "status": "duplicate",
+          "duplicate_conformer": 0
+        },
+        {
+          "attempt": 10,
+          "seed": 194725,
+          "status": "duplicate",
+          "duplicate_conformer": 1
+        },
+        {
+          "attempt": 11,
+          "seed": 194726,
+          "status": "duplicate",
+          "duplicate_conformer": 1
+        },
+        {
+          "attempt": 12,
+          "seed": 194727,
+          "status": "duplicate",
+          "duplicate_conformer": 1
+        },
+        {
+          "attempt": 13,
+          "seed": 194728,
+          "status": "duplicate",
+          "duplicate_conformer": 1
+        },
+        {
+          "attempt": 14,
+          "seed": 194729,
+          "status": "duplicate",
+          "duplicate_conformer": 1
+        },
+        {
+          "attempt": 15,
+          "seed": 194730,
+          "status": "duplicate",
+          "duplicate_conformer": 1
+        }
+      ],
+      "selected_pose_id": "candidate-0001-pose-001",
+      "partial": false,
+      "evaluated": true,
+      "normalized_smiles": "CC(O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "unspecified_stereo": [
+        {
+          "type": "Atom_Tetrahedral",
+          "index": 1
+        }
+      ],
+      "depiction_svg": "depictions/candidate-0001.svg",
+      "parent_to_candidate_atom_map": [
+        8,
+        21,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        26,
+        3,
+        4,
+        5,
+        9,
+        10,
+        11,
+        19,
+        20,
+        22,
+        23,
+        24,
+        7,
+        6,
+        25
+      ],
+      "generated_conformer_count": 2,
+      "seconds": 6.654659249994438
+    }
+  ],
+  "request_spec": {
+    "schema_version": 1,
+    "label": "Reliability v6 stereochemistry Study \u00b7 seed run 1",
+    "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+    "protocol": "guided_growth_cdk2_v2",
+    "candidate_source": {
+      "kind": "supplied",
+      "candidates": [
+        {
+          "name": "Para hydroxyethyl R",
+          "smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+        },
+        {
+          "name": "Para hydroxyethyl unspecified",
+          "smiles": "CC(O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+        }
+      ]
+    },
+    "limits": {
+      "max_unique_candidates_evaluated": 12,
+      "embedding_attempts_per_candidate": 16,
+      "evaluation_admission_seconds": 600
+    },
+    "seeds": {
+      "embedding": 194715,
+      "vina": 42
+    },
+    "constraints": {
+      "max_molecular_weight": 450.0,
+      "max_clogp": 4.5,
+      "max_rotatable_bonds": 8,
+      "formal_charge": 0
+    },
+    "parent_experiment_id": null,
+    "resolved_protocol": {
+      "id": "guided_growth_cdk2_v2",
+      "revision": 2,
+      "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+      "placement": "NU6094_24_atom_protein_aligned_template_then_free_ligand_local_refinement",
+      "ring_locality_max_A": 2.0,
+      "minimum_hinge_contact_types": 1,
+      "objective": "Explore an Asp86 polar contact while retaining a plausible hinge-local pose",
+      "selection": "review_ready_then_Asp86_if_present_then_lowest_Vina",
+      "protein_motion": "rigid",
+      "cloud_compute": false,
+      "engine_fingerprint": "361b7dc321d609803c25e3f1748dec73956884be07e2cb138d9597c747c32d93",
+      "implementation_sha256": {
+        "science.py": "fdeff28273831f71c1a20e7a603f720d57dbaa437ddee6a7a968b279ee1f9fde",
+        "science_config.py": "5cc80d5b88eb2110c2d9a416ea9497d0aa6a82a3219e2335856318bf2095589e",
+        "chemistry/conformers.py": "0e0fd00ceb1c1f3e940a0206931d205aa05c9ad42612b93698c7f561b4e299cd",
+        "chemistry/generate.py": "a14990e317d673d7ed2b2d4161cc437a7a1f38ee2a251766cb9fd49cb1500f40",
+        "chemistry/geometry.py": "b7f926248047ec9bdf5911cac975151fe8c955c5a2a7608536289644a8e219b0",
+        "chemistry/identity.py": "33f39d731a9bfc4358acb6fa98262e144463310f2fb2a53850c0fb15780fe94e"
+      },
+      "parent_name": "NU6094",
+      "attachment": "para carbon C20",
+      "retained_heavy_atoms": 24,
+      "validation_scope": "Retrospective receptor-informed: 1H1S is the NU6102 holo receptor; NU6102 ligand coordinates are excluded from placement and selection",
+      "execution_contract_version": 2,
+      "wall_time_limit_seconds": 2700,
+      "target_manifest_sha256": "dd69f0dc2df29c516fe08f59d634a861f2cabd48cb73b76b9d10abc6d32c7e38",
+      "frame": {
+        "id": "cdk2_1h1s_nu6094_v1:original_1h1s",
+        "units": "angstrom",
+        "transform": "identity",
+        "description": "Original 1H1S prepared receptor coordinates"
+      }
+    }
+  },
+  "protocol_descriptor": {
+    "id": "guided_growth_cdk2_v2",
+    "revision": 2,
+    "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+    "placement": "NU6094_24_atom_protein_aligned_template_then_free_ligand_local_refinement",
+    "ring_locality_max_A": 2.0,
+    "minimum_hinge_contact_types": 1,
+    "objective": "Explore an Asp86 polar contact while retaining a plausible hinge-local pose",
+    "selection": "review_ready_then_Asp86_if_present_then_lowest_Vina",
+    "protein_motion": "rigid",
+    "cloud_compute": false,
+    "engine_fingerprint": "361b7dc321d609803c25e3f1748dec73956884be07e2cb138d9597c747c32d93",
+    "implementation_sha256": {
+      "science.py": "fdeff28273831f71c1a20e7a603f720d57dbaa437ddee6a7a968b279ee1f9fde",
+      "science_config.py": "5cc80d5b88eb2110c2d9a416ea9497d0aa6a82a3219e2335856318bf2095589e",
+      "chemistry/conformers.py": "0e0fd00ceb1c1f3e940a0206931d205aa05c9ad42612b93698c7f561b4e299cd",
+      "chemistry/generate.py": "a14990e317d673d7ed2b2d4161cc437a7a1f38ee2a251766cb9fd49cb1500f40",
+      "chemistry/geometry.py": "b7f926248047ec9bdf5911cac975151fe8c955c5a2a7608536289644a8e219b0",
+      "chemistry/identity.py": "33f39d731a9bfc4358acb6fa98262e144463310f2fb2a53850c0fb15780fe94e"
+    },
+    "parent_name": "NU6094",
+    "attachment": "para carbon C20",
+    "retained_heavy_atoms": 24,
+    "validation_scope": "Retrospective receptor-informed: 1H1S is the NU6102 holo receptor; NU6102 ligand coordinates are excluded from placement and selection"
+  },
+  "summary": {
+    "ready_for_review": 2,
+    "raw_proposals": 2,
+    "processed_proposals": 2,
+    "unique_candidates": 2,
+    "evaluated_candidates": 2,
+    "pose_count": 4,
+    "pose_failures": 0,
+    "objective_hits": 1
+  },
+  "limitations": [
+    "Predicted poses and geometric contacts are computational hypotheses, not measured affinity or potency.",
+    "Receptor-informed retrospective workflow; no general cross-target or prospective docking accuracy claim.",
+    "Rigid receptor, omitted waters and fixed neutral9H scaffold; no pH or protein ensemble.",
+    "Only NU6094 para growth is supported; other sites and lost scaffolds are explicitly excluded.",
+    "Computed contacts and Vina scores are hypotheses, not affinity, potency or synthesis validation.",
+    "The parent is a transferred template, not a native observed NU6094\u20131H1S complex."
+  ],
+  "seconds": 16.745630666031502,
+  "generation": {
+    "source": "supplied",
+    "count": 2,
+    "seconds": 0
+  },
+  "source_accounting": {
+    "requested": 2,
+    "returned": 2
+  },
+  "raw_proposals": [
+    {
+      "name": "Para hydroxyethyl R",
+      "smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+    },
+    {
+      "name": "Para hydroxyethyl unspecified",
+      "smiles": "CC(O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+    }
+  ],
+  "evaluation_seconds": 12.856231916986872,
+  "execution_outcome": "completed",
+  "scientific_outcome": "review_candidates",
+  "objective_outcome": "detected_contact_candidates",
+  "artifacts": [
+    {
+      "path": "depictions/candidate-0000.svg",
+      "sha256": "471d1126d9e2cc9b950b80bd1f01550a652627976afa8a4415c56b2d93c3611f",
+      "bytes": 16348
+    },
+    {
+      "path": "depictions/candidate-0001.svg",
+      "sha256": "88a7d762cfd1d1003fcf585de6acc393057d1dd2bdb302cb93d50c19c02c386b",
+      "bytes": 16104
+    },
+    {
+      "path": "depictions/parent.svg",
+      "sha256": "18b9f7e0f6290fa025b5eb1b25bf358aa10a0972f219aabe5be5d395c6a2dce9",
+      "bytes": 14918
+    },
+    {
+      "path": "inputs/1H1Q_native.sdf",
+      "sha256": "0e50958c4b88fd544890062b270da1fdc6103bd191e368745f3bbb545eb285dc",
+      "bytes": 2308
+    },
+    {
+      "path": "inputs/1H1Q_prepared.pdb",
+      "sha256": "0f0782610393b083217097379968759181c329e479b86dda0c19032175b72129",
+      "bytes": 720560
+    },
+    {
+      "path": "inputs/1H1S_prepared.pdb",
+      "sha256": "a2d9e1d37ca967438fa91cd725fc63c8ab6b25b0da35ac4a4d82fed459af2c02",
+      "bytes": 720560
+    },
+    {
+      "path": "inputs/1H1S_prepared.pdbqt",
+      "sha256": "30a7d139b7309db57166131b15ee8cb7a5c5e3b7c0ea6c5346abc00ec0ca920b",
+      "bytes": 433360
+    },
+    {
+      "path": "inputs/NU6094_template_1h1s.sdf",
+      "sha256": "c11904208081b6b27f9cadee37de095e8168a130a488ceb7a7b21853de5cc08b",
+      "bytes": 2541
+    },
+    {
+      "path": "inputs/preset.json",
+      "sha256": "dd69f0dc2df29c516fe08f59d634a861f2cabd48cb73b76b9d10abc6d32c7e38",
+      "bytes": 17232
+    },
+    {
+      "path": "inputs/protocol.json",
+      "sha256": "d3b9704af16a3580c76bb4b0ef5e8a0a8d9619a7041a3517d7bb772e437fbd57",
+      "bytes": 3602
+    },
+    {
+      "path": "inputs/request.json",
+      "sha256": "41601a9fb638c25f600a1d8fa102687566422c7666f171c974fade607868a587",
+      "bytes": 2754
+    },
+    {
+      "path": "inputs/spec.json",
+      "sha256": "7e7dbe06fcaad258825033768adc4a0a49069fe643cd31362297aac9b8787fac",
+      "bytes": 856
+    },
+    {
+      "path": "inputs/template_alignment.json",
+      "sha256": "208d421d95b15d691e059e91b34b8027ff9100eb4033e340dc194fe92b86014b",
+      "bytes": 7788
+    },
+    {
+      "path": "logs/candidate-0000-pose-000.log",
+      "sha256": "9ba2ad50db13ecc28cde01d007f1d6c7704c915aaa42e9ace53c9377e3ad49e5",
+      "bytes": 2313
+    },
+    {
+      "path": "logs/candidate-0000-pose-001.log",
+      "sha256": "505e2dc5d967c22590cc98ca90af6448f5455d7934f35388b7eda0148488e6cf",
+      "bytes": 2313
+    },
+    {
+      "path": "logs/candidate-0001-pose-000.log",
+      "sha256": "4ff19060bd55922d75eb442bd7f19a13dd98c31d14c4088d874fc94f0ab21e34",
+      "bytes": 2313
+    },
+    {
+      "path": "logs/candidate-0001-pose-001.log",
+      "sha256": "10e606ebb2963871ec462fffd522f16f7381f653c18564f9345ee4339a661446",
+      "bytes": 2313
+    },
+    {
+      "path": "logs/parent-baseline.log",
+      "sha256": "bebb552ea4ff23c471f121a4249774aeb1ab93da48fe3a52b908d1dfe304978f",
+      "bytes": 2305
+    },
+    {
+      "path": "poses/candidate-0000-pose-000-input.pdbqt",
+      "sha256": "1a0500e29d28c4e5126add9e44fd882585300c954595db3e8961e10a0f75b388",
+      "bytes": 2947
+    },
+    {
+      "path": "poses/candidate-0000-pose-000-output.pdbqt",
+      "sha256": "735404ad31d293211939c8d3ea2f6b07cf0d8cfb414a4e2d58840638eec60150",
+      "bytes": 2947
+    },
+    {
+      "path": "poses/candidate-0000-pose-000.sdf",
+      "sha256": "b80ecef17071dce07496e50f72ddfcefb7f150211bb6fdaf71e617825244da3b",
+      "bytes": 4603
+    },
+    {
+      "path": "poses/candidate-0000-pose-001-input.pdbqt",
+      "sha256": "b4655476365f3d8b43bd688575a8e3c14c779a247440877434d2ed57295804b3",
+      "bytes": 2947
+    },
+    {
+      "path": "poses/candidate-0000-pose-001-output.pdbqt",
+      "sha256": "70546d8e1191f2c125410ac3c975b289073a814b0f999cfc3b15428449ecbd4f",
+      "bytes": 2947
+    },
+    {
+      "path": "poses/candidate-0000-pose-001.sdf",
+      "sha256": "ac12cf80bb0638fb7461aff203f3df86f0fa2a40cc162ea457c0b9f76d9a8cc8",
+      "bytes": 4603
+    },
+    {
+      "path": "poses/candidate-0001-pose-000-input.pdbqt",
+      "sha256": "6205092e6da4934b0e75771809a3ba67cf72c05a585cae1f6d5b3a05284825e9",
+      "bytes": 2947
+    },
+    {
+      "path": "poses/candidate-0001-pose-000-output.pdbqt",
+      "sha256": "23222e3a61d2a17bd58769e168604017976aa998a96ba56efbd28e1feba86fe7",
+      "bytes": 2947
+    },
+    {
+      "path": "poses/candidate-0001-pose-000.sdf",
+      "sha256": "51ad8df1f50cd0d2424c7e6fb3841c8d13b5a1aac2f5a601e139d800b127e2cb",
+      "bytes": 4613
+    },
+    {
+      "path": "poses/candidate-0001-pose-001-input.pdbqt",
+      "sha256": "14b2622762ede43a46d1a0e686b421b8340404543bd66fa0f71bc10f5baacb5b",
+      "bytes": 2948
+    },
+    {
+      "path": "poses/candidate-0001-pose-001-output.pdbqt",
+      "sha256": "2ed5b11b51f5627ec4d7d1a9129dfcbb7c8759f9c84c9718d02eabf3375fc243",
+      "bytes": 2948
+    },
+    {
+      "path": "poses/candidate-0001-pose-001.sdf",
+      "sha256": "47ab2f37972289eef5a8859acbe80ab181a77a902dc9a5ab395fb501518e6fce",
+      "bytes": 4613
+    },
+    {
+      "path": "poses/parent-baseline-input.pdbqt",
+      "sha256": "a453d6d3f65a9dbe1df9513c79c5423aa8411076430d85b2269f9f75997015ea",
+      "bytes": 2529
+    },
+    {
+      "path": "poses/parent-baseline-output.pdbqt",
+      "sha256": "6809f6850071421c624c22b6ccc728ce39e10199a5325f1203fdfdbf91dc75ec",
+      "bytes": 2529
+    },
+    {
+      "path": "poses/parent-baseline.sdf",
+      "sha256": "16ab8c25e2361322c057c05ddead2def0d193143345fff1bdf4eebf464fe59f7",
+      "bytes": 4010
+    },
+    {
+      "path": "poses/parent-observed.sdf",
+      "sha256": "4ec07849e073747c5bc57760d4f3876519520b41ffc5d17e0ae2ad90a62d077d",
+      "bytes": 4290
+    },
+    {
+      "path": "views/candidate-0000-pose-000.json",
+      "sha256": "fb5ac60ec5341d6c85494597ff5efddf67a743a7916c2b187e7349618eb08ad7",
+      "bytes": 263335
+    },
+    {
+      "path": "views/candidate-0000-pose-001.json",
+      "sha256": "1fde2e328e0b79c8dfab8a46a564392869a43d56bbc4ce016bbe9cfed849ed4b",
+      "bytes": 262033
+    },
+    {
+      "path": "views/candidate-0001-pose-000.json",
+      "sha256": "27541f35c82263ae641ce420d186a8191ae87cda30bc110f6ba621663df53841",
+      "bytes": 265940
+    },
+    {
+      "path": "views/candidate-0001-pose-001.json",
+      "sha256": "8d5191bf021a264faf917e12f8fa40c8093e19dcf03b83b14f83ccf1c82e3817",
+      "bytes": 262036
+    },
+    {
+      "path": "views/parent-baseline.json",
+      "sha256": "d2efa0f203b9446bfdc1e0d3af4401c8ecc695fc7195de99d2cb13e09cd30367",
+      "bytes": 264107
+    },
+    {
+      "path": "views/parent-observed.json",
+      "sha256": "3752329bf28a1dc12022d8e2d4f0ce367a350d0d43b402ad5fb02277f608cc18",
+      "bytes": 260796
+    }
+  ]
+}

@@ -1,0 +1,962 @@
+{
+  "schema_version": 1,
+  "id": "cdk2_1h1s_nu6094_v1",
+  "protocol": "guided_growth_cdk2_v2",
+  "name": "CDK2 \u00b7 NU6094 para growth",
+  "label": "CDK2 \u00b7 NU6094 para growth",
+  "recommended": true,
+  "description": "Grow one substituent from NU6094's para carbon toward Asp86 in an open CDK2 receptor.",
+  "receptor_pdb_id": "1H1S",
+  "source": {
+    "pdb": "1H1S",
+    "url": "https://www.rcsb.org/structure/1H1S",
+    "source_model": 1,
+    "author_chains": [
+      "A",
+      "B"
+    ],
+    "ligand": {
+      "component": "4SP",
+      "removed_from_receptor": true
+    }
+  },
+  "parent": {
+    "name": "NU6094",
+    "source_pdb": "1H1Q",
+    "source_url": "https://www.rcsb.org/structure/1H1Q",
+    "component": "2A6",
+    "pose_kind": "protein_aligned_template",
+    "reference_label": "NU6094 template transferred from 1H1Q",
+    "source_canonical_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3[nH]cnc3n2)cc1",
+    "prepared_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+    "preparation_transformations": [
+      "Declared neutral9H state selected from the source CCD tautomer",
+      "Heavy atoms transformed using protein backbone alignment only"
+    ]
+  },
+  "coordinate_frame": {
+    "id": "cdk2_1h1s_nu6094_v1:original_1h1s",
+    "units": "angstrom",
+    "transform": "identity",
+    "description": "Original 1H1S prepared receptor coordinates"
+  },
+  "preparation": {
+    "receptor": "Rigid 1H1S source chains A/B; TPO160 retained; waters removed; default altloc A",
+    "ligand": "Neutral9H NU6094 scaffold; 1H1Q coordinates transferred by protein alignment",
+    "meeko_version": "0.8.0",
+    "rdkit_version": "2025.9.6",
+    "prolif_version": "2.2.3",
+    "posebusters_version": "0.6.5",
+    "no_pH_ensemble": true
+  },
+  "scaffold": {
+    "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+    "libinvent_scaffold": "[*:0]c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+    "retained_heavy_atoms": 24,
+    "ring_atoms": [
+      "N1",
+      "C2",
+      "N3",
+      "C4",
+      "C5",
+      "C6",
+      "N7",
+      "C8",
+      "N9"
+    ],
+    "attachment_atom_name": "C20",
+    "attachment_label": "para carbon on the aniline ring"
+  },
+  "files": {
+    "receptor_pdb": "1H1S_prepared.pdb",
+    "receptor_pdbqt": "1H1S_prepared.pdbqt",
+    "parent_sdf": "NU6094_template_1h1s.sdf",
+    "template_source_pdb": "1H1Q_prepared.pdb",
+    "template_source_sdf": "1H1Q_native.sdf",
+    "template_alignment": "template_alignment.json"
+  },
+  "reference_candidates": [
+    {
+      "name": "NU6094",
+      "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "source_pdb": "1H1Q"
+    },
+    {
+      "name": "NU6102",
+      "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "source_pdb": "1H1S"
+    }
+  ],
+  "default_spec": {
+    "schema_version": 1,
+    "label": "CDK2 \u00b7 NU6094 para growth",
+    "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+    "protocol": "guided_growth_cdk2_v2",
+    "candidate_source": {
+      "kind": "supplied",
+      "candidates": [
+        {
+          "name": "NU6094",
+          "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+        },
+        {
+          "name": "NU6102",
+          "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+        }
+      ]
+    },
+    "limits": {
+      "max_unique_candidates_evaluated": 12,
+      "embedding_attempts_per_candidate": 16,
+      "evaluation_admission_seconds": 600
+    },
+    "seeds": {
+      "embedding": 194715,
+      "vina": 42
+    },
+    "constraints": {
+      "max_molecular_weight": 450,
+      "max_clogp": 4.5,
+      "max_rotatable_bonds": 8,
+      "formal_charge": 0
+    }
+  },
+  "validation_scope": {
+    "kind": "retrospective_receptor_informed",
+    "receptor_informed_by": "The known NU6102 holo complex 1H1S was chosen as the open receptor; this is not fully prospective validation.",
+    "placement_inputs": "Observed NU6094 heavy-atom template from 1H1Q and candidate molecular graph only.",
+    "target_ligand_coordinates_used_for_placement": false,
+    "target_ligand_coordinates_used_for_selection": false,
+    "reference_comparison": "NU6102 coordinates are held out for retrospective RMSD/contact checks only; not included in this live preparation.",
+    "scope": "Preserve NU6094 and add at most one substituent at C20; arbitrary molecules, other attachment sites and charge states are outside this workflow."
+  },
+  "limitations": [
+    "Receptor-informed retrospective workflow; no general cross-target or prospective docking accuracy claim.",
+    "Rigid receptor, omitted waters and fixed neutral9H scaffold; no pH or protein ensemble.",
+    "Only NU6094 para growth is supported; other sites and lost scaffolds are explicitly excluded.",
+    "Computed contacts and Vina scores are hypotheses, not affinity, potency or synthesis validation.",
+    "The parent is a transferred template, not a native observed NU6094\u20131H1S complex."
+  ],
+  "provenance": {
+    "archive_license": "CC0-1.0",
+    "source_urls": [
+      "https://www.rcsb.org/structure/1H1Q",
+      "https://www.rcsb.org/structure/1H1S",
+      "https://doi.org/10.1038/nsb842"
+    ],
+    "prepared_source_sha256": {
+      "1H1Q_native.sdf": "0e50958c4b88fd544890062b270da1fdc6103bd191e368745f3bbb545eb285dc",
+      "1H1Q_prepared.pdb": "0f0782610393b083217097379968759181c329e479b86dda0c19032175b72129",
+      "1H1S_prepared.pdb": "a2d9e1d37ca967438fa91cd725fc63c8ab6b25b0da35ac4a4d82fed459af2c02",
+      "1H1S_prepared.pdbqt": "30a7d139b7309db57166131b15ee8cb7a5c5e3b7c0ea6c5346abc00ec0ca920b"
+    },
+    "template_alignment": {
+      "source": "1H1Q",
+      "destination": "1H1S",
+      "rotation_row_vectors": [
+        [
+          0.9999569988117464,
+          -0.005985044845830648,
+          -0.007083767754374476
+        ],
+        [
+          0.005988993573156675,
+          0.9999819219779807,
+          0.0005363517537852698
+        ],
+        [
+          0.007080429604565615,
+          -0.0005787533295772896,
+          0.999974765962221
+        ]
+      ],
+      "translation_A": [
+        -0.6941996972719626,
+        0.19797075207002507,
+        0.23310869907404844
+      ],
+      "matched_backbone_atoms": 128,
+      "backbone_rmsd_A": 0.2757792549167853,
+      "selection": "Common chain A N/CA/C/O within 8 A of observed NU6094 in 1H1Q; proper rigid fit; no ligand fitting",
+      "matched_atom_ids": [
+        [
+          "A",
+          9,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          9,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          10,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          10,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          10,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          10,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          11,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          11,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          11,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          11,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          12,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          12,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          12,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          12,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          13,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          13,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          13,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          13,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          14,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          14,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          15,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          16,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          17,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          17,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          17,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          18,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          18,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          18,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          18,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          19,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          19,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          19,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          19,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          20,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          20,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          29,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          30,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          30,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          30,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          31,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          31,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          31,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          31,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          32,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          32,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          32,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          32,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          33,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          33,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          63,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          64,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          64,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          64,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          64,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          65,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          65,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          65,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          65,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          66,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          66,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          78,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          79,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          79,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          79,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          80,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          80,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          80,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          80,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          81,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          81,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          81,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          81,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          82,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          82,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          82,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          82,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          83,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          83,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          83,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          83,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          84,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          84,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          84,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          84,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          85,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          85,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          85,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          85,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          86,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          86,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          86,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          86,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          87,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          89,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          89,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          129,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          130,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          130,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          131,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          131,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          131,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          131,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          132,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          132,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          132,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          132,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          133,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          133,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          133,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          133,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          134,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          134,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          134,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          134,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          135,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          135,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          135,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          135,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          143,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          143,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          144,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          144,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          144,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          144,
+          " ",
+          "O"
+        ],
+        [
+          "A",
+          145,
+          " ",
+          "C"
+        ],
+        [
+          "A",
+          145,
+          " ",
+          "CA"
+        ],
+        [
+          "A",
+          145,
+          " ",
+          "N"
+        ],
+        [
+          "A",
+          145,
+          " ",
+          "O"
+        ]
+      ]
+    },
+    "reproduction": "python -m capychem.experiments.science_prepare --source-dir SOURCE --output-dir NEW_DIRECTORY"
+  },
+  "sha256": {
+    "1H1Q_native.sdf": "0e50958c4b88fd544890062b270da1fdc6103bd191e368745f3bbb545eb285dc",
+    "1H1Q_prepared.pdb": "0f0782610393b083217097379968759181c329e479b86dda0c19032175b72129",
+    "1H1S_prepared.pdb": "a2d9e1d37ca967438fa91cd725fc63c8ab6b25b0da35ac4a4d82fed459af2c02",
+    "1H1S_prepared.pdbqt": "30a7d139b7309db57166131b15ee8cb7a5c5e3b7c0ea6c5346abc00ec0ca920b",
+    "NU6094_template_1h1s.sdf": "c11904208081b6b27f9cadee37de095e8168a130a488ceb7a7b21853de5cc08b",
+    "template_alignment.json": "208d421d95b15d691e059e91b34b8027ff9100eb4033e340dc194fe92b86014b"
+  }
+}
