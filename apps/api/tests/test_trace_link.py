@@ -1,4 +1,4 @@
-"""Trace deep-link (FR-014 / SPEC §6.3 `GET /trace/{run_id}`).
+"""Trace deep-link: `GET /trace/{run_id}`.
 
 The app persists each run's Langfuse trace id in `summary_json["trace_id"]`
 (no schema change — `summary_json` is an existing JSON column). The deep link

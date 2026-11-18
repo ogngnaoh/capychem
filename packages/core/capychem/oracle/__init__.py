@@ -207,7 +207,7 @@ def _parse_last_json_line(stdout: str) -> dict[str, Any] | None:
 # ---------------------------------------------------------------------------
 
 _DEFAULT_ORACLE_USD_PER_SEC = 4e-5  # placeholder ~Modal CPU core-second; configure via env.
-# NOT a price guarantee (PRD N6 / cost-discipline framing).
+# NOT a price guarantee .
 _MODAL_APP = "capychem-worker"
 _MODAL_FN = "score"
 

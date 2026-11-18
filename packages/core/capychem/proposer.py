@@ -1,16 +1,16 @@
-"""DeepSeek-v4-pro proposer adapter (milestone-02 slice 03).
+"""DeepSeek-v4-pro proposer adapter.
 
 Modern code calls the proposer through an env-selected backend, mirroring
 ``capychem.oracle``. The ``stub`` backend is deterministic and network-free (CI
-+ later-slice development); the ``modal`` backend awaits the Modal ``propose``
++ local development); the ``modal`` backend awaits the Modal ``propose``
 worker, which wraps DeepSeek's OpenAI-compatible API; the ``direct`` backend
 calls DeepSeek's OpenAI-compatible chat-completions API straight from the modern
 process via httpx (no Modal). Cost policy lives here: the worker / API returns
 token counts, this module maps tokens -> USD via env placeholder rates (NOT a
-price guarantee; PRD N6).
+price guarantee).
 
 This module returns the model's *cleaned proposed string* — it does NOT
-RDKit-validate. Validation stays in the loop's ``validate`` node (a later slice).
+RDKit-validate. Validation stays in the loop's ``validate`` node.
 """
 
 from __future__ import annotations

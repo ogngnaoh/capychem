@@ -1,11 +1,10 @@
-"""Async SQLAlchemy 2.0 models for CapyChem run state (SPEC §6.2).
+"""Async SQLAlchemy 2.0 models for benchmark run state and oracle caching.
 
-Six entities: Run, Generation, Candidate, OracleCall, RunCost, AnalyzerHypothesis
-(added milestone-03 slice 01). Schema changes go through Alembic migrations
+Schema changes go through Alembic migrations
 (packages/core/capychem/db/migrations/) — after changing a model, generate a
 revision with `uv run alembic revision --autogenerate -m <message>` and apply it
 with `uv run alembic upgrade head`. metadata.create_all (db/session.py) remains
-for test bootstrap only.
+for isolated SQLite tests only.
 """
 
 from __future__ import annotations
@@ -67,7 +66,7 @@ class Run(Base):
     lease_owner: Mapped[str | None] = mapped_column(String(128), default=None)
     lease_expires_at: Mapped[datetime | None] = mapped_column(default=None)
     heartbeat_at: Mapped[datetime | None] = mapped_column(default=None)
-    # Idempotency key (m08-05, SPEC §6.3 POST /runs): a client-supplied
+    # POST /runs idempotency key: a client-supplied
     # ``Idempotency-Key`` header, unique when present. A retried POST with the
     # SAME key returns the existing row instead of minting a second Run; None
     # (no key given) is the unchanged prior behavior -- Postgres allows any

@@ -1,0 +1,98 @@
+{
+  "id": "guided_growth_cdk2_v2",
+  "version": 2,
+  "preparation": {
+    "receptor": "Rigid 1H1S source chains A/B; TPO160 retained; waters removed; default altloc A",
+    "ligand": "Neutral9H NU6094 scaffold; 1H1Q coordinates transferred by protein alignment",
+    "meeko_version": "0.8.0",
+    "rdkit_version": "2025.9.6",
+    "prolif_version": "2.2.3",
+    "posebusters_version": "0.6.5",
+    "no_pH_ensemble": true
+  },
+  "scaffold": {
+    "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+    "libinvent_scaffold": "[*:0]c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+    "retained_heavy_atoms": 24,
+    "ring_atoms": [
+      "N1",
+      "C2",
+      "N3",
+      "C4",
+      "C5",
+      "C6",
+      "N7",
+      "C8",
+      "N9"
+    ],
+    "attachment_atom_name": "C20",
+    "attachment_label": "para carbon on the aniline ring"
+  },
+  "initial_prior": "all 24 parent/template heavy atoms; RDKit constrained embedding with UFF tethers",
+  "placement_reference": {
+    "name": "NU6094",
+    "source_pdb": "1H1Q",
+    "source_url": "https://www.rcsb.org/structure/1H1Q",
+    "component": "2A6",
+    "pose_kind": "protein_aligned_template",
+    "reference_label": "NU6094 template transferred from 1H1Q",
+    "source_canonical_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3[nH]cnc3n2)cc1",
+    "prepared_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+    "preparation_transformations": [
+      "Declared neutral9H state selected from the source CCD tautomer",
+      "Heavy atoms transformed using protein backbone alignment only"
+    ]
+  },
+  "validation_scope": {
+    "kind": "retrospective_receptor_informed",
+    "receptor_informed_by": "The known NU6102 holo complex 1H1S was chosen as the open receptor; this is not fully prospective validation.",
+    "placement_inputs": "Observed NU6094 heavy-atom template from 1H1Q and candidate molecular graph only.",
+    "target_ligand_coordinates_used_for_placement": false,
+    "target_ligand_coordinates_used_for_selection": false,
+    "reference_comparison": "NU6102 coordinates are held out for retrospective RMSD/contact checks only; not included in this live preparation.",
+    "scope": "Preserve NU6094 and add at most one substituent at C20; arbitrary molecules, other attachment sites and charge states are outside this workflow."
+  },
+  "conformer_adapter": "FEgrow mapped embedding procedure, isolated adaptation, v1",
+  "refinement": "Vina local_only; ligand translation/orientation/torsions released; rigid receptor",
+  "vina": {
+    "version": "AutoDock Vina v1.2.7",
+    "seed": 42,
+    "cpu_threads": 1,
+    "timeout_seconds": 120
+  },
+  "box": {
+    "center": [
+      6.0750375,
+      44.306691666666666,
+      51.03965416666666
+    ],
+    "size": [
+      27.3031,
+      23.7691,
+      25.352199999999996
+    ]
+  },
+  "embedding": {
+    "attempts": 16,
+    "seed_start": 194715,
+    "duplicate_rms_A": 0.5
+  },
+  "posebusters_config": "dock",
+  "contact_types": [
+    "HBDonor",
+    "HBAcceptor"
+  ],
+  "review": {
+    "geometry_required": true,
+    "ring_drift_max_A": 2.0,
+    "hinge_residues": [
+      "GLU81.A",
+      "LEU83.A"
+    ],
+    "minimum_hinge_interaction_types": 1
+  },
+  "objective": "Seek an ASP86.A hydrogen-bond hypothesis while retaining a hinge-local pose",
+  "selection": "Prefer review-ready Asp86-contact poses, then lowest Vina score; otherwise eligible minimum; otherwise flagged minimum",
+  "parent_baseline": "Independent local refinement of observed parent pose; no previously computed control score is reused",
+  "admission_budget": "Elapsed evaluation time checked before each candidate; not a hard run deadline"
+}

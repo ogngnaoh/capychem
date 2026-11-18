@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "label": "CDK2 \u00b7 does the contact repeat? \u00b7 seed run 3",
+  "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+  "protocol": "guided_growth_cdk2_v2",
+  "candidate_source": {
+    "kind": "supplied",
+    "candidates": [
+      {
+        "name": "NU6094",
+        "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+      },
+      {
+        "name": "NU6102",
+        "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+      },
+      {
+        "name": "Para carboxamide",
+        "smiles": "NC(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+      }
+    ]
+  },
+  "limits": {
+    "max_unique_candidates_evaluated": 3,
+    "embedding_attempts_per_candidate": 16,
+    "evaluation_admission_seconds": 300
+  },
+  "seeds": {
+    "embedding": 61531,
+    "vina": 44
+  },
+  "constraints": {
+    "max_molecular_weight": 450.0,
+    "max_clogp": 4.5,
+    "max_rotatable_bonds": 8,
+    "formal_charge": 0
+  },
+  "parent_experiment_id": "58c63b90-086a-4cb6-adee-e09657734574",
+  "candidate_origins": [
+    {
+      "candidate_index": 0,
+      "experiment_id": "58c63b90-086a-4cb6-adee-e09657734574",
+      "candidate_id": "2adbb357-0801-5050-aa51-98174c726935",
+      "pose_id": "b94c3970-f625-55b2-88b3-552222f969d0"
+    },
+    {
+      "candidate_index": 1,
+      "experiment_id": "58c63b90-086a-4cb6-adee-e09657734574",
+      "candidate_id": "95595e25-6b90-5e75-9244-2eb3a386ad65",
+      "pose_id": "d530a76d-050b-59a3-904f-0c4376be2971"
+    },
+    {
+      "candidate_index": 2,
+      "experiment_id": "58c63b90-086a-4cb6-adee-e09657734574",
+      "candidate_id": "5c6a685a-0865-58ec-8572-65b0ede22732",
+      "pose_id": "9ff595f4-1eda-50e7-8405-588bba055f64"
+    }
+  ],
+  "resolved_protocol": {
+    "id": "guided_growth_cdk2_v2",
+    "revision": 2,
+    "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+    "placement": "NU6094_24_atom_protein_aligned_template_then_free_ligand_local_refinement",
+    "ring_locality_max_A": 2.0,
+    "minimum_hinge_contact_types": 1,
+    "objective": "Explore an Asp86 polar contact while retaining a plausible hinge-local pose",
+    "selection": "review_ready_then_Asp86_if_present_then_lowest_Vina",
+    "protein_motion": "rigid",
+    "cloud_compute": false,
+    "engine_fingerprint": "361b7dc321d609803c25e3f1748dec73956884be07e2cb138d9597c747c32d93",
+    "implementation_sha256": {
+      "science.py": "fdeff28273831f71c1a20e7a603f720d57dbaa437ddee6a7a968b279ee1f9fde",
+      "science_config.py": "5cc80d5b88eb2110c2d9a416ea9497d0aa6a82a3219e2335856318bf2095589e",
+      "chemistry/conformers.py": "0e0fd00ceb1c1f3e940a0206931d205aa05c9ad42612b93698c7f561b4e299cd",
+      "chemistry/generate.py": "a14990e317d673d7ed2b2d4161cc437a7a1f38ee2a251766cb9fd49cb1500f40",
+      "chemistry/geometry.py": "b7f926248047ec9bdf5911cac975151fe8c955c5a2a7608536289644a8e219b0",
+      "chemistry/identity.py": "33f39d731a9bfc4358acb6fa98262e144463310f2fb2a53850c0fb15780fe94e"
+    },
+    "parent_name": "NU6094",
+    "attachment": "para carbon C20",
+    "retained_heavy_atoms": 24,
+    "validation_scope": "Retrospective receptor-informed: 1H1S is the NU6102 holo receptor; NU6102 ligand coordinates are excluded from placement and selection",
+    "execution_contract_version": 2,
+    "wall_time_limit_seconds": 2400,
+    "target_manifest_sha256": "dd69f0dc2df29c516fe08f59d634a861f2cabd48cb73b76b9d10abc6d32c7e38",
+    "frame": {
+      "id": "cdk2_1h1s_nu6094_v1:original_1h1s",
+      "units": "angstrom",
+      "transform": "identity",
+      "description": "Original 1H1S prepared receptor coordinates"
+    }
+  }
+}

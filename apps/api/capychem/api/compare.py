@@ -37,7 +37,7 @@ def resample_auc_to_common_axis(
     curve_a: list[CurvePoint], curve_b: list[CurvePoint]
 ) -> list[AucOverlayPoint]:
     """Resample both curves onto one shared x grid (the sorted union of every
-    oracle_calls), so the two series are overlay-comparable (SPEC §6.4d)."""
+    oracle_calls), so the two series are overlay-comparable."""
     xs = sorted({p.oracle_calls for p in curve_a} | {p.oracle_calls for p in curve_b})
     return [
         AucOverlayPoint(oracle_calls=x, a=_value_at(curve_a, x), b=_value_at(curve_b, x))

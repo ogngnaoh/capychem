@@ -1,5 +1,5 @@
 """A sustained oracle fault pauses the run recoverably instead of erroring it out,
-keeping partial results durable/browseable (PRD edge case 2)."""
+keeping partial results durable and browsable."""
 
 from __future__ import annotations
 

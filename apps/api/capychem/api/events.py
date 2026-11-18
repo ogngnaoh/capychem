@@ -1,10 +1,10 @@
-"""Cross-process live events via Postgres LISTEN/NOTIFY (milestone 08 slice 03).
+"""Cross-process benchmark events via Postgres LISTEN/NOTIFY.
 
-PROBLEM (follows m08-02): once a run can be driven by a standalone
+When a run is driven by a standalone
 ``apps/runner`` worker process, the FastAPI process serving a WS subscriber may
 never hold that run's in-memory ``RunHandle`` — its ``broadcast()`` has nobody
 local to reach. Postgres LISTEN/NOTIFY is the cross-process transport (no
-Redis/broker/Celery, per the milestone's ALL-POSTGRES decision): the driver
+separate message broker): the driver
 NOTIFYs after each event it persists, and every API process LISTENs and fans
 the notification out to its own local WS subscribers.
 
@@ -17,7 +17,7 @@ shared channel avoids all of that: one asyncpg connection LISTENs for the
 whole process lifetime; every notification carries ``run_id`` in its payload,
 and this module's in-process dict fans it out to the right local queues. The
 cost is that every API process receives every run's traffic system-wide — at
-CapyChem's single-digit-concurrent-runs scale (SPEC §5) that's a JSON-decode +
+CapyChem's intended single-digit-concurrent-runs scale that's a JSON-decode +
 dict lookup per generation, not a scaling concern.
 
 Payload is a small POINTER, never the event body: a NOTIFY payload has an

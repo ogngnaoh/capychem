@@ -1,9 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-// Opt-in smoke (pnpm --filter web test:e2e) — needs the live stack: Next dev, FastAPI,
+// Opt-in smoke (CAPYCHEM_E2E_LIVE=1) — needs the live stack: Next dev, FastAPI,
 // Postgres, harness venv. Drives the real front door (/launch): pick a task from the
 // catalog, shrink the budget, start, and wait for a terminal state. jnk3 reloads its
 // ~10 MB model per generation, so keep the budget small and the timeout generous.
+test.skip(process.env.CAPYCHEM_E2E_LIVE !== "1", "Requires the live legacy API and oracle harness.");
+test.setTimeout(270_000);
+
 test("launch a jnk3 run from the hybrid launcher and reach a terminal state", async ({
   page,
 }) => {

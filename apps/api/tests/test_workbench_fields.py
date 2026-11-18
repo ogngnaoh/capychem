@@ -1,4 +1,4 @@
-"""RunSnapshot's new workbench read-fields (milestone 05 slice 03a): valid_smiles_rate,
+"""RunSnapshot's workbench read-fields: valid_smiles_rate,
 graph_ga_baseline, llm_cost_usd/oracle_cost_usd. All nullable/additive; exercised
 against an in-memory sqlite app (no real Postgres), mirroring test_trace_link.py.
 """
@@ -65,8 +65,7 @@ def _client(app: FastAPI) -> httpx.AsyncClient:
 def test_graph_ga_baseline_known_task() -> None:
     # jnk3 is a comparable row in the G1 report.
     val = graph_ga_baseline("jnk3")
-    assert val is not None
-    assert 0.0 <= val <= 1.0
+    assert val == pytest.approx(0.6838650000000002)
 
 
 def test_graph_ga_baseline_unbanked_task_is_none() -> None:

@@ -1,4 +1,4 @@
-"""Run mode: the benchmark/exploratory invariant (milestone 07 slice 01).
+"""Run mode: the benchmark/exploratory invariant.
 
 Every run carries a ``mode``. Only ``benchmark`` runs feed the committed G1
 numbers; the moment a run uses ANY custom input — an
@@ -7,9 +7,8 @@ it is ``exploratory`` and is never presented as benchmark-comparable.
 
 ``derive_mode`` is the one place that decision is made. Mode is server-derived
 from the run's inputs, never accepted from the client, so a run cannot claim a
-benchmark tag it hasn't earned. Later 07 slices route their new inputs through
-this function; at slice 01 no exploratory inputs exist yet, so every run derives
-to ``benchmark``.
+benchmark tag it hasn't earned. All custom seed, objective and constraint inputs
+pass through this function.
 """
 
 from __future__ import annotations

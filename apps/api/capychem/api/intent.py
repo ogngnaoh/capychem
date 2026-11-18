@@ -29,7 +29,7 @@ Confidence = Literal["high", "medium", "low"]
 _HIGH_THRESHOLD = 0.82
 _MEDIUM_THRESHOLD = 0.55
 
-_DEFAULT_BUDGET = 10_000  # the PRD/SPEC standard oracle-call budget
+_DEFAULT_BUDGET = 10_000  # standard benchmark oracle-call budget
 _DEFAULT_PLATEAU_WINDOW = 5  # matches CreateRunRequest's default
 _DEFAULT_MUTATION_STRATEGY = "graph_ga"  # matches CreateRunRequest's default
 _MAX_BUDGET = 200_000  # generous ceiling above the 10k PMO convention (FR-015)

@@ -23,10 +23,7 @@ SOFTWARE.
 
 ---
 
-Third-party components. CapyChem's modern code (packages/core, apps/*) is MIT.
-The optional legacy evaluation harness under harness/ pins the PMO/mol_opt +
-PyTDC stack, some of which is distributed under other licenses (e.g. GPL). That
-stack runs only as an isolated subprocess (its own Python 3.10 virtualenv) and
-is never imported or linked into the MIT-licensed code — the JSON subprocess
-bridge is the only boundary. RDKit (BSD-3), FastAPI/Next.js/React (MIT), and
-the other modern dependencies carry their own permissive licenses.
+Third-party software, fonts, scientific data and model weights retain their
+upstream licenses. See apps/studio/public/THIRD_PARTY_NOTICES.txt and
+data/reference/cdk2/THIRD_PARTY_NOTICES.txt. The optional Python 3.10 benchmark
+harness runs PMO and PyTDC in a separate process under their upstream terms.

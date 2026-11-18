@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# CapyChem multi-target image (milestone 08 slice 06 — ops maturity).
+# CapyChem legacy benchmark API and runner images.
 #
 # One Dockerfile, two runnable targets (`api` and `runner`), so both images
 # share an IDENTICAL harness build and an identical uv workspace build —
@@ -15,19 +15,15 @@
 # --- Honesty about oracle scoring in-container -----------------------------
 # The oracle-scoring subprocess bridge (packages/core/capychem/oracle) shells
 # out to an isolated Python-3.10 interpreter running `capychem_harness/score.py`
-# — the legacy PyTDC 0.3.6 env (CLAUDE.md gotcha: never imported, only ever
-# invoked as a subprocess). This image bakes that SAME harness/ source the
+# — the legacy PyTDC 0.3.6 environment, invoked as a subprocess rather than
+# imported into the API. This image bakes that SAME harness/ source the
 # repo ships into its own `harness` build stage below (copied into the final
 # image at /opt/harness-py310, pointed at via CAPYCHEM_HARNESS_PYTHON), so a
 # container built from this Dockerfile scores PMO/TDC oracles exactly as
 # local dev does — this is in-silico benchmark scoring (RDKit + PyTDC oracle
-# functions), never live docking or any wet-lab process (N6, non-goal N2).
-# If a constrained build environment cannot complete the `harness` stage
-# (e.g. no network egress for its pinned wheels), the `api`/`runner` images
-# still build and serve REST/WS/health/readiness; any run that reaches the
-# score node then raises HarnessError and the run pauses in a recoverable
-# state (the same oracle-fault path a local harness outage takes, PRD edge
-# case 2) rather than fabricating a score.
+# functions). The Studio's separate molecular science environment is not installed.
+# A failed harness dependency installation fails the image build. A later runtime
+# oracle failure pauses its run while preserving partial results for recovery.
 # -----------------------------------------------------------------------------
 
 FROM python:3.10-slim AS harness
@@ -69,6 +65,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /repo
 COPY --from=workspace /repo /repo
+# The benchmark API's Graph-GA overlay and figure verification read this fixture.
+COPY data/benchmarks /repo/data/benchmarks
 # The harness stage's ENTIRE Python 3.10 install (interpreter + stdlib +
 # shared libs + PyTDC/RDKit), namespaced under /opt so it can never collide
 # with this image's own /usr/local (Python 3.12, the app's own venv). Both

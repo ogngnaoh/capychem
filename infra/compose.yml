@@ -1,6 +1,6 @@
-# CapyChem: Postgres + the containerized API + the containerized out-of-process
-# runner (milestone 08 slice 06 — ops maturity). All three together are the
-# full ALL-POSTGRES system: the API enqueues a run (a durable "queued" row);
+# Legacy benchmark deployment: Postgres, the API and an out-of-process runner.
+# This does not start the Studio frontend or structure-guided scientific worker.
+# The API enqueues a benchmark run (a durable "queued" row);
 # the `runner` service is the only thing that claims and drives it
 # (CAPYCHEM_INLINE_WORKER=0 below turns off the API's own inline dev/test
 # worker, per apps/api/capychem/api/main.py); cross-process live events ride
@@ -9,7 +9,7 @@
 # Oracle scoring in-container: both `api` and `runner` bake in the SAME
 # isolated harness/ env (Python 3.10, pinned PyTDC 0.3.6) the repo ships —
 # see infra/Dockerfile's header comment for exactly what that does and does
-# not cover. It is in-silico PMO/TDC benchmark scoring only (N6, non-goal N2).
+# not cover. It is in-silico PMO/TDC benchmark scoring only.
 #
 # Usage:
 #   docker compose -f infra/compose.yml up --build
@@ -23,7 +23,7 @@
 # DEEPSEEK_API_KEY is passed through only if already set in the host shell —
 # unset is fine for the default graph_ga demo above, which needs no LLM call;
 # it is required only to drive an llm/llm_ga mutation-strategy run (never
-# baked into the image or committed — env var only, per CLAUDE.md).
+# baked into the image or committed — environment variable only).
 services:
   postgres:
     image: postgres:16

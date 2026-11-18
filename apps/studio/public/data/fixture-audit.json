@@ -1,0 +1,22 @@
+{
+  "status": "pass",
+  "candidateRecords": 31,
+  "observedStructures": 4,
+  "predictedPoseStructures": 52,
+  "alternativePoses": 28,
+  "contactSegmentsVerified": 144,
+  "maxDistanceRoundingErrorA": 0.0004923613930696291,
+  "exportsVerified": 56,
+  "sourceFixtureSha256": "9fa6b435392a240d3aba6bbdab076347e08d054d2e79ae81ff1330f2d42e49c4",
+  "sourceAllPosesSha256": "8522af5b61e57018e9ba61d1795103f740740b7ff54fc38411bb63844eb7fd8d",
+  "checks": [
+    "Chemical graph and resolved stereochemistry match exported SDF",
+    "Generated coordinates match source pose in parent receptor frame",
+    "Observed heavy coordinates and internal geometry unchanged",
+    "18 scaffold atoms, 9 purine atoms, one N2 attachment for every view",
+    "All bond and contact endpoints exist; contact distances match",
+    "Scores/checks/contact types match the recorded source pose",
+    "Alternative poses retain candidate identity and stereochemistry",
+    "Deferred/excluded/partial records and errors retained"
+  ]
+}

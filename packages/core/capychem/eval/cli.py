@@ -1,6 +1,6 @@
 """``capychem-eval`` -- reproduce a PMO Graph-GA baseline and emit an AUC report.
 
-Every reported score is an in-silico oracle score (PRD N6); the AUC is the
+Every reported score is an in-silico oracle score; the AUC is the
 canonical PMO AUC-of-top-10 from eval/metric.py, not the live-UI running curve.
 """
 

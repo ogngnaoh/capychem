@@ -1,7 +1,7 @@
 """PmoOracle — the PMO/PyTDC benchmark oracle behind the ScoringOracle protocol.
 
 Thin wrapper over the harness bridge (``score_smiles``): it exposes the exact
-benchmark scores through the protocol so the objective boundary (07-04) can treat
+benchmark scores through the protocol so the objective boundary can treat
 PMO as one oracle among many WITHOUT changing the G1 numbers. A parity test proves
 ``PmoOracle(task).score`` is byte-identical to the harness path.
 """
@@ -11,8 +11,8 @@ from __future__ import annotations
 from capychem.oracle import score_smiles
 from capychem.oracle.protocol import Direction
 
-# The pinned legacy harness (CLAUDE.md / SPEC §5). Static for now; OD-5 (07-06)
-# makes the harness emit the real PyTDC version so the manifest cites it dynamically.
+# This adapter's declared version matches the pinned isolated harness dependency.
+# Run manifests additionally record the version reported by the actual harness.
 _PYTDC_PIN = "pytdc-0.3.6"
 
 

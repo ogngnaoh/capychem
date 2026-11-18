@@ -49,3 +49,26 @@ htmlcov/
 
 # Harness env (isolated uv venv at harness/.venv — covered by .venv/ above; never committed)
 harness/__pycache__/
+
+# Local studio runtime, scientific environments and downloaded models
+.local/
+.cache/
+.venv-science/
+.venv-generator/
+.vite/
+*.prior
+*.ckpt
+/output/
+.capychem/
+.playwright-cli/
+.science/
+.pnpm-store/
+test-results/
+playwright-report/
+
+# Local research, release media and planning. Public setup lives in README.md.
+/docs/
+/experiments/
+/assets/demo/
+/apps/launch/
+/.planning/

@@ -1,0 +1,316 @@
+/* Figma/Subframe structure: document controls, selection, object, evidence. */
+.experiment-v5 {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+.studio-action-link.studio-action-primary {
+  color: #fff;
+}
+.experiment-v5 > .experiment-page-header {
+  padding: 14px 22px 0;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+.experiment-v5 .experiment-title-row {
+  min-height: 42px;
+  margin: 0 0 8px;
+  gap: 20px;
+}
+.experiment-v5 .breadcrumb {
+  margin: 0;
+  gap: 12px;
+  font-size: 12px;
+}
+.experiment-v5 .breadcrumb > a {
+  flex-shrink: 0;
+}
+.experiment-v5 .breadcrumb h1 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.5;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.experiment-v5 .experiment-subtitle {
+  margin-top: 3px;
+  gap: 12px;
+  font-size: 11px;
+}
+.experiment-v5 .experiment-tabs-row {
+  border: 0;
+}
+.experiment-v5 .experiment-tabs {
+  gap: 24px;
+}
+.experiment-v5 .experiment-tabs a {
+  font-size: 12px;
+  padding: 9px 0;
+}
+.experiment-v5:not(.experiment-editor) > :not(.experiment-page-header) {
+  margin: 24px;
+}
+.workspace-v5 {
+  min-width: 0;
+  min-height: 0;
+  background: #fff;
+}
+.workspace-v5 .workspace-outcomes {
+  padding: 9px 18px;
+  min-height: 36px;
+  font-size: 11px;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+  flex: none;
+}
+.workspace-v5 .historical-attempt-notice {
+  margin: 0;
+  border-radius: 0;
+  flex: none;
+}
+.workspace-v5 .molecular-review-grid {
+  grid-template-columns: 236px minmax(0, 1fr) 300px;
+  gap: 0;
+  min-width: 0;
+  min-height: 0;
+}
+.workspace-candidate-slot,
+.workspace-evidence-slot {
+  min-width: 0;
+  min-height: 0;
+  scroll-margin-top: 12px;
+}
+.workspace-candidate-slot {
+  border-right: 1px solid var(--line);
+}
+.workspace-evidence-slot {
+  border-left: 1px solid var(--line);
+}
+.workspace-v5 .molecular-review-grid .molecular-stage {
+  border-radius: 0;
+  height: 100%;
+  min-height: 420px;
+  grid-column: auto;
+}
+.workspace-v5 .molecular-review-grid .evidence-panel {
+  height: 100%;
+  min-height: 0 !important;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+}
+.workspace-v5 .candidate-panel {
+  margin-top: 0;
+  border: 0;
+  border-radius: 0;
+}
+.workspace-v5 .stage-heading {
+  top: 18px;
+  left: 18px;
+  right: 18px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.workspace-v5 .stage-heading h2 {
+  font-size: 18px;
+}
+.workspace-v5 .stage-heading p {
+  font-size: 11px;
+}
+.workspace-v5 .stage-heading > div:first-child {
+  min-width: 0;
+}
+.workspace-v5 .stage-heading .pose-select {
+  max-width: 100%;
+}
+.workspace-v5 .stage-bottom {
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.workspace-v5 .stage-legend {
+  gap: 12px;
+}
+.workspace-v5 .stage-tools {
+  margin-left: auto;
+}
+.workspace-v5 .molecular-review-grid .evidence-body {
+  min-height: 0;
+  overflow: auto;
+  max-height: none;
+}
+.workspace-jumps {
+  display: none;
+}
+.workspace-v5.workspace-presentation-table .workspace-candidate-slot {
+  grid-column: 1 / -1;
+  border: 0;
+}
+.workspace-v5.workspace-presentation-table .molecular-stage,
+.workspace-v5.workspace-presentation-table .workspace-evidence-slot {
+  display: none;
+}
+.workspace-v5.viewport-expanded .molecular-stage {
+  display: block;
+  position: fixed;
+  inset: 12px;
+  height: calc(100dvh - 24px);
+  min-height: 0;
+  border-radius: 8px;
+}
+@media (min-width: 1100px) {
+  .studio-editor-shell {
+    height: 100dvh;
+    min-height: 0;
+  }
+  .studio-editor-shell .product-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .studio-editor-shell #main-content,
+  .studio-editor-shell .experiment-editor,
+  .studio-editor-shell .workspace-v5 {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .studio-editor-shell .workspace-v5 .molecular-review-grid {
+    flex: 1;
+    min-height: 0;
+  }
+  .studio-editor-shell .workspace-v5 .molecular-stage {
+    min-height: 0;
+  }
+  .studio-editor-shell .workspace-candidate-slot,
+  .studio-editor-shell .workspace-evidence-slot {
+    height: 100%;
+    overflow: hidden;
+  }
+  .studio-editor-shell .workspace-v5 .candidate-panel {
+    height: 100%;
+    min-height: 0;
+  }
+}
+@media (min-width: 1600px) {
+  .workspace-v5 .molecular-review-grid {
+    grid-template-columns: 256px minmax(0, 1fr) 320px;
+  }
+}
+@media (max-width: 1099px) {
+  .workspace-v5 .molecular-review-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workspace-v5 .workspace-candidate-slot {
+    border: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .workspace-v5 .workspace-evidence-slot {
+    border: 0;
+    border-top: 1px solid var(--line);
+  }
+  .workspace-v5 .candidate-panel {
+    max-height: none;
+    overflow: visible;
+  }
+  .workspace-v5 .candidate-panel .candidate-list-scroll {
+    max-height: 300px;
+    flex: 0 0 auto;
+  }
+  .workspace-v5 .molecular-review-grid .molecular-stage {
+    height: 560px;
+    min-height: 420px;
+  }
+  .workspace-v5 .molecular-review-grid .evidence-panel {
+    height: auto;
+    max-height: none;
+  }
+  .workspace-v5 .molecular-review-grid .evidence-body {
+    overflow: visible;
+  }
+  .workspace-jumps {
+    display: flex;
+    gap: 20px;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .workspace-v5.workspace-presentation-table .candidate-panel {
+    max-height: none;
+  }
+}
+@media (max-width: 767px) {
+  .experiment-v5 > .experiment-page-header {
+    padding: 14px 16px 0;
+  }
+  .experiment-v5 .experiment-title-row {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  .experiment-v5 .breadcrumb {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .experiment-v5 .breadcrumb h1 {
+    flex: 1 1 220px;
+    white-space: normal;
+  }
+  .experiment-v5 .page-actions {
+    align-self: flex-start;
+    padding-bottom: 4px;
+  }
+  .experiment-v5 .experiment-tabs-row {
+    gap: 10px;
+  }
+  .experiment-v5 .experiment-tabs {
+    gap: 16px;
+  }
+  .experiment-v5 .design-rules summary {
+    font-size: 11px;
+  }
+  .experiment-v5:not(.experiment-editor) > :not(.experiment-page-header) {
+    margin: 16px;
+  }
+  .workspace-v5 .molecular-review-grid .molecular-stage {
+    height: 500px;
+  }
+  .workspace-v5 .stage-heading {
+    position: absolute;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .workspace-v5 .stage-options {
+    align-self: flex-end;
+  }
+  .workspace-v5 .stage-legend {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .workspace-v5 .stage-bottom {
+    align-items: flex-start;
+  }
+  .workspace-v5 .stage-tools {
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
+  .workspace-v5 .candidate-list .table-footer {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .workspace-v5 .candidate-list .table-footer > * {
+    text-align: left;
+  }
+}

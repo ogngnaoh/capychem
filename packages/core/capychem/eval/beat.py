@@ -1,9 +1,9 @@
 """Head-to-head beat verdict: LLM proposer vs our own same-seed Graph-GA control.
 
-The slice-06 / milestone-02 week-7 kill-switch. Both runs go through the headless
+Both runs go through the headless
 ``run_reproduction`` (deterministic, no DB) and are measured with the canonical
-PMO ``top_auc`` — never an ad-hoc AUC. Every score is an in-silico oracle score
-(PRD N6). The published baseline (if any) is a sanity reference, not the comparator.
+PMO ``top_auc`` — never an ad-hoc AUC. Every score is an in-silico oracle score.
+The published baseline (if any) is a sanity reference, not the comparator.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from capychem.eval.metric import top_auc
 from capychem.eval.runner import run_reproduction
 from capychem.loop.logic import valid_smiles_gate
 
-# Single source (07-05): below this the with-analyzer arm's hypotheses are not really
+# Shared parsing threshold: below this the with-analyzer arm's hypotheses are not really
 # parsing (a $0-balance mid-run degrades the LLM arm to Graph-GA), so a beat is not
 # trustworthy. De-duplicated into capychem.trust.gates.
 from capychem.trust.gates import PARSE_RATE_FLOOR as _PARSE_RATE_FLOOR

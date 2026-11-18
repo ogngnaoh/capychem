@@ -2,7 +2,7 @@
 
 Called at each loop entrypoint so Langfuse keys (and any other local secrets)
 are present without the operator having to export them. .env.local is gitignored
-(SPEC §8.1) — never commit it.
+— never commit it.
 """
 from __future__ import annotations
 

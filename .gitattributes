@@ -1,0 +1,2 @@
+# These recorded scientific outputs are checked by size and SHA256 in CI.
+apps/studio/public/data/** linguist-generated=true

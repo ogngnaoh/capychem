@@ -1,19 +1,20 @@
 name: CI
 
-# Runs the free, key-free quality gate on every push/PR: no DeepSeek/Modal secrets
-# required — the backend runs the stub proposer + graph_ga path. It DOES build the
-# isolated legacy harness (`uv sync --project harness`, Python 3.10 / PyTDC 0.3.6),
-# because the loop/API tests score real molecules (task=qed, RDKit-computed, no
-# download) through the subprocess oracle bridge — without the harness those 20 tests
-# fail rather than skip. The heavy ML-oracle download tests (jnk3, eval-real) are
-# self-gated by conftest.harness fixtures and are the only network-touching tests.
-# The web job also runs the axe-core accessibility gate (e2e/a11y.spec.ts) across
-# every route in light + dark, failing on serious/critical WCAG violations.
+# Key-free quality gates: no DeepSeek/Modal secrets. Backend tests build the
+# isolated legacy Python 3.10/PyTDC harness for oracle-backed integration tests;
+# legacy ML-oracle tests can download their small reference models.
+# The web job preserves the legacy accessibility gate. Studio builds and runs
+# recorded-data browser flows separately. Scientific model installation and live
+# docking are explicit release checks documented in AGENTS.md.
 
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -40,6 +41,10 @@ jobs:
     env:
       # Matches infra/compose.yml so the API tests reach the service container.
       CAPYCHEM_DATABASE_URL: postgresql+asyncpg://capychem:capychem@localhost:5432/capychem
+      # Studio fixtures create/drop a unique schema per test in this isolated DB.
+      # Without this variable, PostgreSQL concurrency tests silently use SQLite
+      # or skip; the legacy API's database URL alone does not enable them.
+      CAPYCHEM_TEST_DATABASE_URL: postgresql+asyncpg://capychem:capychem@localhost:5432/capychem_studio_test
     steps:
       - uses: actions/checkout@v4
 
@@ -49,19 +54,33 @@ jobs:
           enable-cache: true
 
       - name: Sync modern deps (core + api)
-        run: uv sync
+        run: uv sync --frozen --python 3.12
+
+      - name: Create isolated Studio test database
+        run: |
+          uv run python - <<'PY'
+          import asyncio
+          import os
+          import asyncpg
+
+          async def main():
+              url = os.environ["CAPYCHEM_DATABASE_URL"].replace("postgresql+asyncpg://", "postgresql://", 1)
+              connection = await asyncpg.connect(url)
+              try:
+                  await connection.execute("CREATE DATABASE capychem_studio_test")
+              finally:
+                  await connection.close()
+
+          asyncio.run(main())
+          PY
 
       - name: Build isolated harness env (Python 3.10 / PyTDC 0.3.6)
         # Not a workspace member; its own lockfile + venv. Needed so the oracle
         # subprocess bridge (packages/core/capychem/oracle.py) can score molecules.
-        run: uv sync --project harness
+        run: uv sync --frozen --project harness
 
       - name: Ruff lint
         run: uv run ruff check .
-
-      # Note: `ruff format --check .` is intentionally NOT enforced yet — the
-      # pre-existing tree predates format enforcement (~29 files would reformat).
-      # A repo-wide format baseline is a separate, deliberate pass; CI gates lint.
 
       - name: mypy (strict)
         run: uv run mypy -p capychem -p capychem.api
@@ -69,11 +88,88 @@ jobs:
       - name: pytest
         # Harness built above → oracle-backed loop/API tests run (qed = RDKit, no
         # download); the 3 fixture-gated ML-oracle tests fetch small models on demand.
-        run: uv run pytest -q
+        run: uv run pytest -q -ra
+
+  studio:
+    name: studio (typecheck · production build · recorded E2E)
+    # The locked Playwright release ships Chromium for Ubuntu 24.04.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      # This job verifies portable recorded evidence and interaction contracts.
+      # Live inference tests require an explicitly provisioned science runtime.
+      CAPYCHEM_E2E_LIVE: "0"
+      CAPYCHEM_E2E_STUDY_LAUNCH: "0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.0
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck and build Studio
+        run: pnpm build:studio
+
+      - name: Require recorded experiment and study evidence in the build
+        run: |
+          node - <<'JS'
+          const assert = require('node:assert/strict');
+          const {readFileSync} = require('node:fs');
+          const {createHash} = require('node:crypto');
+          const readAsset = url => readFileSync('apps/studio/dist' + url);
+          const bundle = JSON.parse(readAsset('/data/recorded-experiments.json'));
+          assert(bundle.experiments?.length > 0, 'Recorded experiments must ship with Studio');
+          assert(bundle.studies?.length > 0, 'Recorded study tests must not silently skip');
+          for (const experiment of bundle.experiments) {
+            const record = JSON.parse(readAsset(experiment.export_url));
+            for (const artifact of record.artifacts) {
+              const bytes = readAsset(artifact.url);
+              assert.equal(bytes.length, artifact.size_bytes, artifact.url);
+              assert.equal(createHash('sha256').update(bytes).digest('hex'), artifact.sha256, artifact.url);
+            }
+          }
+          JS
+
+      - name: Install Studio Playwright Chromium
+        run: pnpm --dir apps/studio exec playwright install --with-deps chromium
+
+      - name: Recorded workspace and evidence flows
+        run: pnpm --dir apps/studio exec playwright test --config playwright.ci.config.ts
+
+      - name: Package the offline workspace
+        run: |
+          python3 scripts/package_demo.py --skip-build
+          unzip -q dist/capychem-studio-demo.zip -d dist
+
+      - name: Attach the runnable demo
+        uses: actions/upload-artifact@v4
+        with:
+          name: capychem-studio-demo
+          path: dist/capychem-studio-demo/
+          if-no-files-found: error
+
+      - name: Upload browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-browser-failures
+          path: apps/studio/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
 
   web:
     name: web (lint · typecheck · test)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 

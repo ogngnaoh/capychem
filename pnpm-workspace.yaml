@@ -1,8 +1,10 @@
 packages:
   - "apps/web"
+  - "apps/studio"
 
-# pnpm 11 gates native build scripts; allow these two (sharp = image optimization,
-# unrs-resolver = eslint's oxc resolver) so `pnpm install` runs non-interactively.
+# Allow required build tools; Astryx's optional CLI reminder needs no postinstall.
 allowBuilds:
+  '@astryxdesign/core': false
+  esbuild: true
   sharp: true
   unrs-resolver: true

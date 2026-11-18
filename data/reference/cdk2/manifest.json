@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "id": "cdk2_1h1p",
+  "name": "CDK2 \u00b7 NU2058",
+  "source": {
+    "pdb": "1H1P",
+    "url": "https://www.rcsb.org/structure/1H1P",
+    "source_model": 1,
+    "author_chains": [
+      "A",
+      "B"
+    ],
+    "ligand": {
+      "component": "CMG",
+      "author_chain": "A",
+      "author_residue_number": 1298,
+      "label_asym_id": "E"
+    }
+  },
+  "coordinate_frame": {
+    "id": "cdk2_1h1p:original",
+    "units": "angstrom",
+    "transform": "identity"
+  },
+  "preparation": {
+    "receptor": "Rigid source chains A/B; TPO160 retained; waters removed; default altloc A",
+    "ligand": "Neutral 9H parent scaffold",
+    "meeko_version": "0.8.0",
+    "rdkit_version": "2025.9.6",
+    "prolif_version": "2.2.3",
+    "posebusters_version": "0.6.5",
+    "no_pH_ensemble": true
+  },
+  "scaffold": {
+    "smiles": "Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+    "libinvent_scaffold": "[*:0]Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+    "retained_heavy_atoms": 18,
+    "ring_atoms": [
+      "N1",
+      "C2",
+      "N3",
+      "C4",
+      "C5",
+      "C6",
+      "N7",
+      "C8",
+      "N9"
+    ],
+    "attachment_atom_name": "N2"
+  },
+  "files": {
+    "receptor_pdb": "1H1P_prepared.pdb",
+    "receptor_pdbqt": "1H1P_prepared.pdbqt",
+    "parent_sdf": "1H1P_native.sdf"
+  },
+  "sha256": {
+    "1H1P_prepared.pdb": "dd9a84fd95d601e998a2af4ce6cc49c023be8034d656fae6678544c9ef17540e",
+    "1H1P_prepared.pdbqt": "2da75dfca83904277c608e0a6c2ca374ce33b702f835b1984972838d334baedb",
+    "1H1P_native.sdf": "5d0fd939b2d6bb2904eb30493a660dcf5f3557292bd20a276aa5dfee34cd3607",
+    "1H1Q_native.sdf": "0e50958c4b88fd544890062b270da1fdc6103bd191e368745f3bbb545eb285dc",
+    "1H1R_native.sdf": "a5d8b46d3d47360d8879b69416e68bb314c655524f7a903a0b43c26d27b44ba7",
+    "1H1S_native.sdf": "2d837645d6c385b86d5d12b8279e0ffe6017b1e17476e7896cfa935268ff61af"
+  },
+  "reference_candidates": [
+    {
+      "name": "NU2058",
+      "smiles": "Nc1nc(OCC2CCCCC2)c2nc[nH]c2n1",
+      "source_pdb": "1H1P",
+      "native_sdf": "1H1P_native.sdf"
+    },
+    {
+      "name": "NU6094",
+      "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "source_pdb": "1H1Q",
+      "native_sdf": "1H1Q_native.sdf"
+    },
+    {
+      "name": "NU6086",
+      "smiles": "Clc1cccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)c1",
+      "source_pdb": "1H1R",
+      "native_sdf": "1H1R_native.sdf"
+    },
+    {
+      "name": "NU6102",
+      "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "source_pdb": "1H1S",
+      "native_sdf": "1H1S_native.sdf"
+    }
+  ],
+  "limitations": [
+    "Curated CDK2 input only; arbitrary target preparation is not implemented.",
+    "Water-free rigid receptor and neutral 9H scaffold are explicit approximations.",
+    "Reference ligand coordinates outside 1H1P are diagnostics only, never new-candidate placement inputs.",
+    "Prepared snapshot derives from public RCSB coordinates and CCD connectivity; derived files must retain this provenance."
+  ]
+}

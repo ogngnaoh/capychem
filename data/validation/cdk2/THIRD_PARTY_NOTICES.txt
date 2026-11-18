@@ -1,0 +1,35 @@
+CDK2 validation fixtures and held-out coordinates
+
+The file 1H1S_NU6102_observed.sdf contains deposited NU6102 heavy-atom
+coordinates with Chemical Component Dictionary connectivity, in the original
+1H1S coordinate frame. Source: PDB 1H1S, component 4SP.
+https://www.rcsb.org/structure/1H1S
+PDB archive data are available under CC0 1.0 Universal Public Domain Dedication:
+https://www.wwpdb.org/about/usage-policies
+Associated structural-series publication: https://doi.org/10.1038/nsb842
+
+The coordinate file's SHA256 and provenance are included in each versioned
+fixture. It is a held-out audit reference, read after inference completes;
+it is not supplied to the molecular generation or placement workflow. The
+receptor was selected from this known holo complex, so the validation remains
+receptor-informed and retrospective, not a prospective docking benchmark.
+
+The JSON files are immutable regression declarations and measured reference
+records. Preserve their inputs, identities, hashes and exclusions. The
+source_evidence and evidence fields name historical development records;
+they are provenance labels, not required runtime file paths. The executable
+comparison uses the embedded requests, controls, measurements and reference
+hashes. A changed engine requires explicit review; the runner never updates
+a baseline automatically. Counts across sampling seeds are not binding
+probabilities, and docking scores are not measured affinity.
+
+The neutral polar declaration records inputs before outcomes. Its unmeasured
+reference values intentionally remain null. The optional OH-orientation
+diagnostic examines saved structures without changing their coordinates,
+selection or evidence. Its ligand-only MMFF energies are not binding energies
+or protein-bound rotamer populations. Fixed hydrogen placement and the declared
+neutral state do not establish populations at a particular pH.
+
+Scientific tool and model licenses are listed in
+data/reference/cdk2/THIRD_PARTY_NOTICES.txt. These notices do not grant additional
+rights to third-party software or model weights.
