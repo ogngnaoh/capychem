@@ -1,0 +1,732 @@
+{
+  "schema_version": 1,
+  "identity": {
+    "protocol": "guided_growth_cdk2_v2",
+    "protocol_revision": 2,
+    "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+    "target_manifest_sha256": "dd69f0dc2df29c516fe08f59d634a861f2cabd48cb73b76b9d10abc6d32c7e38",
+    "engine_fingerprint": "c6f39352cbe2f62bb15d799cdb52788deb5cec2b357aeb12df636f0f27ebbe41",
+    "implementation_sha256": {
+      "science.py": "fdeff28273831f71c1a20e7a603f720d57dbaa437ddee6a7a968b279ee1f9fde",
+      "science_config.py": "5cc80d5b88eb2110c2d9a416ea9497d0aa6a82a3219e2335856318bf2095589e",
+      "chemistry/conformers.py": "0e0fd00ceb1c1f3e940a0206931d205aa05c9ad42612b93698c7f561b4e299cd",
+      "chemistry/generate.py": "a14990e317d673d7ed2b2d4161cc437a7a1f38ee2a251766cb9fd49cb1500f40",
+      "chemistry/geometry.py": "9fbdfec6f77abce525f402e62d1bd6880ebb4129740bcdf8247c52cd70e67f9f",
+      "chemistry/identity.py": "33f39d731a9bfc4358acb6fa98262e144463310f2fb2a53850c0fb15780fe94e"
+    },
+    "vina_binary_sha256": "823c2bbacf26d72183861322345f0a89736aca66c8e81054c66f93af5ad623f1",
+    "science_versions": {
+      "rdkit": "2025.9.6",
+      "numpy": "2.4.2",
+      "meeko": "0.8.0",
+      "posebusters": "0.6.5",
+      "prolif": "2.2.3"
+    },
+    "generator": {
+      "checkpoint_sha256": "03e6cbe8a53e59a4ac3aa6728d041f1957bdd07b5eefdf2cfc5c8591036075af",
+      "source_commit": "0f075b349ed22015e0406350c6f426701bb0815d",
+      "versions": {
+        "torch": "2.10.0",
+        "rdkit": "2025.9.6",
+        "numpy": "2.4.2",
+        "molvs": "0.1.1"
+      }
+    }
+  },
+  "heldout_reference": {
+    "path": "data/validation/cdk2/1H1S_NU6102_observed.sdf",
+    "sha256": "2d837645d6c385b86d5d12b8279e0ffe6017b1e17476e7896cfa935268ff61af",
+    "candidate_name": "NU6102",
+    "source_pdb": "1H1S",
+    "source_component": "4SP",
+    "source_url": "https://www.rcsb.org/structure/1H1S",
+    "license": "CC0-1.0",
+    "policy": "Read only after completed inference by the optional molecular audit; never sent in experiment inputs. Deposited heavy-atom coordinates with CCD connectivity in original1H1S frame. Receptor choice remains retrospectively informed."
+  },
+  "comparison_policy": {
+    "hard_contract": "Accounting, declared supplied-input admission/exclusion/duplicate identity, exact frozen request, API/report pose identity and verified artifacts. These are not docking-quality judgments.",
+    "science": "Known-control loss of eligible contact/geometry or RMSD beyond the declared tolerance requires review. Scores, runtime, generated yield and generated contact counts are descriptive. Extra generated hits are not regressions.",
+    "known_pose_rmsd_max_A": 2.0,
+    "rmsd_rationale": "A deliberately broad pose-recovery tolerance relative to the held-out crystal, not an exact0.359A replay oracle. Does not validate affinity; symmetry-aware heavy-atom RMSD without ligand fitting.",
+    "ring_drift_max_A": 2.0,
+    "minimum_hinge_hbond_types": 1,
+    "ring_and_hinge_rationale": "The unchanged curated protocol eligibility thresholds. All original hinge interactions need not be retained.",
+    "numeric_identity_absolute_tolerance": 1e-08,
+    "numeric_identity_rationale": "Only floating-point serialization consistency between a report and its API projection; not a scientific score tolerance.",
+    "missing_molecular_audit": "Report explicitly that geometry/contact values were not independently recomputed and crystal RMSD was not checked.",
+    "exit_codes": {
+      "0": "contract checks passed and no scientific review flags",
+      "1": "preflight/transport/execution failure",
+      "2": "hard contract or artifact consistency failure",
+      "3": "scientific control or changed-engine review required"
+    }
+  },
+  "id": "cdk2-neutral-polar-study-v1",
+  "declared_at_utc": "2026-11-17T05:08:21.626640+00:00",
+  "purpose": "Prospectively declared within-scaffold comparison of six neutral polar para extensions across three seed combinations; retrospective receptor-informed preparation, no potency claims.",
+  "outcomes_seen_before_freeze": false,
+  "candidates": [
+    {
+      "name": "NU6094",
+      "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "canonical_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "rationale": "parent",
+      "properties": {
+        "molecular_weight": 323.3999999999999,
+        "clogp": 4.055600000000003,
+        "rotatable_bonds": 5,
+        "formal_charge": 0,
+        "hydrogen_bond_donors": 2,
+        "hydrogen_bond_acceptors": 5,
+        "heavy_atoms": 24
+      },
+      "supported_attachment_matches": 4,
+      "unspecified_stereo": []
+    },
+    {
+      "name": "NU6102",
+      "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "canonical_smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "rationale": "positive sulfonamide",
+      "properties": {
+        "molecular_weight": 402.48000000000013,
+        "clogp": 2.7030000000000003,
+        "rotatable_bonds": 6,
+        "formal_charge": 0,
+        "hydrogen_bond_donors": 3,
+        "hydrogen_bond_acceptors": 7,
+        "heavy_atoms": 28
+      },
+      "supported_attachment_matches": 4,
+      "unspecified_stereo": []
+    },
+    {
+      "name": "Para carboxamide",
+      "smiles": "NC(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "canonical_smiles": "NC(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "rationale": "amide C=O/NH2 donor and acceptor",
+      "properties": {
+        "molecular_weight": 366.425,
+        "clogp": 3.1545000000000014,
+        "rotatable_bonds": 6,
+        "formal_charge": 0,
+        "hydrogen_bond_donors": 3,
+        "hydrogen_bond_acceptors": 6,
+        "heavy_atoms": 27
+      },
+      "supported_attachment_matches": 4,
+      "unspecified_stereo": []
+    },
+    {
+      "name": "Para methylsulfone",
+      "smiles": "CS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "canonical_smiles": "CS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "rationale": "sulfonyl acceptors without NH donor",
+      "properties": {
+        "molecular_weight": 401.49200000000013,
+        "clogp": 3.459100000000002,
+        "rotatable_bonds": 6,
+        "formal_charge": 0,
+        "hydrogen_bond_donors": 2,
+        "hydrogen_bond_acceptors": 7,
+        "heavy_atoms": 28
+      },
+      "supported_attachment_matches": 4,
+      "unspecified_stereo": []
+    },
+    {
+      "name": "Para hydroxymethyl",
+      "smiles": "OCc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "canonical_smiles": "OCc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "rationale": "flexible alcohol donor and acceptor",
+      "properties": {
+        "molecular_weight": 353.426,
+        "clogp": 3.547900000000002,
+        "rotatable_bonds": 6,
+        "formal_charge": 0,
+        "hydrogen_bond_donors": 3,
+        "hydrogen_bond_acceptors": 6,
+        "heavy_atoms": 26
+      },
+      "supported_attachment_matches": 4,
+      "unspecified_stereo": []
+    },
+    {
+      "name": "Para hydroxy",
+      "smiles": "Oc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "canonical_smiles": "Oc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "rationale": "short phenolic OH; state/pH approximation",
+      "properties": {
+        "molecular_weight": 339.39899999999994,
+        "clogp": 3.7612000000000014,
+        "rotatable_bonds": 5,
+        "formal_charge": 0,
+        "hydrogen_bond_donors": 3,
+        "hydrogen_bond_acceptors": 6,
+        "heavy_atoms": 25
+      },
+      "supported_attachment_matches": 4,
+      "unspecified_stereo": []
+    },
+    {
+      "name": "Para acetamide",
+      "smiles": "CC(=O)Nc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "canonical_smiles": "CC(=O)Nc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "rationale": "reversed amide attachment, donor and acceptor",
+      "properties": {
+        "molecular_weight": 380.45200000000006,
+        "clogp": 4.014000000000003,
+        "rotatable_bonds": 6,
+        "formal_charge": 0,
+        "hydrogen_bond_donors": 3,
+        "hydrogen_bond_acceptors": 6,
+        "heavy_atoms": 28
+      },
+      "supported_attachment_matches": 4,
+      "unspecified_stereo": []
+    },
+    {
+      "name": "Para nitrile",
+      "smiles": "N#Cc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "canonical_smiles": "N#Cc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+      "rationale": "small linear acceptor, no donor",
+      "properties": {
+        "molecular_weight": 348.4099999999999,
+        "clogp": 3.9272800000000023,
+        "rotatable_bonds": 5,
+        "formal_charge": 0,
+        "hydrogen_bond_donors": 2,
+        "hydrogen_bond_acceptors": 6,
+        "heavy_atoms": 26
+      },
+      "supported_attachment_matches": 4,
+      "unspecified_stereo": []
+    }
+  ],
+  "seed_pairs": [
+    {
+      "embedding": 194715,
+      "vina": 42
+    },
+    {
+      "embedding": 41821,
+      "vina": 43
+    },
+    {
+      "embedding": 61531,
+      "vina": 44
+    }
+  ],
+  "source_evidence": "docs/redesign/walkthrough-validation.json",
+  "cases": [
+    {
+      "id": "neutral-seed-1",
+      "spec": {
+        "schema_version": 1,
+        "label": "Neutral polar study \u00b7 seed pair 1",
+        "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+        "protocol": "guided_growth_cdk2_v2",
+        "candidate_source": {
+          "kind": "supplied",
+          "candidates": [
+            {
+              "name": "NU6094",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "NU6102",
+              "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para carboxamide",
+              "smiles": "NC(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para methylsulfone",
+              "smiles": "CS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxymethyl",
+              "smiles": "OCc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxy",
+              "smiles": "Oc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para acetamide",
+              "smiles": "CC(=O)Nc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para nitrile",
+              "smiles": "N#Cc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            }
+          ]
+        },
+        "limits": {
+          "max_unique_candidates_evaluated": 8,
+          "embedding_attempts_per_candidate": 16,
+          "evaluation_admission_seconds": 300
+        },
+        "seeds": {
+          "embedding": 194715,
+          "vina": 42
+        },
+        "constraints": {
+          "max_molecular_weight": 450.0,
+          "max_clogp": 4.5,
+          "max_rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "parent_experiment_id": null
+      },
+      "hard_expectations": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 1,
+          "name": "NU6102",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 2,
+          "name": "Para carboxamide",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 3,
+          "name": "Para methylsulfone",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 4,
+          "name": "Para hydroxymethyl",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 5,
+          "name": "Para hydroxy",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 6,
+          "name": "Para acetamide",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 7,
+          "name": "Para nitrile",
+          "admission": "evaluated"
+        }
+      ],
+      "scientific_controls": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": false,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        },
+        {
+          "proposal_index": 1,
+          "name": "NU6102",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": true,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        }
+      ],
+      "reference_measurements": {
+        "summary": null,
+        "science_seconds": null,
+        "candidates": [
+          {
+            "proposal_index": 0,
+            "name": "NU6094",
+            "normalized_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "ready_for_review",
+            "selected": {
+              "score": -8.183,
+              "asp86_contact": false,
+              "geometry_pass": true,
+              "review_ready": true,
+              "hinge_hbond_type_count": 3,
+              "ring_drift_A": 0.3546025537289749,
+              "heldout_native_rmsd_A": null
+            }
+          },
+          {
+            "proposal_index": 1,
+            "name": "NU6102",
+            "normalized_smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "ready_for_review",
+            "selected": {
+              "score": -8.525,
+              "asp86_contact": true,
+              "geometry_pass": true,
+              "review_ready": true,
+              "hinge_hbond_type_count": 2,
+              "ring_drift_A": 0.49722370775693603,
+              "heldout_native_rmsd_A": 0.35919995426344
+            }
+          }
+        ],
+        "note": "Only existing Q/S control measurements are references. Whole-study counts and runtime have not been measured before this declaration."
+      }
+    },
+    {
+      "id": "neutral-seed-2",
+      "spec": {
+        "schema_version": 1,
+        "label": "Neutral polar study \u00b7 seed pair 2",
+        "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+        "protocol": "guided_growth_cdk2_v2",
+        "candidate_source": {
+          "kind": "supplied",
+          "candidates": [
+            {
+              "name": "NU6094",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "NU6102",
+              "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para carboxamide",
+              "smiles": "NC(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para methylsulfone",
+              "smiles": "CS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxymethyl",
+              "smiles": "OCc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxy",
+              "smiles": "Oc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para acetamide",
+              "smiles": "CC(=O)Nc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para nitrile",
+              "smiles": "N#Cc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            }
+          ]
+        },
+        "limits": {
+          "max_unique_candidates_evaluated": 8,
+          "embedding_attempts_per_candidate": 16,
+          "evaluation_admission_seconds": 300
+        },
+        "seeds": {
+          "embedding": 41821,
+          "vina": 43
+        },
+        "constraints": {
+          "max_molecular_weight": 450.0,
+          "max_clogp": 4.5,
+          "max_rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "parent_experiment_id": null
+      },
+      "hard_expectations": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 1,
+          "name": "NU6102",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 2,
+          "name": "Para carboxamide",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 3,
+          "name": "Para methylsulfone",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 4,
+          "name": "Para hydroxymethyl",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 5,
+          "name": "Para hydroxy",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 6,
+          "name": "Para acetamide",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 7,
+          "name": "Para nitrile",
+          "admission": "evaluated"
+        }
+      ],
+      "scientific_controls": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": false,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        },
+        {
+          "proposal_index": 1,
+          "name": "NU6102",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": true,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        }
+      ],
+      "reference_measurements": {
+        "summary": null,
+        "science_seconds": null,
+        "candidates": [
+          {
+            "proposal_index": 0,
+            "name": "NU6094",
+            "normalized_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "ready_for_review",
+            "selected": {
+              "score": -8.183,
+              "asp86_contact": false,
+              "geometry_pass": true,
+              "review_ready": true,
+              "hinge_hbond_type_count": 3,
+              "ring_drift_A": 0.3546025537289749,
+              "heldout_native_rmsd_A": null
+            }
+          },
+          {
+            "proposal_index": 1,
+            "name": "NU6102",
+            "normalized_smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "ready_for_review",
+            "selected": {
+              "score": -8.525,
+              "asp86_contact": true,
+              "geometry_pass": true,
+              "review_ready": true,
+              "hinge_hbond_type_count": 2,
+              "ring_drift_A": 0.49722370775693603,
+              "heldout_native_rmsd_A": 0.35919995426344
+            }
+          }
+        ],
+        "note": "Only existing Q/S control measurements are references. Whole-study counts and runtime have not been measured before this declaration."
+      }
+    },
+    {
+      "id": "neutral-seed-3",
+      "spec": {
+        "schema_version": 1,
+        "label": "Neutral polar study \u00b7 seed pair 3",
+        "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+        "protocol": "guided_growth_cdk2_v2",
+        "candidate_source": {
+          "kind": "supplied",
+          "candidates": [
+            {
+              "name": "NU6094",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "NU6102",
+              "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para carboxamide",
+              "smiles": "NC(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para methylsulfone",
+              "smiles": "CS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxymethyl",
+              "smiles": "OCc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxy",
+              "smiles": "Oc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para acetamide",
+              "smiles": "CC(=O)Nc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para nitrile",
+              "smiles": "N#Cc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            }
+          ]
+        },
+        "limits": {
+          "max_unique_candidates_evaluated": 8,
+          "embedding_attempts_per_candidate": 16,
+          "evaluation_admission_seconds": 300
+        },
+        "seeds": {
+          "embedding": 61531,
+          "vina": 44
+        },
+        "constraints": {
+          "max_molecular_weight": 450.0,
+          "max_clogp": 4.5,
+          "max_rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "parent_experiment_id": null
+      },
+      "hard_expectations": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 1,
+          "name": "NU6102",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 2,
+          "name": "Para carboxamide",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 3,
+          "name": "Para methylsulfone",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 4,
+          "name": "Para hydroxymethyl",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 5,
+          "name": "Para hydroxy",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 6,
+          "name": "Para acetamide",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 7,
+          "name": "Para nitrile",
+          "admission": "evaluated"
+        }
+      ],
+      "scientific_controls": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": false,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        },
+        {
+          "proposal_index": 1,
+          "name": "NU6102",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": true,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        }
+      ],
+      "reference_measurements": {
+        "summary": null,
+        "science_seconds": null,
+        "candidates": [
+          {
+            "proposal_index": 0,
+            "name": "NU6094",
+            "normalized_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "ready_for_review",
+            "selected": {
+              "score": -8.183,
+              "asp86_contact": false,
+              "geometry_pass": true,
+              "review_ready": true,
+              "hinge_hbond_type_count": 3,
+              "ring_drift_A": 0.3546025537289749,
+              "heldout_native_rmsd_A": null
+            }
+          },
+          {
+            "proposal_index": 1,
+            "name": "NU6102",
+            "normalized_smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "ready_for_review",
+            "selected": {
+              "score": -8.525,
+              "asp86_contact": true,
+              "geometry_pass": true,
+              "review_ready": true,
+              "hinge_hbond_type_count": 2,
+              "ring_drift_A": 0.49722370775693603,
+              "heldout_native_rmsd_A": 0.35919995426344
+            }
+          }
+        ],
+        "note": "Only existing Q/S control measurements are references. Whole-study counts and runtime have not been measured before this declaration."
+      }
+    }
+  ],
+  "qualitative_checks": {
+    "known_controls": "NU6094 should remain review-eligible without Asp86; NU6102 should retain an eligible Asp86 contact and held-out heavy-atom RMSD <=2A. Loss is review_required, not grounds to change thresholds.",
+    "new_variants": "No predicted hit labels. Assess eligible-selected and any-pose frequency, selected and any-eligible Asp86 frequency, score spread, ring/hinge, state identity, exclusions and failures across all three pairs.",
+    "preflight": "All eight graph inputs parse, are formal-charge zero, match the declared24-heavy-atom parent and singleC20 attachment, have no unspecified stereo, and meet existingpropertylimits. This does not establish experimentalneutrality or synthesis feasibility.",
+    "state_assumption": "One declared neutral9H tautomer/charge state, not a pH or pKa calculation. In particular phenol and sulfonamide state populations are not determined. Amide/alcohol hydrogen orientation is a computed approximation.",
+    "design_rationale": "Vary donor/acceptor pattern, reach and flexibility while preserving one known scaffold. New variants are supplied design hypotheses, not claimed known inhibitors.",
+    "posthoc_sensitivity": "Inspect explicit hydrogen/contact classification if results expose a discrepancy. Any alternative detector/preparation is a diagnostic labeled separately, never retroactively used to pick baseline hits."
+  },
+  "sources": [
+    {
+      "url": "https://www.rcsb.org/structure/1H1S",
+      "supports": "Known NU6102 structural series and two addedAsp86 hydrogen bonds in the original publication."
+    },
+    {
+      "url": "https://doi.org/10.1038/nsb842",
+      "supports": "Original structure-based CDK2 inhibitor series; does not validate these newvariants."
+    },
+    {
+      "url": "https://autodock-vina.readthedocs.io/en/latest/faq.html",
+      "supports": "Target-specific accuracy, seed/input sensitivity and importance of inputprotonation; approximate united-atom scoring."
+    },
+    {
+      "url": "https://prolif.readthedocs.io/en/v2.2.0/notebooks/pdb.html",
+      "supports": "Explicit hydrogen/bond-order/protonation preparation affects interaction detection; generatedhydrogens may require optimization."
+    }
+  ]
+}

@@ -33,7 +33,19 @@ def make_engine(url: str | None = None) -> AsyncEngine:
     # caller hitting a stale-connection error on its first real query. Adds one
     # round-trip per checkout, not per query, and is a no-op difference for the
     # in-memory-sqlite fast tests.
-    return create_async_engine(url or database_url(), future=True, pool_pre_ping=True)
+    resolved = url or database_url()
+    # Legacy Run timestamps are naive UTC. PostgreSQL casts between timestamp
+    # and timestamptz in its session timezone, so a host-local database timezone
+    # otherwise shifts lease comparisons. Explicit UTC also makes exports and
+    # new timezone-aware Experiment timestamps consistent across installations.
+    connection_args = (
+        {"server_settings": {"timezone": "UTC"}}
+        if resolved.startswith("postgresql+asyncpg:")
+        else {}
+    )
+    return create_async_engine(
+        resolved, future=True, pool_pre_ping=True, connect_args=connection_args
+    )
 
 
 async def init_schema(engine: AsyncEngine) -> None:

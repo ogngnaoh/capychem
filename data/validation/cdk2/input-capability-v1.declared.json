@@ -1,0 +1,701 @@
+{
+  "schema_version": 1,
+  "identity": {
+    "protocol": "guided_growth_cdk2_v2",
+    "protocol_revision": 2,
+    "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+    "target_manifest_sha256": "dd69f0dc2df29c516fe08f59d634a861f2cabd48cb73b76b9d10abc6d32c7e38",
+    "engine_fingerprint": "c6f39352cbe2f62bb15d799cdb52788deb5cec2b357aeb12df636f0f27ebbe41",
+    "implementation_sha256": {
+      "science.py": "fdeff28273831f71c1a20e7a603f720d57dbaa437ddee6a7a968b279ee1f9fde",
+      "science_config.py": "5cc80d5b88eb2110c2d9a416ea9497d0aa6a82a3219e2335856318bf2095589e",
+      "chemistry/conformers.py": "0e0fd00ceb1c1f3e940a0206931d205aa05c9ad42612b93698c7f561b4e299cd",
+      "chemistry/generate.py": "a14990e317d673d7ed2b2d4161cc437a7a1f38ee2a251766cb9fd49cb1500f40",
+      "chemistry/geometry.py": "9fbdfec6f77abce525f402e62d1bd6880ebb4129740bcdf8247c52cd70e67f9f",
+      "chemistry/identity.py": "33f39d731a9bfc4358acb6fa98262e144463310f2fb2a53850c0fb15780fe94e"
+    },
+    "vina_binary_sha256": "823c2bbacf26d72183861322345f0a89736aca66c8e81054c66f93af5ad623f1",
+    "science_versions": {
+      "rdkit": "2025.9.6",
+      "numpy": "2.4.2",
+      "meeko": "0.8.0",
+      "posebusters": "0.6.5",
+      "prolif": "2.2.3"
+    },
+    "generator": {
+      "checkpoint_sha256": "03e6cbe8a53e59a4ac3aa6728d041f1957bdd07b5eefdf2cfc5c8591036075af",
+      "source_commit": "0f075b349ed22015e0406350c6f426701bb0815d",
+      "versions": {
+        "torch": "2.10.0",
+        "rdkit": "2025.9.6",
+        "numpy": "2.4.2",
+        "molvs": "0.1.1"
+      }
+    }
+  },
+  "heldout_reference": {
+    "path": "data/validation/cdk2/1H1S_NU6102_observed.sdf",
+    "sha256": "2d837645d6c385b86d5d12b8279e0ffe6017b1e17476e7896cfa935268ff61af",
+    "candidate_name": "NU6102",
+    "source_pdb": "1H1S",
+    "source_component": "4SP",
+    "source_url": "https://www.rcsb.org/structure/1H1S",
+    "license": "CC0-1.0",
+    "policy": "Read only after completed inference by the optional molecular audit; never sent in experiment inputs. Deposited heavy-atom coordinates with CCD connectivity in original1H1S frame. Receptor choice remains retrospectively informed."
+  },
+  "comparison_policy": {
+    "hard_contract": "Accounting, declared supplied-input admission/exclusion/duplicate identity, exact frozen request, API/report pose identity and verified artifacts. These are not docking-quality judgments.",
+    "science": "Known-control loss of eligible contact/geometry or RMSD beyond the declared tolerance requires review. Scores, runtime, generated yield and generated contact counts are descriptive. Extra generated hits are not regressions.",
+    "known_pose_rmsd_max_A": 2.0,
+    "rmsd_rationale": "A deliberately broad pose-recovery tolerance relative to the held-out crystal, not an exact0.359A replay oracle. Does not validate affinity; symmetry-aware heavy-atom RMSD without ligand fitting.",
+    "ring_drift_max_A": 2.0,
+    "minimum_hinge_hbond_types": 1,
+    "ring_and_hinge_rationale": "The unchanged curated protocol eligibility thresholds. All original hinge interactions need not be retained.",
+    "numeric_identity_absolute_tolerance": 1e-08,
+    "numeric_identity_rationale": "Only floating-point serialization consistency between a report and its API projection; not a scientific score tolerance.",
+    "missing_molecular_audit": "Report explicitly that geometry/contact values were not independently recomputed and crystal RMSD was not checked.",
+    "exit_codes": {
+      "0": "contract checks passed and no scientific review flags",
+      "1": "preflight/transport/execution failure",
+      "2": "hard contract or artifact consistency failure",
+      "3": "scientific control or changed-engine review required"
+    }
+  },
+  "id": "cdk2-input-capability-v1",
+  "declared_at_utc": "2026-11-17T22:29:41.079210+00:00",
+  "outcomes_seen_before_freeze": false,
+  "purpose": "Prospectively fixed neutral para analogs, stereochemistry, input rejection, filtering and budget accounting. Original known controls retained; novel contact counts are measurements, not success criteria.",
+  "source_evidence": "docs/redesign/reliability-v6/core-validation.json",
+  "cases": [
+    {
+      "id": "diverse-neutral-seed-1",
+      "spec": {
+        "schema_version": 1,
+        "label": "diverse-neutral-seed-1",
+        "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+        "protocol": "guided_growth_cdk2_v2",
+        "candidate_source": {
+          "kind": "supplied",
+          "candidates": [
+            {
+              "name": "NU6094",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "NU6102",
+              "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxy",
+              "smiles": "Oc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para nitrile",
+              "smiles": "N#Cc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxyethyl R",
+              "smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxyethyl S",
+              "smiles": "C[C@@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxyethyl unspecified",
+              "smiles": "CC(O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para aminomethyl",
+              "smiles": "NCc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            }
+          ]
+        },
+        "limits": {
+          "max_unique_candidates_evaluated": 12,
+          "embedding_attempts_per_candidate": 16,
+          "evaluation_admission_seconds": 600
+        },
+        "seeds": {
+          "embedding": 194715,
+          "vina": 42
+        },
+        "constraints": {
+          "max_molecular_weight": 450.0,
+          "max_clogp": 4.5,
+          "max_rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "parent_experiment_id": null
+      },
+      "hard_expectations": [
+        {
+          "proposal_index": 0,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 1,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 2,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 3,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 4,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 5,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 6,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 7,
+          "admission": "evaluated"
+        }
+      ],
+      "scientific_controls": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": false,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        },
+        {
+          "proposal_index": 1,
+          "name": "NU6102",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": true,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        }
+      ],
+      "reference_measurements": {
+        "science_seconds": null,
+        "candidates": []
+      }
+    },
+    {
+      "id": "diverse-neutral-seed-2",
+      "spec": {
+        "schema_version": 1,
+        "label": "diverse-neutral-seed-2",
+        "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+        "protocol": "guided_growth_cdk2_v2",
+        "candidate_source": {
+          "kind": "supplied",
+          "candidates": [
+            {
+              "name": "NU6094",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "NU6102",
+              "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxy",
+              "smiles": "Oc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para nitrile",
+              "smiles": "N#Cc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxyethyl R",
+              "smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxyethyl S",
+              "smiles": "C[C@@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxyethyl unspecified",
+              "smiles": "CC(O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para aminomethyl",
+              "smiles": "NCc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            }
+          ]
+        },
+        "limits": {
+          "max_unique_candidates_evaluated": 12,
+          "embedding_attempts_per_candidate": 16,
+          "evaluation_admission_seconds": 600
+        },
+        "seeds": {
+          "embedding": 41821,
+          "vina": 43
+        },
+        "constraints": {
+          "max_molecular_weight": 450.0,
+          "max_clogp": 4.5,
+          "max_rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "parent_experiment_id": null
+      },
+      "hard_expectations": [
+        {
+          "proposal_index": 0,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 1,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 2,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 3,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 4,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 5,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 6,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 7,
+          "admission": "evaluated"
+        }
+      ],
+      "scientific_controls": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": false,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        },
+        {
+          "proposal_index": 1,
+          "name": "NU6102",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": true,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        }
+      ],
+      "reference_measurements": {
+        "science_seconds": null,
+        "candidates": []
+      }
+    },
+    {
+      "id": "diverse-neutral-seed-3",
+      "spec": {
+        "schema_version": 1,
+        "label": "diverse-neutral-seed-3",
+        "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+        "protocol": "guided_growth_cdk2_v2",
+        "candidate_source": {
+          "kind": "supplied",
+          "candidates": [
+            {
+              "name": "NU6094",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "NU6102",
+              "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxy",
+              "smiles": "Oc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para nitrile",
+              "smiles": "N#Cc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxyethyl R",
+              "smiles": "C[C@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxyethyl S",
+              "smiles": "C[C@@H](O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para hydroxyethyl unspecified",
+              "smiles": "CC(O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Para aminomethyl",
+              "smiles": "NCc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            }
+          ]
+        },
+        "limits": {
+          "max_unique_candidates_evaluated": 12,
+          "embedding_attempts_per_candidate": 16,
+          "evaluation_admission_seconds": 600
+        },
+        "seeds": {
+          "embedding": 61531,
+          "vina": 44
+        },
+        "constraints": {
+          "max_molecular_weight": 450.0,
+          "max_clogp": 4.5,
+          "max_rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "parent_experiment_id": null
+      },
+      "hard_expectations": [
+        {
+          "proposal_index": 0,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 1,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 2,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 3,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 4,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 5,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 6,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 7,
+          "admission": "evaluated"
+        }
+      ],
+      "scientific_controls": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": false,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        },
+        {
+          "proposal_index": 1,
+          "name": "NU6102",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": true,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        }
+      ],
+      "reference_measurements": {
+        "science_seconds": null,
+        "candidates": []
+      }
+    },
+    {
+      "id": "admission-boundaries",
+      "spec": {
+        "schema_version": 1,
+        "label": "admission-boundaries",
+        "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+        "protocol": "guided_growth_cdk2_v2",
+        "candidate_source": {
+          "kind": "supplied",
+          "candidates": [
+            {
+              "name": "NU6094",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Alternate 7H tautomer",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3[nH]cnc3n2)cc1"
+            },
+            {
+              "name": "Malformed ring",
+              "smiles": "C1CC"
+            },
+            {
+              "name": "Salt disconnected",
+              "smiles": "[Na+].c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Dummy attachment",
+              "smiles": "*c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Charged para ammonium",
+              "smiles": "[NH3+]Cc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "Wrong scaffold",
+              "smiles": "Cn1c(=O)c2c(ncn2C)n(C)c1=O"
+            },
+            {
+              "name": "Wrong meta attachment",
+              "smiles": "Oc1cccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)c1"
+            },
+            {
+              "name": "Two phenyl attachments",
+              "smiles": "Oc1cc(O)cc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)c1"
+            },
+            {
+              "name": "Wrong scaffold protonation",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH+]c3n2)cc1"
+            }
+          ]
+        },
+        "limits": {
+          "max_unique_candidates_evaluated": 12,
+          "embedding_attempts_per_candidate": 16,
+          "evaluation_admission_seconds": 600
+        },
+        "seeds": {
+          "embedding": 194715,
+          "vina": 42
+        },
+        "constraints": {
+          "max_molecular_weight": 450.0,
+          "max_clogp": 4.5,
+          "max_rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "parent_experiment_id": null
+      },
+      "hard_expectations": [
+        {
+          "proposal_index": 0,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 1,
+          "admission": "excluded",
+          "status": "duplicate",
+          "duplicate_of_proposal_index": 0
+        },
+        {
+          "proposal_index": 2,
+          "admission": "excluded",
+          "status": "invalid",
+          "error_required": true
+        },
+        {
+          "proposal_index": 3,
+          "admission": "excluded",
+          "status": "invalid",
+          "error_required": true
+        },
+        {
+          "proposal_index": 4,
+          "admission": "excluded",
+          "status": "invalid",
+          "error_required": true
+        },
+        {
+          "proposal_index": 5,
+          "admission": "excluded",
+          "status": "outside_constraints",
+          "filter_failures": [
+            "formal_charge!=0"
+          ]
+        },
+        {
+          "proposal_index": 6,
+          "admission": "excluded",
+          "status": "outside_constraints",
+          "filter_failures": [
+            "parent_scaffold_not_retained"
+          ]
+        },
+        {
+          "proposal_index": 7,
+          "admission": "excluded",
+          "status": "outside_constraints",
+          "filter_failures": [
+            "modification_outside_declared_para_attachment"
+          ]
+        },
+        {
+          "proposal_index": 8,
+          "admission": "excluded",
+          "status": "outside_constraints",
+          "filter_failures": [
+            "modification_outside_declared_para_attachment"
+          ]
+        },
+        {
+          "proposal_index": 9,
+          "admission": "excluded"
+        }
+      ],
+      "scientific_controls": [],
+      "reference_measurements": {
+        "science_seconds": null,
+        "candidates": []
+      }
+    },
+    {
+      "id": "all-filtered",
+      "spec": {
+        "schema_version": 1,
+        "label": "all-filtered",
+        "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+        "protocol": "guided_growth_cdk2_v2",
+        "candidate_source": {
+          "kind": "supplied",
+          "candidates": [
+            {
+              "name": "NU6094",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "NU6102",
+              "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            }
+          ]
+        },
+        "limits": {
+          "max_unique_candidates_evaluated": 12,
+          "embedding_attempts_per_candidate": 16,
+          "evaluation_admission_seconds": 600
+        },
+        "seeds": {
+          "embedding": 194715,
+          "vina": 42
+        },
+        "constraints": {
+          "max_molecular_weight": 300.0,
+          "max_clogp": 0.0,
+          "max_rotatable_bonds": 0,
+          "formal_charge": 0
+        },
+        "parent_experiment_id": null
+      },
+      "hard_expectations": [
+        {
+          "proposal_index": 0,
+          "admission": "excluded",
+          "status": "outside_constraints",
+          "filter_failures": [
+            "molecular_weight>300.0",
+            "clogp>0.0",
+            "rotatable_bonds>0"
+          ]
+        },
+        {
+          "proposal_index": 1,
+          "admission": "excluded",
+          "status": "outside_constraints",
+          "filter_failures": [
+            "molecular_weight>300.0",
+            "clogp>0.0",
+            "rotatable_bonds>0"
+          ]
+        }
+      ],
+      "scientific_controls": [],
+      "reference_measurements": {
+        "science_seconds": null,
+        "candidates": []
+      }
+    },
+    {
+      "id": "candidate-budget",
+      "spec": {
+        "schema_version": 1,
+        "label": "candidate-budget",
+        "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+        "protocol": "guided_growth_cdk2_v2",
+        "candidate_source": {
+          "kind": "supplied",
+          "candidates": [
+            {
+              "name": "NU6094",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "NU6102",
+              "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "NU6094 repeated",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            }
+          ]
+        },
+        "limits": {
+          "max_unique_candidates_evaluated": 1,
+          "embedding_attempts_per_candidate": 16,
+          "evaluation_admission_seconds": 600
+        },
+        "seeds": {
+          "embedding": 194715,
+          "vina": 42
+        },
+        "constraints": {
+          "max_molecular_weight": 450.0,
+          "max_clogp": 4.5,
+          "max_rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "parent_experiment_id": null
+      },
+      "hard_expectations": [
+        {
+          "proposal_index": 0,
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 1,
+          "admission": "excluded",
+          "status": "deferred_budget"
+        },
+        {
+          "proposal_index": 2,
+          "admission": "excluded",
+          "status": "duplicate",
+          "duplicate_of_proposal_index": 0
+        }
+      ],
+      "scientific_controls": [],
+      "reference_measurements": {
+        "science_seconds": null,
+        "candidates": []
+      }
+    }
+  ]
+}

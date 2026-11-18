@@ -1,0 +1,61 @@
+CapyChem CDK2 science components and reference data
+
+REFERENCE DATA
+The bundled prepared receptor and ligand SDFs derive from PDB archive structures
+1H1P, 1H1Q, 1H1R and 1H1S and their Chemical Component Dictionary connectivity.
+PDB archive data are available under CC0 1.0 Universal Public Domain Dedication:
+https://www.rcsb.org/pages/policies
+https://www.wwpdb.org/about/usage-policies
+
+Original structures:
+https://www.rcsb.org/structure/1H1P
+https://www.rcsb.org/structure/1H1Q
+https://www.rcsb.org/structure/1H1R
+https://www.rcsb.org/structure/1H1S
+Associated structural-series publication: https://doi.org/10.1038/nsb842
+
+The prepared structures are derived computational inputs, not unmodified deposited
+structures. manifest.json records chain selection, ligand identity, preparation,
+coordinate frame and file hashes. Computed hydrogens and water-removal choices
+must not be mistaken for experimentally observed coordinates.
+
+The versioned cdk2_1h1s_nu6094_v1 preparation transfers NU6094 heavy-atom
+coordinates from 1H1Q into the ligand-free 1H1S receptor by protein backbone
+alignment and selects a declared neutral 9H tautomer. It is a computational
+template, not an observed NU6094–1H1S complex. The 1H1S receptor was chosen from
+the known NU6102 complex, so validation using it is receptor-informed and
+retrospective. NU6102 ligand coordinates are not included in this live
+preparation. Its own manifest and template_alignment.json retain the source
+identities, transformation and hashes; science_prepare.py reproduces these
+derived files from the bundled prepared sources.
+
+DIRECT SCIENTIFIC COMPONENTS
+RDKit: BSD-3-Clause; https://github.com/rdkit/rdkit
+Meeko: LGPL-2.1 (installed distribution declaration);
+  https://github.com/forlilab/Meeko/blob/develop/LICENSE
+AutoDock Vina 1.2.7: Apache-2.0;
+  https://github.com/ccsb-scripps/AutoDock-Vina/blob/v1.2.7/LICENSE
+PoseBusters: MIT; https://github.com/maabuu/posebusters/blob/main/LICENSE
+ProLIF: Apache-2.0; https://github.com/chemosim-lab/ProLIF/blob/master/LICENSE
+FEgrow mapped conformer procedure: MIT, Copyright (c) 2022 Daniel J Cole;
+  https://github.com/cole-group/FEgrow
+  Source commit 55fd15b2a65df0d64cc30d9eb4684ec5224ddd47.
+  The adapted code in chemistry/conformers.py includes the complete MIT notice.
+  This adapter does not implement the full FEgrow workflow or its other models.
+
+OPTIONAL GENERATOR
+REINVENT4 code: Apache-2.0; https://github.com/MolecularAI/REINVENT4
+  Pinned source commit 0f075b349ed22015e0406350c6f426701bb0815d.
+LibInvent checkpoint: the REINVENT4 priors record declares Apache-2.0 separately
+from the code license: https://zenodo.org/records/15641297
+  Record title: REINVENT4 priors; Hannes Loeffler, AstraZeneca (Sweden).
+  Checkpoint file: libinvent.prior; publication date 2025-06-11.
+  SHA256: 03e6cbe8a53e59a4ac3aa6728d041f1957bdd07b5eefdf2cfc5c8591036075af
+  Checkpoints are downloaded separately and are not committed to this repository.
+PyTorch and remaining dependencies retain their upstream licenses and notices in
+the installed distributions. The pinned requirements files record exact package
+versions used for the isolated CPU and generator environments.
+
+No RCSB logos, copyrighted educational illustrations or commercial software assets
+are included. Molecular depictions and workspace geometry are generated from the
+stored structural data and computed poses.

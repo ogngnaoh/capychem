@@ -1,0 +1,664 @@
+{
+  "schema_version": 1,
+  "id": "cdk2-growth-v2-baseline-v2",
+  "recorded_date_utc": "2026-11-17T22:39:27.232029+00:00",
+  "source_evidence": "docs/redesign/reliability-v6/core-validation.json",
+  "identity": {
+    "protocol": "guided_growth_cdk2_v2",
+    "protocol_revision": 2,
+    "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+    "target_manifest_sha256": "dd69f0dc2df29c516fe08f59d634a861f2cabd48cb73b76b9d10abc6d32c7e38",
+    "engine_fingerprint": "361b7dc321d609803c25e3f1748dec73956884be07e2cb138d9597c747c32d93",
+    "implementation_sha256": {
+      "science.py": "fdeff28273831f71c1a20e7a603f720d57dbaa437ddee6a7a968b279ee1f9fde",
+      "science_config.py": "5cc80d5b88eb2110c2d9a416ea9497d0aa6a82a3219e2335856318bf2095589e",
+      "chemistry/conformers.py": "0e0fd00ceb1c1f3e940a0206931d205aa05c9ad42612b93698c7f561b4e299cd",
+      "chemistry/generate.py": "a14990e317d673d7ed2b2d4161cc437a7a1f38ee2a251766cb9fd49cb1500f40",
+      "chemistry/geometry.py": "b7f926248047ec9bdf5911cac975151fe8c955c5a2a7608536289644a8e219b0",
+      "chemistry/identity.py": "33f39d731a9bfc4358acb6fa98262e144463310f2fb2a53850c0fb15780fe94e"
+    },
+    "vina_binary_sha256": "823c2bbacf26d72183861322345f0a89736aca66c8e81054c66f93af5ad623f1",
+    "science_versions": {
+      "rdkit": "2025.9.6",
+      "numpy": "2.4.2",
+      "meeko": "0.8.0",
+      "posebusters": "0.6.5",
+      "prolif": "2.2.3"
+    },
+    "generator": {
+      "checkpoint_sha256": "03e6cbe8a53e59a4ac3aa6728d041f1957bdd07b5eefdf2cfc5c8591036075af",
+      "source_commit": "0f075b349ed22015e0406350c6f426701bb0815d",
+      "versions": {
+        "torch": "2.10.0",
+        "rdkit": "2025.9.6",
+        "numpy": "2.4.2",
+        "molvs": "0.1.1"
+      }
+    }
+  },
+  "heldout_reference": {
+    "path": "data/validation/cdk2/1H1S_NU6102_observed.sdf",
+    "sha256": "2d837645d6c385b86d5d12b8279e0ffe6017b1e17476e7896cfa935268ff61af",
+    "candidate_name": "NU6102",
+    "source_pdb": "1H1S",
+    "source_component": "4SP",
+    "source_url": "https://www.rcsb.org/structure/1H1S",
+    "license": "CC0-1.0",
+    "policy": "Read only after completed inference by the optional molecular audit; never sent in experiment inputs. Deposited heavy-atom coordinates with CCD connectivity in original1H1S frame. Receptor choice remains retrospectively informed."
+  },
+  "comparison_policy": {
+    "hard_contract": "Accounting, declared supplied-input admission/exclusion/duplicate identity, exact frozen request, API/report pose identity and verified artifacts. These are not docking-quality judgments.",
+    "science": "Known-control loss of eligible contact/geometry or RMSD beyond the declared tolerance requires review. Scores, runtime, generated yield and generated contact counts are descriptive. Extra generated hits are not regressions.",
+    "known_pose_rmsd_max_A": 2.0,
+    "rmsd_rationale": "A deliberately broad pose-recovery tolerance relative to the held-out crystal, not an exact0.359A replay oracle. Does not validate affinity; symmetry-aware heavy-atom RMSD without ligand fitting.",
+    "ring_drift_max_A": 2.0,
+    "minimum_hinge_hbond_types": 1,
+    "ring_and_hinge_rationale": "The unchanged curated protocol eligibility thresholds. All original hinge interactions need not be retained.",
+    "numeric_identity_absolute_tolerance": 1e-08,
+    "numeric_identity_rationale": "Only floating-point serialization consistency between a report and its API projection; not a scientific score tolerance.",
+    "missing_molecular_audit": "Report explicitly that geometry/contact values were not independently recomputed and crystal RMSD was not checked.",
+    "exit_codes": {
+      "0": "contract checks passed and no scientific review flags",
+      "1": "preflight/transport/execution failure",
+      "2": "hard contract or artifact consistency failure",
+      "3": "scientific control or changed-engine review required"
+    }
+  },
+  "cases": [
+    {
+      "id": "known",
+      "spec": {
+        "schema_version": 1,
+        "label": "CDK2 \u00b7 live walkthrough \u00b7 parent versus polar extension",
+        "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+        "protocol": "guided_growth_cdk2_v2",
+        "candidate_source": {
+          "kind": "supplied",
+          "candidates": [
+            {
+              "name": "NU6094",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "NU6102",
+              "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            }
+          ]
+        },
+        "limits": {
+          "max_unique_candidates_evaluated": 12,
+          "embedding_attempts_per_candidate": 16,
+          "evaluation_admission_seconds": 600
+        },
+        "seeds": {
+          "embedding": 194715,
+          "vina": 42
+        },
+        "constraints": {
+          "max_molecular_weight": 450.0,
+          "max_clogp": 4.5,
+          "max_rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "parent_experiment_id": null
+      },
+      "source_experiment_id": "e013d7dd-70bb-49c0-b04c-f167ce462d0c",
+      "source_report_sha256": "f4ca6140a863554549dddefec2f61f9b30762bb4cc834e7a9b089e3e01afb563",
+      "hard_expectations": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 1,
+          "name": "NU6102",
+          "admission": "evaluated"
+        }
+      ],
+      "scientific_controls": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": false,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        },
+        {
+          "proposal_index": 1,
+          "name": "NU6102",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": true,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        }
+      ],
+      "reference_measurements": {
+        "summary": {
+          "ready_for_review": 2,
+          "raw_proposals": 2,
+          "processed_proposals": 2,
+          "unique_candidates": 2,
+          "evaluated_candidates": 2,
+          "pose_count": 6,
+          "pose_failures": 0,
+          "objective_hits": 1
+        },
+        "science_seconds": 19.055191541963723,
+        "candidates": [
+          {
+            "proposal_index": 0,
+            "name": "NU6094",
+            "normalized_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "ready_for_review",
+            "selected": {
+              "score": -8.183,
+              "asp86_contact": false,
+              "geometry_pass": true,
+              "review_ready": true,
+              "hinge_hbond_type_count": 3,
+              "ring_drift_A": 0.3546025537289749,
+              "heldout_native_rmsd_A": null
+            }
+          },
+          {
+            "proposal_index": 1,
+            "name": "NU6102",
+            "normalized_smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "ready_for_review",
+            "selected": {
+              "score": -8.525,
+              "asp86_contact": true,
+              "geometry_pass": true,
+              "review_ready": true,
+              "hinge_hbond_type_count": 2,
+              "ring_drift_A": 0.49722370775693603,
+              "heldout_native_rmsd_A": 0.35919995426344
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "mixed",
+      "spec": {
+        "schema_version": 1,
+        "label": "Walkthrough \u00b7 mixed input quality",
+        "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+        "protocol": "guided_growth_cdk2_v2",
+        "candidate_source": {
+          "kind": "supplied",
+          "candidates": [
+            {
+              "name": "NU6094",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "NU6102",
+              "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "NU6094 \u00b7 alternate tautomer duplicate",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3[nH]cnc3n2)cc1"
+            },
+            {
+              "name": "Malformed ring",
+              "smiles": "C1CC"
+            },
+            {
+              "name": "Caffeine \u00b7 outside scaffold",
+              "smiles": "Cn1c(=O)c2c(ncn2C)n(C)c1=O"
+            },
+            {
+              "name": "NU6086 \u00b7 meta substituent",
+              "smiles": "Clc1cccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)c1"
+            }
+          ]
+        },
+        "limits": {
+          "max_unique_candidates_evaluated": 6,
+          "embedding_attempts_per_candidate": 16,
+          "evaluation_admission_seconds": 180
+        },
+        "seeds": {
+          "embedding": 194715,
+          "vina": 42
+        },
+        "constraints": {
+          "max_molecular_weight": 450.0,
+          "max_clogp": 4.5,
+          "max_rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "parent_experiment_id": null
+      },
+      "source_experiment_id": "5ab0266d-df56-427b-9f9c-ea2a7ebd4da0",
+      "source_report_sha256": "b4fbda304bc3f767ba596ad694735eb10557922640e98a3455cd6d9ff416a828",
+      "hard_expectations": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 1,
+          "name": "NU6102",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 2,
+          "name": "NU6094 \u00b7 alternate tautomer duplicate",
+          "status": "duplicate",
+          "admission": "not_evaluated",
+          "duplicate_of_proposal_index": 0
+        },
+        {
+          "proposal_index": 3,
+          "name": "Malformed ring",
+          "status": "invalid",
+          "admission": "not_evaluated",
+          "error_required": true
+        },
+        {
+          "proposal_index": 4,
+          "name": "Caffeine \u00b7 outside scaffold",
+          "status": "outside_constraints",
+          "admission": "not_evaluated",
+          "filter_failures": [
+            "parent_scaffold_not_retained"
+          ]
+        },
+        {
+          "proposal_index": 5,
+          "name": "NU6086 \u00b7 meta substituent",
+          "status": "outside_constraints",
+          "admission": "not_evaluated",
+          "filter_failures": [
+            "modification_outside_declared_para_attachment",
+            "clogp>4.5"
+          ]
+        }
+      ],
+      "scientific_controls": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": false,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        },
+        {
+          "proposal_index": 1,
+          "name": "NU6102",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": true,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        }
+      ],
+      "reference_measurements": {
+        "summary": {
+          "duplicate": 1,
+          "invalid": 1,
+          "outside_constraints": 2,
+          "ready_for_review": 2,
+          "raw_proposals": 6,
+          "processed_proposals": 6,
+          "unique_candidates": 4,
+          "evaluated_candidates": 2,
+          "pose_count": 6,
+          "pose_failures": 0,
+          "objective_hits": 1
+        },
+        "science_seconds": 19.01428762503201,
+        "candidates": [
+          {
+            "proposal_index": 0,
+            "name": "NU6094",
+            "normalized_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "ready_for_review",
+            "selected": {
+              "score": -8.183,
+              "asp86_contact": false,
+              "geometry_pass": true,
+              "review_ready": true,
+              "hinge_hbond_type_count": 3,
+              "ring_drift_A": 0.3546025537289749,
+              "heldout_native_rmsd_A": null
+            }
+          },
+          {
+            "proposal_index": 1,
+            "name": "NU6102",
+            "normalized_smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "ready_for_review",
+            "selected": {
+              "score": -8.525,
+              "asp86_contact": true,
+              "geometry_pass": true,
+              "review_ready": true,
+              "hinge_hbond_type_count": 2,
+              "ring_drift_A": 0.49722370775693603,
+              "heldout_native_rmsd_A": 0.35919995426344
+            }
+          },
+          {
+            "proposal_index": 2,
+            "name": "NU6094 \u00b7 alternate tautomer duplicate",
+            "normalized_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "duplicate",
+            "selected": null
+          },
+          {
+            "proposal_index": 3,
+            "name": "Malformed ring",
+            "normalized_smiles": null,
+            "status": "invalid",
+            "selected": null
+          },
+          {
+            "proposal_index": 4,
+            "name": "Caffeine \u00b7 outside scaffold",
+            "normalized_smiles": "Cn1c(=O)c2c(ncn2C)n(C)c1=O",
+            "status": "outside_constraints",
+            "selected": null
+          },
+          {
+            "proposal_index": 5,
+            "name": "NU6086 \u00b7 meta substituent",
+            "normalized_smiles": "Clc1cccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)c1",
+            "status": "outside_constraints",
+            "selected": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "strict",
+      "spec": {
+        "schema_version": 1,
+        "label": "Walkthrough \u00b7 molecular weight ceiling350",
+        "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+        "protocol": "guided_growth_cdk2_v2",
+        "candidate_source": {
+          "kind": "supplied",
+          "candidates": [
+            {
+              "name": "NU6094",
+              "smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            },
+            {
+              "name": "NU6102",
+              "smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1"
+            }
+          ]
+        },
+        "limits": {
+          "max_unique_candidates_evaluated": 6,
+          "embedding_attempts_per_candidate": 16,
+          "evaluation_admission_seconds": 180
+        },
+        "seeds": {
+          "embedding": 194715,
+          "vina": 42
+        },
+        "constraints": {
+          "max_molecular_weight": 350.0,
+          "max_clogp": 4.5,
+          "max_rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "parent_experiment_id": null
+      },
+      "source_experiment_id": "1238665c-b549-4953-9c5b-3ceb41089b2a",
+      "source_report_sha256": "b7e82592dc9aff6d9a4dd71a73141357a31c4c3b6386b430424fad35c02ab6ff",
+      "hard_expectations": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "admission": "evaluated"
+        },
+        {
+          "proposal_index": 1,
+          "name": "NU6102",
+          "status": "outside_constraints",
+          "admission": "not_evaluated",
+          "filter_failures": [
+            "molecular_weight>350.0"
+          ]
+        }
+      ],
+      "scientific_controls": [
+        {
+          "proposal_index": 0,
+          "name": "NU6094",
+          "review_ready": true,
+          "geometry_pass": true,
+          "asp86_contact": false,
+          "maximum_ring_drift_A": 2.0,
+          "minimum_hinge_hbond_types": 1
+        }
+      ],
+      "reference_measurements": {
+        "summary": {
+          "outside_constraints": 1,
+          "ready_for_review": 1,
+          "raw_proposals": 2,
+          "processed_proposals": 2,
+          "unique_candidates": 2,
+          "evaluated_candidates": 1,
+          "pose_count": 1,
+          "pose_failures": 0,
+          "objective_hits": 0
+        },
+        "science_seconds": 6.327445542032365,
+        "candidates": [
+          {
+            "proposal_index": 0,
+            "name": "NU6094",
+            "normalized_smiles": "c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "ready_for_review",
+            "selected": {
+              "score": -8.183,
+              "asp86_contact": false,
+              "geometry_pass": true,
+              "review_ready": true,
+              "hinge_hbond_type_count": 3,
+              "ring_drift_A": 0.3546025537289749,
+              "heldout_native_rmsd_A": null
+            }
+          },
+          {
+            "proposal_index": 1,
+            "name": "NU6102",
+            "normalized_smiles": "NS(=O)(=O)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "outside_constraints",
+            "selected": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "generated",
+      "spec": {
+        "schema_version": 1,
+        "label": "Walkthrough \u00b7 LibInvent seed47",
+        "target_preparation_id": "cdk2_1h1s_nu6094_v1",
+        "protocol": "guided_growth_cdk2_v2",
+        "candidate_source": {
+          "kind": "libinvent",
+          "raw_proposal_count": 12,
+          "seed": 47
+        },
+        "limits": {
+          "max_unique_candidates_evaluated": 6,
+          "embedding_attempts_per_candidate": 16,
+          "evaluation_admission_seconds": 180
+        },
+        "seeds": {
+          "embedding": 194715,
+          "vina": 42
+        },
+        "constraints": {
+          "max_molecular_weight": 450.0,
+          "max_clogp": 4.5,
+          "max_rotatable_bonds": 8,
+          "formal_charge": 0
+        },
+        "parent_experiment_id": null
+      },
+      "source_experiment_id": "d0260e62-d8cb-43c3-8c35-faa22d81c2f4",
+      "source_report_sha256": "9e91e202e54d57e47d12ac493f52da811303bc96d6af2dd3f5e615266b101718",
+      "hard_expectations": [],
+      "scientific_controls": [],
+      "reference_measurements": {
+        "summary": {
+          "duplicate": 4,
+          "outside_constraints": 5,
+          "ready_for_review": 3,
+          "raw_proposals": 12,
+          "processed_proposals": 12,
+          "unique_candidates": 8,
+          "evaluated_candidates": 3,
+          "pose_count": 12,
+          "pose_failures": 0,
+          "objective_hits": 0
+        },
+        "science_seconds": 40.610077624965925,
+        "candidates": [
+          {
+            "proposal_index": 0,
+            "name": "Generated 1",
+            "normalized_smiles": "CN1CCC(c2ccc(Nc3nc(OCC4CCCCC4)c4nc[nH]c4n3)cc2)CC1",
+            "status": "outside_constraints",
+            "selected": null
+          },
+          {
+            "proposal_index": 1,
+            "name": "Generated 2",
+            "normalized_smiles": "c1nc2c(OCC3CCCCC3)nc(Nc3ccc(N4CCOCC4)cc3)nc2[nH]1",
+            "status": "ready_for_review",
+            "selected": {
+              "score": -8.099,
+              "asp86_contact": false,
+              "geometry_pass": true,
+              "review_ready": true,
+              "hinge_hbond_type_count": 2,
+              "ring_drift_A": 0.1483058176726579,
+              "heldout_native_rmsd_A": null
+            }
+          },
+          {
+            "proposal_index": 2,
+            "name": "Generated 3",
+            "normalized_smiles": "CN1CCN(c2ccc(Nc3nc(OCC4CCCCC4)c4nc[nH]c4n3)cc2)CC1",
+            "status": "ready_for_review",
+            "selected": {
+              "score": -8.484,
+              "asp86_contact": false,
+              "geometry_pass": true,
+              "review_ready": true,
+              "hinge_hbond_type_count": 3,
+              "ring_drift_A": 0.3449677827147213,
+              "heldout_native_rmsd_A": null
+            }
+          },
+          {
+            "proposal_index": 3,
+            "name": "Generated 4",
+            "normalized_smiles": "c1nc2c(OCC3CCCCC3)nc(Nc3ccc(N4CCOCC4)cc3)nc2[nH]1",
+            "status": "duplicate",
+            "selected": null
+          },
+          {
+            "proposal_index": 4,
+            "name": "Generated 5",
+            "normalized_smiles": "CC(C)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "outside_constraints",
+            "selected": null
+          },
+          {
+            "proposal_index": 5,
+            "name": "Generated 6",
+            "normalized_smiles": "CCCc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "outside_constraints",
+            "selected": null
+          },
+          {
+            "proposal_index": 6,
+            "name": "Generated 7",
+            "normalized_smiles": "O=S1(=O)CCN(c2ccc(Nc3nc(OCC4CCCCC4)c4nc[nH]c4n3)cc2)CCN1",
+            "status": "outside_constraints",
+            "selected": null
+          },
+          {
+            "proposal_index": 7,
+            "name": "Generated 8",
+            "normalized_smiles": "CN1CCN(c2ccc(Nc3nc(OCC4CCCCC4)c4nc[nH]c4n3)cc2)CC1",
+            "status": "duplicate",
+            "selected": null
+          },
+          {
+            "proposal_index": 8,
+            "name": "Generated 9",
+            "normalized_smiles": "c1nc2c(OCC3CCCCC3)nc(Nc3ccc(N4CCOCC4)cc3)nc2[nH]1",
+            "status": "duplicate",
+            "selected": null
+          },
+          {
+            "proposal_index": 9,
+            "name": "Generated 10",
+            "normalized_smiles": "c1nc2c(OCC3CCCCC3)nc(Nc3ccc(-c4cnco4)cc3)nc2[nH]1",
+            "status": "outside_constraints",
+            "selected": null
+          },
+          {
+            "proposal_index": 10,
+            "name": "Generated 11",
+            "normalized_smiles": "Cc1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "ready_for_review",
+            "selected": {
+              "score": -8.558,
+              "asp86_contact": false,
+              "geometry_pass": true,
+              "review_ready": true,
+              "hinge_hbond_type_count": 3,
+              "ring_drift_A": 0.3174529081436938,
+              "heldout_native_rmsd_A": null
+            }
+          },
+          {
+            "proposal_index": 11,
+            "name": "Generated 12",
+            "normalized_smiles": "CC(C)c1ccc(Nc2nc(OCC3CCCCC3)c3nc[nH]c3n2)cc1",
+            "status": "duplicate",
+            "selected": null
+          }
+        ]
+      }
+    }
+  ],
+  "engine_review": {
+    "reviewed_at_utc": "2026-11-17T22:39:27.231742+00:00",
+    "previous_engine_fingerprint": "c6f39352cbe2f62bb15d799cdb52788deb5cec2b357aeb12df636f0f27ebbe41",
+    "current_engine_fingerprint": "361b7dc321d609803c25e3f1748dec73956884be07e2cb138d9597c747c32d93",
+    "changed_implementation_files": [
+      "chemistry/geometry.py"
+    ],
+    "decision": "Accept as a software regression baseline; no scientific accuracy or affinity improvement claim.",
+    "evidence": "docs/redesign/reliability-v6/core-validation.json",
+    "basis": [
+      "Only chemistry/geometry.py source hash changed from the prior baseline; hydrogen-preparation annotation was added.",
+      "All four original cases pass unchanged input, accounting, artifact, independently recomputed molecular evidence and known-control checks.",
+      "Every replayed selected score equals its original reference score; NU6102 held-out heavy-atom RMSD remains 0.35919995426344 A.",
+      "Three additional fixed seeds retain known controls while novel contact variability is measured rather than treated as a failure.",
+      "Coordinate-preservation hydrogen-warning test and all 104 initial backend/real-science tests passed."
+    ]
+  }
+}

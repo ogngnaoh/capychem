@@ -74,3 +74,16 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["asyncpg", "asyncpg.*"]
 ignore_missing_imports = true
+
+# These adapters execute in separately provisioned scientific/model Python
+# environments. Keep their third-party import boundaries explicit; the API's
+# lightweight environment intentionally does not install these packages.
+[[tool.mypy.overrides]]
+module = [
+    "prolif", "prolif.*",
+    "meeko", "meeko.*",
+    "posebusters", "posebusters.*",
+    "torch", "torch.*",
+    "reinvent", "reinvent.*",
+]
+ignore_missing_imports = true

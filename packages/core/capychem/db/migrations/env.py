@@ -1,6 +1,7 @@
 from logging.config import fileConfig
 
 import capychem.db.models
+import capychem.experiments.models
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
@@ -68,12 +69,26 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    supplied_connection = config.attributes.get("connection")
+    if supplied_connection is not None:
+        context.configure(
+            connection=supplied_connection,
+            target_metadata=target_metadata,
+            compare_type=True,
+        )
+        with context.begin_transaction():
+            context.run_migrations()
+        return
+
     section = config.get_section(config.config_ini_section, {})
     section["sqlalchemy.url"] = _sync_url()
     connectable = engine_from_config(
         section,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args={"options": "-c timezone=UTC"}
+        if section["sqlalchemy.url"].startswith("postgresql")
+        else {},
     )
 
     with connectable.connect() as connection:

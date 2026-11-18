@@ -19,6 +19,8 @@ from capychem.api.ws_runs import router as ws_router
 from capychem.db.migrate import run_migrations
 from capychem.db.models import Run
 from capychem.db.session import database_url, make_engine, make_sessionmaker
+from capychem.experiments.routes import router as experiments_router
+from capychem.experiments.studies import router as studies_router
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func, or_, select, text
@@ -84,7 +86,7 @@ app = FastAPI(title="CapyChem API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PUT", "PATCH"],
     allow_headers=["*"],
 )
 
@@ -92,6 +94,8 @@ app.include_router(runs_router)
 app.include_router(ws_router)
 app.include_router(catalog_router)
 app.include_router(molecule_router)
+app.include_router(experiments_router)
+app.include_router(studies_router)
 
 
 @app.get("/healthz")
