@@ -1,23 +1,46 @@
-# CapyChem
+[![CapyChem — watch the 28-second film showing a molecule in the CDK2 binding pocket](assets/readme/capychem-film.jpg)](#product-film)
 
-A local 3D workspace for structure-guided molecular design. Start with related molecules, or generate variants of a shared core. Compare their calculated positions inside a protein pocket, inspect which atoms touch, and download the exact pose on screen.
+# Molecular design in 3D
 
-[Watch the 28-second product tour](https://github.com/ogngnaoh/capychem/blob/6d482de562679923daea41d151d2dbded3a22041/assets/demo/v10/capychem-studio-launch.mp4?raw=1) · [Run a live experiment](#run-a-live-experiment)
+CapyChem is a local workspace for seeing how a small change to a molecule affects its fit inside a protein. Compare two candidates in the same pocket, inspect the atoms that come into contact, and export the exact 3D pose on screen.
+
+**[Download the demo ZIP](https://github.com/ogngnaoh/capychem/blob/6d482de562679923daea41d151d2dbded3a22041/assets/demo/capychem-studio-demo.zip?raw=1)** · [Watch the film](#product-film) · [Run a live experiment](#run-a-live-experiment)
 
 ## Try the recorded workspace
 
-From the repository root, with Node.js 22 and pnpm 11.5.0 installed:
+The demo includes 11 experiments and three studies. You need Python 3 and a browser with WebGL. Once downloaded, it runs offline.
+
+1. [Download the demo ZIP (13 MB)](https://github.com/ogngnaoh/capychem/blob/6d482de562679923daea41d151d2dbded3a22041/assets/demo/capychem-studio-demo.zip?raw=1) and extract it.
+2. Open a terminal in the folder containing `serve.py` and run `python3 serve.py`.
+3. [Open the CDK2 experiment](http://127.0.0.1:5182/experiments/58c63b90-086a-4cb6-adee-e09657734574?mode=demo). Select **NU6094**, then **NU6102**. Drag to rotate the pocket. Select **ASP86** to see which atoms the added group reaches.
+
+**Does the contact show up again?** In the [three-run study](http://127.0.0.1:5182/studies/a73fc517-6425-490a-a921-9ea3e7c0686d?mode=demo), each run uses a different sampling seed. Compare the selected poses:
+
+| Molecule | Runs that reached Asp86 |
+| --- | ---: |
+| NU6094 · parent | 0 of 3 |
+| NU6102 · sulfonamide | 3 of 3 |
+| Carboxamide variant | 2 of 3 |
+
+Open the carboxamide run that missed. **Download selected pose** saves the coordinates behind that result. These counts describe calculated contacts in a fixed protein structure. Measuring binding strength requires experimental data.
+
+<details>
+<summary>Run the recorded workspace from source</summary>
+
+From the repository root, with Node.js 22 and pnpm 11.5.0:
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm studio
 ```
 
-[Open the example experiment](http://127.0.0.1:5181/experiments/58c63b90-086a-4cb6-adee-e09657734574?mode=demo). Select **NU6094**, then **NU6102**. The second molecule has an added group. Select **ASP86** to see which atoms it reaches in the CDK2 protein, drag to rotate the pocket, then choose **Download selected pose**.
+Open [Studio in recorded mode](http://127.0.0.1:5181/?mode=demo). To build the portable ZIP, run `python3 scripts/package_demo.py`.
 
-[Open the three-run study](http://127.0.0.1:5181/studies/a73fc517-6425-490a-a921-9ea3e7c0686d?mode=demo). With three different sampling seeds, the selected poses reached Asp86 in **0/3** runs for NU6094, **3/3** for NU6102, and **2/3** for the carboxamide variant. Click the carboxamide run that missed to see the difference. These results describe calculated geometry in a fixed receptor. Measuring binding strength requires experimental data.
+</details>
 
-**Portable demo.** For a machine with just Python 3 and a WebGL browser, download the `capychem-studio-demo` artifact from a successful [CI run](https://github.com/ogngnaoh/capychem/actions/workflows/ci.yml), extract it, and run `python3 serve.py` from the folder containing that file. Open the printed address. To build the same offline workspace yourself after installing the Node dependencies, run `python3 scripts/package_demo.py`. It writes `dist/capychem-studio-demo.zip`.
+## Product film
+
+https://github.com/user-attachments/assets/f34b5ee5-8c14-44f0-a989-409440781ff8
 
 ## Run a live experiment
 
