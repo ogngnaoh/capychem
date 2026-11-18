@@ -1,0 +1,52 @@
+{
+  "composition": "CapyChemSpatialLaunch",
+  "media": {
+    "sha256": "105d59478fbf390c698b649fcef5e098c1482b16e4010d7b172a21186b9e7476",
+    "bytes": 9967297,
+    "seconds": 28,
+    "frames": 840,
+    "fps": 30,
+    "width": 1920,
+    "height": 1080,
+    "codec": "h264",
+    "audioStreams": 0,
+    "fullDecode": "pass"
+  },
+  "source": {
+    "capture": "apps/launch/public/v8/full-workflow.mp4",
+    "captureSha256": "aa2139fefca5ccd54f1c62ebc291e5c826dc35378ae6081e9654f41540cf6f84",
+    "experimentId": "75c0fc72-1fea-42c9-841a-0792c2f4b1c2",
+    "poseId": "7d92be87-677e-5b27-9761-149d841b20e2",
+    "exportedSdfSha256": "9f947249da3d2d501a9dc9c48ae8ec09c9673c510ae95fa5f43b5c4b38de398c",
+    "candidateSource": "supplied",
+    "observedRunSeconds": 23.066,
+    "v8CaseSha256": "e0062b4e93671949fef3ab59eb99d6bb7f325ba0af3f68e95f1587aad54408ef",
+    "v9ProductSha256": "9282de26aa121759f88a1860c5419128343817a669f823e07432184978320795"
+  },
+  "edit": {
+    "sourcePointerEventsInFilmSeconds": {
+      "Run experiment": 8.02,
+      "Select variant": 11.635,
+      "Inspect contact": 17.387,
+      "Download selected pose": 21.885
+    },
+    "setupSourceStartSeconds": 1.3,
+    "setupCalibrationCheck": {
+      "framesScanned": 65,
+      "reviewWidth": 640,
+      "maximumMagentaPixelCount": 0
+    },
+    "visualReview": {
+      "sampleWidth": 360,
+      "focus": [
+        "Molecular camera match inside live viewport",
+        "Centered real Run and SDF actions",
+        "Variant switch and indicated computed contact",
+        "Coordinated export panels and molecular pullback",
+        "Centered mark and lowercase wordmark"
+      ]
+    },
+    "posterFrameSeconds": 0.12,
+    "posterSha256": "bfca993ccbfc9aa6ebafce903d5e9268c148c779279fbfeab441f066b676185a"
+  }
+}

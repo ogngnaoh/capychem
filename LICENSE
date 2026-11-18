@@ -28,5 +28,6 @@ The optional legacy evaluation harness under harness/ pins the PMO/mol_opt +
 PyTDC stack, some of which is distributed under other licenses (e.g. GPL). That
 stack runs only as an isolated subprocess (its own Python 3.10 virtualenv) and
 is never imported or linked into the MIT-licensed code — the JSON subprocess
-bridge is the only boundary. RDKit (BSD-3), FastAPI/Next.js/React (MIT), and
-the other modern dependencies carry their own permissive licenses.
+bridge is the only boundary. Third-party software, fonts, scientific reference
+data and model weights retain their upstream licenses. The launch renderer's
+license is included in apps/launch/REMOTION_LICENSE.txt.
