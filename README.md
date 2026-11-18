@@ -4,13 +4,13 @@
 
 CapyChem is a local workspace for seeing how a small change to a molecule affects its fit inside a protein. Compare two candidates in the same pocket, inspect the atoms that come into contact, and export the exact 3D pose on screen.
 
-**[Download the demo ZIP](https://github.com/ogngnaoh/capychem/blob/6d482de562679923daea41d151d2dbded3a22041/assets/demo/capychem-studio-demo.zip?raw=1)** · [Watch the film](#product-film) · [Run a live experiment](#run-a-live-experiment)
+**[Download the demo ZIP](https://raw.githubusercontent.com/ogngnaoh/capychem/6d482de562679923daea41d151d2dbded3a22041/assets/demo/capychem-studio-demo.zip)** · [Watch the film](#product-film) · [Run a live experiment](#run-a-live-experiment)
 
 ## Try the recorded workspace
 
 The demo includes 11 experiments and three studies. You need Python 3 and a browser with WebGL. Once downloaded, it runs offline.
 
-1. [Download the demo ZIP (13 MB)](https://github.com/ogngnaoh/capychem/blob/6d482de562679923daea41d151d2dbded3a22041/assets/demo/capychem-studio-demo.zip?raw=1) and extract it.
+1. [Download the demo ZIP (13 MB)](https://raw.githubusercontent.com/ogngnaoh/capychem/6d482de562679923daea41d151d2dbded3a22041/assets/demo/capychem-studio-demo.zip) and extract it.
 2. Open a terminal in the folder containing `serve.py` and run `python3 serve.py`.
 3. [Open the CDK2 experiment](http://127.0.0.1:5182/experiments/58c63b90-086a-4cb6-adee-e09657734574?mode=demo). Select **NU6094**, then **NU6102**. Drag to rotate the pocket. Select **ASP86** to see which atoms the added group reaches.
 
